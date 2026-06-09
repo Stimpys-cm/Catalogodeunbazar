@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --black:#1a1f2e;
+  --white:#f7f4ef;
+  --accent:#2d6be4;
+  --accent2:#4a90d9;
+  --gray:#f0ece4;
+  --mid:#e8e2d8;
+  --card:#faf8f4;
+  --border:#d4cfc6;
+  --muted:#8a8178;
+  --text2:#6b6560;
+  --text-dark:#1a1f2e;
+  --danger:#e05c5c;
+  --success:#2e8b57;
+  --bg-gradient:linear-gradient(135deg,#f7f4ef 0%,#edf2fb 50%,#e8e2d8 100%);
+  --hero-gradient:linear-gradient(160deg,#1a1f2e 0%,#2d4a7a 60%,#4a90d9 100%);
+  --card-gradient:linear-gradient(145deg,#faf8f4 0%,#edf2fb 100%);
+  --accent-gradient:linear-gradient(135deg,#2d6be4 0%,#4a90d9 100%);
+}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg-gradient);
+  background-attachment:fixed;
+  color:var(--text-dark);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+button{font-family:'DM Sans',sans-serif}
+
+.hidden{display:none!important}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--black);border:1px solid rgba(45,107,228,.3);color:var(--white);
+  padding:12px 20px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:6px;z-index:9999;opacity:0;transition:opacity .25s;pointer-events:none;
+  box-shadow:0 4px 20px rgba(45,107,228,.2);
+}
+.toast.show{opacity:1}
+
+/* Modal imágenes */
+.modal-overlay{
+  display:none;position:fixed;inset:0;z-index:1000;
+  background:rgba(26,31,46,.96);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;
+}
+.modal-overlay.active{display:flex}
+.modal-inner{max-width:600px;max-height:90vh;width:90%;position:relative}
+.modal-inner img{width:100%;max-height:88vh;object-fit:contain;border-radius:4px}
+.m-close{
+  position:fixed;top:18px;right:18px;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  color:#f7f4ef;cursor:pointer;width:38px;height:38px;border-radius:50%;font-size:16px;
+  display:flex;align-items:center;justify-content:center;transition:background .2s;
+}
+.m-close:hover{background:rgba(255,255,255,.2)}
+.m-nav{
+  position:fixed;top:50%;transform:translateY(-50%);
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  color:#f7f4ef;border:none;cursor:pointer;
+  width:42px;height:42px;border-radius:50%;font-size:22px;
+  display:flex;align-items:center;justify-content:center;transition:background .2s;
+}
+.m-nav:hover{background:rgba(255,255,255,.16)}
+#mPrev,#modalPrev{left:14px}
+#mNext,#modalNext{right:14px}

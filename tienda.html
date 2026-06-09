@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bazar En Linea | Prendas Disponibles |</title>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/tienda.css">
+  <script src="js/db.js" defer></script>
+  <script src="js/tienda.js" defer></script>
+</head>
+<body>
+
+<header>
+  <a href="tienda.html" class="logo">Bazar En Linea<span>.</span></a>
+
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input type="search" id="searchInput" placeholder="Buscar prendas..." autocomplete="off" aria-label="Buscar prendas">
+  </div>
+
+  <div class="header-actions">
+    <a href="https://www.instagram.com/stiimpys" target="_blank" rel="noopener" class="btn-ig">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="20" height="20" rx="5"/>
+        <circle cx="12" cy="12" r="4"/>
+        <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+      </svg>
+      Seguir
+    </a>
+  </div>
+</header>
+
+<nav class="cat-nav">
+  <div class="cat-nav-inner">
+
+    <div class="nav-item" id="navCats">
+      <button class="nav-btn" onclick="toggleDrop('dropCats')" aria-expanded="false" aria-controls="dropCats">
+        Categorías <span class="nav-arrow" aria-hidden="true">▾</span>
+      </button>
+      <div class="nav-dropdown" id="dropCats">
+        <div class="drop-inner" id="dropCatsList">
+          </div>
+      </div>
+    </div>
+
+    <div class="nav-item" id="navBrands">
+      <button class="nav-btn" onclick="toggleDrop('dropBrands')" aria-expanded="false" aria-controls="dropBrands">
+        Marcas <span class="nav-arrow" aria-hidden="true">▾</span>
+      </button>
+      <div class="nav-dropdown" id="dropBrands">
+        <div class="drop-inner" id="dropBrandsList">
+          </div>
+      </div>
+    </div>
+
+    <div class="active-filters" id="activeFilters"></div>
+
+    <button class="clear-filters hidden" id="clearFiltersBtn" onclick="clearFilters()">
+      ✕ Limpiar filtros
+    </button>
+
+  </div>
+</nav>
+
+<main>
+  <section class="hero">
+    <h2>Prendas<br><em>Disponibles</em></h2>
+    <p>Streetwear · Vintage · Bazar</p>
+  </section>
+
+  <div class="toolbar">
+    <span id="countLabel">Cargando...</span>
+  </div>
+
+  <div class="grid" id="productGrid"></div>
+</main>
+
+<footer>
+  <p>Bazar En Linea &copy; 2026 &nbsp;·&nbsp; Reynosa, Tamaulipas</p>
+  <p style="margin-top:8px">
+    <a href="login.html" class="footer-admin-link">Admin Access</a>
+  </p>
+</footer>
+
+<div class="modal-overlay" id="modalOv" role="dialog" aria-hidden="true">
+  <button class="m-close" onclick="closeMod()" aria-label="Cerrar modal">✕</button>
+  <button class="m-nav" id="mPrev" onclick="mChg(-1)" aria-label="Imagen anterior">‹</button>
+  <div class="modal-inner"><img id="modImg" src="" alt="Vista ampliada de la prenda"></div>
+  <button class="m-nav" id="mNext" onclick="mChg(1)" aria-label="Siguiente imagen">›</button>
+</div>
+
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+</body>
+</html>

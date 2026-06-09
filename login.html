@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stiimpys Bazar | Admin Access</title>
+<link rel="stylesheet" href="css/global.css">
+<link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+
+<div class="card">
+  <div class="brand">
+    <div class="brand-name">Bazar</div>
+    <div class="brand-sub">Admin Panel</div>
+  </div>
+
+  <div class="error" id="errorMsg">Usuario o contraseña incorrectos.</div>
+
+  <div class="form-group">
+    <label>Usuario</label>
+    <input type="text" id="username" placeholder="Ingrese su usuario" autocomplete="username">
+  </div>
+  <div class="form-group">
+    <label>Contraseña</label>
+    <input type="password" id="password" placeholder="Ingrese su contraseña" autocomplete="current-password">
+  </div>
+
+  <button class="btn" onclick="doLogin()">Entrar</button>
+  <a href="tienda.html" class="back-link">← Volver a la tienda</a>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/login.js"></script>
+</body>
+</html>

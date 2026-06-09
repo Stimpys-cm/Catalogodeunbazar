@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bazar En Linea | Admin</title>
+<link rel="stylesheet" href="css/global.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">BAZAR EN LINEA<span>.</span></div>
+  <div class="nav-tabs">
+    <button class="tab active" id="tab-inventario" onclick="showTab('inventario')">Inventario</button>
+    <button class="tab" id="tab-registrar"  onclick="showTab('registrar')">+ Registrar</button>
+    <button class="tab tab-admin-only" id="tab-catalogo"   onclick="showTab('catalogo')">🏷 Catálogo</button>
+    <button class="tab tab-admin-only" id="tab-vendedores" onclick="showTab('vendedores')">👥 Vendedores</button>
+  </div>
+  <div class="nav-right">
+    <div class="online-badge-container">
+      <div class="online-badge" id="onlineBadge">
+        <span class="pulse-dot"></span>
+        <span id="onlineCount">0</span> en línea
+      </div>
+      <div class="online-tooltip" id="onlineTooltip">
+        <div class="tooltip-title">Usuarios activos:</div>
+        <ul id="onlineUsersList"></ul>
+      </div>
+    </div>
+
+    <div class="nav-user">
+      <span class="nav-username" id="navUsername"></span>
+      <span class="nav-role-badge" id="navRole"></span>
+    </div>
+    <button class="btn-tienda" onclick="window.open('tienda.html','_blank')">Ver Tienda</button>
+    <button class="btn-logout" onclick="logout()">Salir</button>
+  </div>
+</nav>
+
+<div class="main">
+
+  <!-- ── INVENTARIO ── -->
+  <div id="view-inventario">
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="inv-toolbar">
+      <div class="inv-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="invSearch" placeholder="Buscar nombre, marca, categoría...">
+      </div>
+      <div class="filter-btns">
+        <button class="filter-btn active" onclick="setFilter('todos',this)">Todos</button>
+        <button class="filter-btn" onclick="setFilter('disponibles',this)">Disponibles</button>
+        <button class="filter-btn" onclick="setFilter('vendidos',this)">Vendidos</button>
+      </div>
+    </div>
+    <div class="inv-grid" id="invGrid"></div>
+  </div>
+
+  <!-- ── REGISTRAR / EDITAR ── -->
+  <div id="view-registrar" class="hidden">
+    <div class="form-wrap">
+      <div class="form-card">
+        <div class="form-title" id="formTitle">Nuevo Registro</div>
+        <input type="hidden" id="editId">
+
+        <div class="fg">
+          <label>Nombre de la prenda</label>
+          <input type="text" id="f_nombre" placeholder="Ej. Pantalón Cargo Dickies">
+        </div>
+
+        <div class="form-row">
+          <div class="fg">
+            <label>Marca</label>
+            <select id="f_marca"><option value="">Sin marca</option></select>
+          </div>
+          <div class="fg">
+            <label>Talla</label>
+            <input type="text" id="f_talla" placeholder="M, L, 32...">
+          </div>
+        </div>
+
+        <!-- Categorías múltiples -->
+        <div class="fg">
+          <label>Categorías <span style="color:var(--muted);font-weight:400">(selecciona una o más)</span></label>
+          <div class="cat-checkboxes" id="f_cats_wrap"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="fg">
+            <label>Precio de Venta</label>
+            <input type="number" id="f_precio" placeholder="$ 0.00" min="0" step="0.01">
+          </div>
+          <div class="fg costo">
+            <label>🔒 Costo Interno</label>
+            <input type="number" id="f_costo" placeholder="Me costó..." min="0" step="0.01">
+          </div>
+        </div>
+
+        <div class="fg">
+          <label>Estado</label>
+          <input type="text" id="f_estado" placeholder="Nuevo con etiquetas, Como nuevo...">
+        </div>
+
+        <div class="fg"><label>Fotos</label></div>
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="fileInput" accept="image/*" multiple onchange="handleFiles(this.files)">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">Arrastra o toca para agregar fotos</div>
+        </div>
+        <div class="preview-strip" id="previewStrip"></div>
+
+        <button class="submit-btn" onclick="submitForm()">PUBLICAR EN BAZAR</button>
+        <button class="cancel-btn" onclick="showTab('inventario')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CATÁLOGO (solo admin) ── -->
+  <div id="view-catalogo" class="hidden">
+    <div class="catalogo-layout">
+
+      <!-- CATEGORÍAS -->
+      <div class="catalogo-section">
+        <div class="catalogo-header">
+          <span>🏷 Categorías de Ropa</span>
+          <span class="catalogo-hint">Ej: Pantalones, Playeras, Suéteres</span>
+        </div>
+        <div class="catalogo-add">
+          <input type="text" id="newCatName" placeholder="Nueva categoría..." onkeydown="if(event.key==='Enter')addCat()">
+          <button class="add-btn" onclick="addCat()">+ Agregar</button>
+        </div>
+        <div class="cat-list" id="catList"></div>
+      </div>
+
+      <!-- MARCAS -->
+      <div class="catalogo-section">
+        <div class="catalogo-header">
+          <span>👟 Marcas</span>
+          <span class="catalogo-hint">Ej: Nike, Adidas, Supreme</span>
+        </div>
+        <div class="catalogo-add">
+          <input type="text" id="newBrandName" placeholder="Nueva marca..." onkeydown="if(event.key==='Enter')addBrand()">
+          <button class="add-btn" onclick="addBrand()">+ Agregar</button>
+        </div>
+        <div class="cat-list" id="brandList"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── VENDEDORES (solo admin) ── -->
+  <div id="view-vendedores" class="hidden">
+    <div class="vendedores-layout">
+      <div class="form-card vendedor-form">
+        <div class="form-title">Nuevo Vendedor</div>
+        <p class="vendedor-hint">Los vendedores pueden ver inventario, agregar, editar y marcar ventas. No tienen acceso a ganancias, catálogo ni esta sección.</p>
+        <div class="fg">
+          <label>Usuario</label>
+          <input type="text" id="v_username" placeholder="Ej. juan_vendedor">
+        </div>
+        <div class="fg">
+          <label>Contraseña</label>
+          <input type="password" id="v_password" placeholder="Mínimo 4 caracteres">
+        </div>
+        <div class="fg">
+          <label>Confirmar Contraseña</label>
+          <input type="password" id="v_confirm" placeholder="Repetir contraseña">
+        </div>
+        <div class="vendedor-error" id="vendedorError"></div>
+        <button class="submit-btn" onclick="createVendedor()">CREAR VENDEDOR</button>
+      </div>
+      <div class="vendedor-list-wrap">
+        <div class="vendedor-list-header"><span>Vendedores activos</span></div>
+        <table class="vendedor-table">
+          <thead>
+            <tr><th>Usuario</th><th>Rol</th><th style="text-align:right">Acciones</th></tr>
+          </thead>
+          <tbody id="vendedoresTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- Modal imágenes -->
+<div class="modal-overlay" id="modalOv">
+  <button class="m-close" onclick="closeMod()">✕</button>
+  <button class="m-nav" id="mPrev" onclick="mChg(-1)">‹</button>
+  <div class="modal-inner"><img id="modImg" src="" alt="Imagen"></div>
+  <button class="m-nav" id="mNext" onclick="mChg(1)">›</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/db.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
+
+<!-- Modal imágenes -->
+<div class="modal-overlay" id="modalOv">
+  <button class="m-close" onclick="closeMod()">✕</button>
+  <button class="m-nav" id="mPrev" onclick="mChg(-1)">‹</button>
+  <div class="modal-inner"><img id="modImg" src="" alt="Imagen"></div>
+  <button class="m-nav" id="mNext" onclick="mChg(1)">›</button>
+</div>
