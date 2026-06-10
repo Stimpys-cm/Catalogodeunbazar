@@ -1,4 +1,4 @@
-// tienda.js
+// js/tienda.js
 
 let filterCat   = null;
 let filterBrand = null;
@@ -6,18 +6,15 @@ let searchQuery = '';
 
 // ─── DROPDOWNS ───────────────────────────────────────────────
 function toggleDrop(id) {
-  const drop = document.getElementById(id);
+  const drop   = document.getElementById(id);
   const isOpen = drop.classList.contains('open');
-  // cerrar todos
   document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
   if (!isOpen) drop.classList.add('open');
 }
 
-// Cerrar dropdowns al hacer clic fuera
 document.addEventListener('click', e => {
-  if (!e.target.closest('.nav-item')) {
+  if (!e.target.closest('.nav-item'))
     document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
-  }
 });
 
 // ─── POBLAR DROPDOWNS ────────────────────────────────────────
@@ -25,17 +22,16 @@ function buildDropdowns() {
   const cats   = getCats();
   const brands = getBrands();
 
-  // Categorías
-  const catList = document.getElementById('dropCatsList');
-  catList.innerHTML = `<a class="drop-link ${!filterCat?'active':''}" onclick="setFilterCat(null)">Todas las categorías</a>` +
+  document.getElementById('dropCatsList').innerHTML =
+    `<a class="drop-link ${!filterCat?'active':''}" onclick="setFilterCat(null)">Todas las categorías</a>` +
     cats.map(c =>
       `<a class="drop-link ${filterCat===c.nombre?'active':''}" onclick="setFilterCat('${c.nombre}')">${c.nombre}</a>`
     ).join('');
 
-  // Marcas — columnas si hay muchas
-  const brandList = document.getElementById('dropBrandsList');
-  brandList.className = 'drop-inner' + (brands.length > 8 ? ' drop-cols' : '');
-  brandList.innerHTML = `<a class="drop-link ${!filterBrand?'active':''}" onclick="setFilterBrand(null)">Todas las marcas</a>` +
+  const bl = document.getElementById('dropBrandsList');
+  bl.className = 'drop-inner' + (brands.length > 8 ? ' drop-cols' : '');
+  bl.innerHTML =
+    `<a class="drop-link ${!filterBrand?'active':''}" onclick="setFilterBrand(null)">Todas las marcas</a>` +
     brands.map(b =>
       `<a class="drop-link ${filterBrand===b.nombre?'active':''}" onclick="setFilterBrand('${b.nombre}')">${b.nombre}</a>`
     ).join('');
@@ -45,27 +41,17 @@ function buildDropdowns() {
 function setFilterCat(cat) {
   filterCat = cat;
   document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
-  updateActiveFilters();
-  renderGrid();
-  buildDropdowns();
+  updateActiveFilters(); renderGrid(); buildDropdowns();
 }
-
 function setFilterBrand(brand) {
   filterBrand = brand;
   document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
-  updateActiveFilters();
-  renderGrid();
-  buildDropdowns();
+  updateActiveFilters(); renderGrid(); buildDropdowns();
 }
-
 function clearFilters() {
-  filterCat = null;
-  filterBrand = null;
-  updateActiveFilters();
-  renderGrid();
-  buildDropdowns();
+  filterCat = null; filterBrand = null;
+  updateActiveFilters(); renderGrid(); buildDropdowns();
 }
-
 function updateActiveFilters() {
   const wrap  = document.getElementById('activeFilters');
   const clear = document.getElementById('clearFiltersBtn');
@@ -79,26 +65,17 @@ function updateActiveFilters() {
 // ─── RENDER GRID ─────────────────────────────────────────────
 function renderGrid(query) {
   if (query !== undefined) searchQuery = query;
+  let items = getDB().filter(p => !p.vendido);
 
-  const inventario = getDB();
-  let items = inventario.filter(p => !p.vendido);
-
-  // Filtro búsqueda
   const q = searchQuery.toLowerCase().trim();
   if (q) items = items.filter(p =>
     (p.nombre||'').toLowerCase().includes(q) ||
     (p.marca||'').toLowerCase().includes(q) ||
     (p.estado||'').toLowerCase().includes(q) ||
     (p.talla||'').toLowerCase().includes(q) ||
-    (Array.isArray(p.categorias)?p.categorias:[]).some(c=>c.toLowerCase().includes(q))
+    (Array.isArray(p.categorias)?p.categorias:[]).some(c => c.toLowerCase().includes(q))
   );
-
-  // Filtro categoría
-  if (filterCat) items = items.filter(p =>
-    Array.isArray(p.categorias) && p.categorias.includes(filterCat)
-  );
-
-  // Filtro marca
+  if (filterCat)   items = items.filter(p => Array.isArray(p.categorias) && p.categorias.includes(filterCat));
   if (filterBrand) items = items.filter(p => p.marca === filterBrand);
 
   const grid  = document.getElementById('productGrid');
@@ -111,21 +88,14 @@ function renderGrid(query) {
   }
 
   grid.innerHTML = items.map(p => {
-    const imgs  = Array.isArray(p.imagenes) ? p.imagenes : [];
-    const first = imgs[0] || null;
-    const imgHtml = first
-      ? `<img src="${first}" alt="${p.nombre}" loading="lazy">`
+    const imgs    = Array.isArray(p.imagenes) ? p.imagenes : [];
+    const imgHtml = imgs[0]
+      ? `<img src="${imgs[0]}" alt="${p.nombre}" loading="lazy">`
       : `<div class="no-photo">Sin foto</div>`;
-
-    // Etiqueta de marca
-    const marcaTag = p.marca
-      ? `<div class="brand-tag">${p.marca}</div>` : '';
-
-    // Chips de categorías
-    const cats = Array.isArray(p.categorias) ? p.categorias : [];
-    const catChips = cats.map(c => `<span class="cat-chip">${c}</span>`).join('');
-
-    const waMsg = encodeURIComponent(`Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta}`);
+    const marcaTag  = p.marca ? `<div class="brand-tag">${p.marca}</div>` : '';
+    const cats      = Array.isArray(p.categorias) ? p.categorias : [];
+    const catChips  = cats.map(c => `<span class="cat-chip">${c}</span>`).join('');
+    const waMsg     = encodeURIComponent(`Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta}`);
 
     return `<div class="card">
       <div class="card-img" onclick='openModal(${JSON.stringify(imgs)}, 0)' style="cursor:zoom-in">
@@ -144,7 +114,7 @@ function renderGrid(query) {
   }).join('');
 }
 
-// modal re-usa mChg de db.js pero con variable local
+// Modal local
 let modalImages = [], modalIdx = 0;
 function openModal(imgs, idx) {
   modalImages = imgs; modalIdx = idx;
@@ -161,23 +131,23 @@ function mChg(d) {
 }
 
 // ─── INIT ────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await waitForDB();   // espera el primer fetch a MongoDB
   buildDropdowns();
   renderGrid();
 
   let searchTimer;
   const input = document.getElementById('searchInput');
   if (input) {
-    input.addEventListener('input', function() {
+    input.addEventListener('input', function () {
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => renderGrid(this.value), 250);
     });
   }
 });
 
-window.addEventListener('storage', e => {
-  if (e.key === DB_KEY || e.key === CATS_KEY || e.key === BRANDS_KEY) {
-    buildDropdowns();
-    renderGrid();
-  }
+// Tiempo real — se dispara cuando el polling detecta cambios
+window.addEventListener('db:inventario', () => {
+  renderGrid();
+  buildDropdowns();
 });

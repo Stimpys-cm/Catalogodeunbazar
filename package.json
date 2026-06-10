@@ -1,0 +1,8 @@
+{
+  "name": "bazar-en-linea",
+  "version": "1.0.0",
+  "description": "Bazar En Linea - Reynosa Tamaulipas",
+  "dependencies": {
+    "mongodb": "^6.21.0"
+  }
+}
