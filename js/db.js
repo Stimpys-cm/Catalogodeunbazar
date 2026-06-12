@@ -90,7 +90,7 @@ _loadAll().then(() => {
   _hBrands = _h(_brands);
   _hUsers  = _h(_users);
   _hActivos = _h(_activos);
-  setInterval(_poll, 3000); // 3 segundos
+  setInterval(_poll, 10000); // 3 segundos
 });
 
 window.waitForDB = () => new Promise(resolve => {
@@ -233,3 +233,11 @@ async function removeMyActivity() {
     await api(`/api/activos?username=${encodeURIComponent(session.username)}`, { method: 'DELETE' });
   } catch (_) {}
 }
+
+// ── Keep-alive: ping cada 4 minutos para evitar cold start ───
+// Solo cuando hay sesión activa (admin/vendedor)
+function _keepAlive() {
+  if (!getSession()) return;
+  fetch('/api/sync').catch(() => {});
+}
+setInterval(_keepAlive, 4 * 60 * 1000);

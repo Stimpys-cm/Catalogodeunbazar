@@ -1,26 +1,35 @@
 // api/_db.js
-// Conexión compartida a MongoDB Atlas.
-// Vercel reutiliza instancias "calientes", así que el cliente
-// se crea una sola vez por instancia (no por request).
-
 import { MongoClient } from 'mongodb';
 
-const uri    = process.env.MONGODB_URI;   // variable de entorno en Vercel
+const uri    = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB || 'bazar';
 
-let client;
+if (!uri) throw new Error('Falta MONGODB_URI');
+
+const options = {
+  // Tiempo máximo para conectar — falla rápido en vez de colgar 30s
+  connectTimeoutMS:       5000,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS:        10000,
+
+  // Pool de conexiones — reutiliza conexiones entre requests
+  maxPoolSize:  10,
+  minPoolSize:  1,
+
+  // Compresión — reduce datos entre Vercel y Atlas
+  compressors: ['zlib'],
+};
+
+// Patrón singleton — una sola conexión por instancia serverless
 let clientPromise;
 
-if (!uri) {
-  throw new Error('Falta la variable de entorno MONGODB_URI');
+if (!global._mongoClientPromise) {
+  const client = new MongoClient(uri, options);
+  global._mongoClientPromise = client.connect();
 }
-
-if (!client) {
-  client = new MongoClient(uri);
-  clientPromise = client.connect();
-}
+clientPromise = global._mongoClientPromise;
 
 export async function getDB() {
-  await clientPromise;
+  const client = await clientPromise;
   return client.db(dbName);
 }
