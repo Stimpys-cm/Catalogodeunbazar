@@ -8,13 +8,44 @@ let searchQuery = '';
 function toggleDrop(id) {
   const drop   = document.getElementById(id);
   const isOpen = drop.classList.contains('open');
-  document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
-  if (!isOpen) drop.classList.add('open');
+  // Cierra todos y regresa al DOM original si fueron teleportados
+  document.querySelectorAll('.nav-dropdown').forEach(d => {
+    d.classList.remove('open');
+    const orig = d.dataset.origParent ? document.getElementById(d.dataset.origParent) : null;
+    if (orig && d.parentElement === document.body) orig.appendChild(d);
+  });
+  if (!isOpen) {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      const btn  = drop.previousElementSibling;
+      const rect = btn.getBoundingClientRect();
+      drop.dataset.origParent = drop.parentElement.id || (() => {
+        drop.parentElement.id = 'navItem_' + id;
+        return 'navItem_' + id;
+      })();
+      document.body.appendChild(drop);
+      drop.style.position    = 'fixed';
+      drop.style.top         = rect.bottom + 'px';
+      drop.style.left        = '0';
+      drop.style.right       = '0';
+      drop.style.width       = '100vw';
+      drop.style.zIndex      = '9999';
+      drop.style.borderRadius = '0 0 16px 16px';
+      drop.style.maxHeight   = '50vh';
+      drop.style.overflowY   = 'auto';
+    }
+    drop.classList.add('open');
+  }
 }
 
 document.addEventListener('click', e => {
-  if (!e.target.closest('.nav-item'))
-    document.querySelectorAll('.nav-dropdown').forEach(d => d.classList.remove('open'));
+  if (!e.target.closest('.nav-item') && !e.target.closest('.nav-dropdown')) {
+    document.querySelectorAll('.nav-dropdown').forEach(d => {
+      d.classList.remove('open');
+      const orig = d.dataset.origParent ? document.getElementById(d.dataset.origParent) : null;
+      if (orig && d.parentElement === document.body) orig.appendChild(d);
+    });
+  }
 });
 
 // ─── BÚSQUEDA EXPANDIBLE ─────────────────────────────────────
@@ -433,6 +464,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }, { passive: true });
 
   let searchTimer;
+  const input = document.getElementById('searchInput');
   if (input) {
     input.addEventListener('input', function () {
       clearTimeout(searchTimer);

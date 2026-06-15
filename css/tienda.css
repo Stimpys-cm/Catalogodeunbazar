@@ -772,6 +772,8 @@ footer {
   height: 32px;
   display: flex;
   align-items: center;
+  width: 100%;
+  max-width: 100%;
 }
 .ticker-track {
   display: flex;
@@ -826,10 +828,10 @@ header {
   .cat-nav    { top: calc(32px + 60px); }
 }
 @media (max-width: 480px) {
-  .ticker-bar { height: 28px; }
-  .ticker-track span { font-size: 9px; letter-spacing: 0.14em; padding: 0 1.5rem; }
-  .header-row { height: 52px; padding: 0 .875rem; gap: .5rem; }
-  .cat-nav    { top: calc(28px + 52px); }
+  .ticker-bar { height: 24px; }
+  .ticker-track span { font-size: 8px; letter-spacing: 0.12em; padding: 0 1.2rem; }
+  .ticker-track span::before { margin-right: 1.2rem; }
+  .header-row { height: 52px !important; padding: 0 .875rem !important; gap: .5rem !important; }
 }
 
 /* ── BÚSQUEDA EXPANDIBLE ─────────────────────────────────────── */
@@ -1279,4 +1281,54 @@ header {
   .pd-main-img { width: 200px; }
   .pd-thumb    { width: 52px; height: 52px; }
   .pd-info     { padding: 12px 12px 20px; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   FIXES MÓVIL — logo, btn-ig, hero proporcional
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Logo: siempre muestra "Bazar." en móvil */
+@media (max-width: 480px) {
+  .logo-full { display: none !important; }
+  .logo-short { display: inline !important; }
+
+  /* Botón Instagram — solo ícono, sin fondo raro */
+  .btn-ig {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .ig-label { display: none !important; }
+
+  /* Hero más compacto */
+  .hero {
+    padding: 1.8rem 1rem !important;
+    min-height: 0 !important;
+  }
+  .hero h2 {
+    font-size: clamp(2rem, 12vw, 3rem) !important;
+    margin-bottom: .4rem !important;
+  }
+  .hero p { font-size: 9px !important; letter-spacing: .15em !important; }
+
+  /* Grid 2 columnas con buen tamaño */
+  .grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    padding: 10px !important;
+  }
+
+  /* Header compacto */
+  .header-row {
+    height: 52px !important;
+    padding: 0 .875rem !important;
+    gap: .5rem !important;
+  }
 }

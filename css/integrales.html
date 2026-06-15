@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>20 Integrales Resueltas</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #f5f4f0;
+    font-family: 'Inter', sans-serif;
+    color: #1a1a1a;
+    min-height: 100vh;
+    padding: 3rem 1rem;
+  }
+
+  .page {
+    max-width: 780px;
+    margin: 0 auto;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  header h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: #111;
+  }
+
+  header p {
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
+    color: #888;
+  }
+
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #aaa;
+    margin: 2.5rem 0 0.75rem;
+    padding-left: 0.25rem;
+    border-left: 3px solid #d4c9f5;
+    padding-left: 0.75rem;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e8e5e0;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #f0ede8;
+    background: #faf9f7;
+  }
+
+  .num {
+    width: 32px;
+    height: 32px;
+    background: #ede9fb;
+    color: #6c5ce7;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .integral {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #222;
+  }
+
+  .card-body {
+    padding: 1rem 1.25rem;
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 0.75rem;
+    align-items: start;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid #f4f2ee;
+    font-size: 0.875rem;
+  }
+
+  .step:last-of-type { border-bottom: none; }
+
+  .step-label {
+    color: #999;
+    font-size: 0.75rem;
+    padding-top: 2px;
+    line-height: 1.5;
+  }
+
+  .step-math {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: #333;
+    line-height: 1.7;
+  }
+
+  .step-note {
+    color: #555;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  .result-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+    background: #f0ecff;
+    border: 1px solid #d4c9f5;
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+  }
+
+  .result-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8b7cd8;
+    flex-shrink: 0;
+  }
+
+  .result-math {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #4a3ab5;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 3rem;
+    font-size: 0.8rem;
+    color: #bbb;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <h1>20 Integrales Resueltas</h1>
+    <p>Solución paso a paso con explicación de cada técnica</p>
+  </header>
+
+  <!-- SECCIÓN 1 -->
+  <div class="section-label">Regla de la potencia directa</div>
+
+  <!-- 1 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">1</div>
+      <div class="integral">∫ x⁵ dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Fórmula</div>
+        <div class="step-math">∫xⁿ dx = xⁿ⁺¹ / (n+1) + C</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Aplicar con n = 5</div>
+        <div class="step-math">= x⁽⁵⁺¹⁾ / (5+1) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= x⁶/6 + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">2</div>
+      <div class="integral">∫ dx / x²</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Reescribir</div>
+        <div class="step-math">1/x² = x⁻²</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Aplicar con n = −2</div>
+        <div class="step-math">∫ x⁻² dx = x⁻¹ / (−1) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= −1/x + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">3</div>
+      <div class="integral">∫ ∛x dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Reescribir</div>
+        <div class="step-math">∛x = x^(1/3)</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Aplicar con n = 1/3</div>
+        <div class="step-math">∫ x^(1/3) dx = x^(1/3 + 1) / (1/3 + 1) + C</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Simplificar exponente</div>
+        <div class="step-math">= x^(4/3) / (4/3) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= (3/4) x^(4/3) + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">4</div>
+      <div class="integral">∫ dx / ∛(x²)</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Reescribir</div>
+        <div class="step-math">∛(x²) = x^(2/3)  →  1/x^(2/3) = x^(−2/3)</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Aplicar con n = −2/3</div>
+        <div class="step-math">∫ x^(−2/3) dx = x^(1/3) / (1/3) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= 3∛x + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">5</div>
+      <div class="integral">∫ (2x² − 5x + 3) dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Linealidad</div>
+        <div class="step-math">2∫x² dx − 5∫x dx + 3∫dx</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Integrar cada término</div>
+        <div class="step-math">= 2·(x³/3) − 5·(x²/2) + 3x + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= (2/3)x³ − (5/2)x² + 3x + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">6</div>
+      <div class="integral">∫ (1 − x)√x dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Expandir el producto</div>
+        <div class="step-math">(1 − x)·x^(1/2) = x^(1/2) − x^(3/2)</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Integrar cada término</div>
+        <div class="step-math">∫x^(1/2) dx − ∫x^(3/2) dx</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Aplicar regla de potencia</div>
+        <div class="step-math">= x^(3/2)/(3/2) − x^(5/2)/(5/2) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= (2/3)x^(3/2) − (2/5)x^(5/2) + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 2 -->
+  <div class="section-label">Expansión algebraica previa</div>
+
+  <!-- 7 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">7</div>
+      <div class="integral">∫ (3x + 4)² dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Expandir (a+b)²</div>
+        <div class="step-math">(3x+4)² = 9x² + 24x + 16</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Integrar cada término</div>
+        <div class="step-math">9∫x² dx + 24∫x dx + 16∫dx</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Aplicar regla de potencia</div>
+        <div class="step-math">= 9(x³/3) + 24(x²/2) + 16x + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= 3x³ + 12x² + 16x + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">8</div>
+      <div class="integral">∫ (x³ + 5x² − 4) / x² dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Dividir término a término</div>
+        <div class="step-math">x³/x² + 5x²/x² − 4/x² = x + 5 − 4x⁻²</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Integrar cada término</div>
+        <div class="step-math">∫x dx + 5∫dx − 4∫x⁻² dx</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Aplicar regla de potencia</div>
+        <div class="step-math">= x²/2 + 5x − 4·(x⁻¹/−1) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= x²/2 + 5x + 4/x + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 3 -->
+  <div class="section-label">Sustitución u (cambio de variable)</div>
+
+  <!-- 9 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">9</div>
+      <div class="integral">∫ (x³ + 2)² (3x²) dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Sea u =</div>
+        <div class="step-math">u = x³ + 2</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Diferencial</div>
+        <div class="step-math">du = 3x² dx  →  el factor 3x² ya está presente ✓</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Sustituir</div>
+        <div class="step-math">∫ u² du = u³/3 + C</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Regresar a x</div>
+        <div class="step-math">= (x³ + 2)³ / 3 + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= (x³ + 2)³ / 3 + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">10</div>
+      <div class="integral">∫ √(x³ + 2) · x² dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Sea u =</div>
+        <div class="step-math">u = x³ + 2</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Diferencial</div>
+        <div class="step-math">du = 3x² dx  →  x² dx = du/3</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Sustituir</div>
+        <div class="step-math">∫ √u · (du/3) = (1/3)∫u^(1/2) du</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Integrar</div>
+        <div class="step-math">= (1/3) · u^(3/2)/(3/2) + C = (2/9)u^(3/2) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= (2/9)(x³ + 2)^(3/2) + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">11</div>
+      <div class="integral">∫ 8x² dx / (x³ + 2)³</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Sea u =</div>
+        <div class="step-math">u = x³ + 2</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Diferencial</div>
+        <div class="step-math">du = 3x² dx  →  x² dx = du/3</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Sustituir</div>
+        <div class="step-math">∫ 8/u³ · (du/3) = (8/3)∫u⁻³ du</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Integrar</div>
+        <div class="step-math">= (8/3) · u⁻²/(−2) + C = (−4/3)u⁻² + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= −4 / [3(x³ + 2)²] + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 12 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">12</div>
+      <div class="integral">∫ x² dx / ⁴√(x³ + 2)</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Sea u =</div>
+        <div class="step-math">u = x³ + 2</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Diferencial</div>
+        <div class="step-math">du = 3x² dx  →  x² dx = du/3</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Reescribir denominador</div>
+        <div class="step-math">⁴√(x³+2) = u^(1/4)  →  1/u^(1/4) = u^(−1/4)</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Sustituir e integrar</div>
+        <div class="step-math">(1/3)∫u^(−1/4) du = (1/3) · u^(3/4)/(3/4) + C</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Simplificar</div>
+        <div class="step-math">= (4/9)u^(3/4) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= (4/9)(x³ + 2)^(3/4) + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 13 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">13</div>
+      <div class="integral">∫ 3x √(1 − 2x²) dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Sea u =</div>
+        <div class="step-math">u = 1 − 2x²</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Diferencial</div>
+        <div class="step-math">du = −4x dx  →  x dx = −du/4</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Reescribir 3x dx</div>
+        <div class="step-math">3x dx = 3·(−du/4) = −3du/4</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Sustituir e integrar</div>
+        <div class="step-math">(−3/4)∫u^(1/2) du = (−3/4) · u^(3/2)/(3/2) + C</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Simplificar</div>
+        <div class="step-math">= (−1/2)u^(3/2) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= −(1/2)(1 − 2x²)^(3/2) + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 14 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">14</div>
+      <div class="integral">∫ (x + 3) / ∛(x² + 6x) dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Sea u =</div>
+        <div class="step-math">u = x² + 6x</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Diferencial</div>
+        <div class="step-math">du = (2x + 6) dx = 2(x+3) dx  →  (x+3) dx = du/2</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Reescribir denominador</div>
+        <div class="step-math">∛(x²+6x) = u^(1/3)  →  1/u^(1/3) = u^(−1/3)</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Sustituir e integrar</div>
+        <div class="step-math">(1/2)∫u^(−1/3) du = (1/2) · u^(2/3)/(2/3) + C</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Simplificar</div>
+        <div class="step-math">= (3/4)u^(2/3) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= (3/4)(x² + 6x)^(2/3) + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 15 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">15</div>
+      <div class="integral">∫ x ∛(1 − x²) dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Sea u =</div>
+        <div class="step-math">u = 1 − x²</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Diferencial</div>
+        <div class="step-math">du = −2x dx  →  x dx = −du/2</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Sustituir e integrar</div>
+        <div class="step-math">(−1/2)∫u^(1/3) du = (−1/2) · u^(4/3)/(4/3) + C</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Simplificar</div>
+        <div class="step-math">= (−3/8)u^(4/3) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= −(3/8)(1 − x²)^(4/3) + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 16 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">16</div>
+      <div class="integral">∫ √(x² − 2x⁴) dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Factorizar bajo la raíz</div>
+        <div class="step-math">x² − 2x⁴ = x²(1 − 2x²)</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Aplicar raíz</div>
+        <div class="step-math">√(x²(1−2x²)) = x√(1−2x²)   (x > 0)</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Sea u =</div>
+        <div class="step-math">u = 1 − 2x²</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Diferencial</div>
+        <div class="step-math">du = −4x dx  →  x dx = −du/4</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Sustituir e integrar</div>
+        <div class="step-math">(−1/4)∫u^(1/2) du = (−1/4) · u^(3/2)/(3/2) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= −(1/6)(1 − 2x²)^(3/2) + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 17 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">17</div>
+      <div class="integral">∫ (1 + x)² / √x dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Expandir numerador</div>
+        <div class="step-math">(1+x)² = 1 + 2x + x²</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Dividir entre √x = x^(1/2)</div>
+        <div class="step-math">x^(−1/2) + 2x^(1/2) + x^(3/2)</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Integrar cada término</div>
+        <div class="step-math">x^(1/2)/(1/2) + 2·x^(3/2)/(3/2) + x^(5/2)/(5/2) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= 2√x + (4/3)x^(3/2) + (2/5)x^(5/2) + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 18 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">18</div>
+      <div class="integral">∫ (x² + 2x) / (x + 1)² dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Reescribir numerador</div>
+        <div class="step-math">x² + 2x = (x+1)² − 1</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Verificación</div>
+        <div class="step-math">(x+1)² − 1 = x² + 2x + 1 − 1 = x² + 2x  ✓</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Dividir</div>
+        <div class="step-math">[(x+1)² − 1] / (x+1)² = 1 − 1/(x+1)²</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Separar e integrar</div>
+        <div class="step-math">∫1 dx − ∫(x+1)⁻² dx</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Sea u = x+1, du = dx</div>
+        <div class="step-math">∫u⁻² du = −u⁻¹ + C = −1/(x+1) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= x + 1/(x+1) + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 4 -->
+  <div class="section-label">Expansión + regla de potencia</div>
+
+  <!-- 19 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">19</div>
+      <div class="integral">∫ (3x² − 2x + 4)² dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Expandir (a+b+c)²</div>
+        <div class="step-math">a=3x², b=−2x, c=4</div>
+      </div>
+      <div class="step">
+        <div class="step-label">a² + b² + c²</div>
+        <div class="step-math">9x⁴ + 4x² + 16</div>
+      </div>
+      <div class="step">
+        <div class="step-label">2ab + 2ac + 2bc</div>
+        <div class="step-math">2(3x²)(−2x) + 2(3x²)(4) + 2(−2x)(4)</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Calcular cada cruce</div>
+        <div class="step-math">= −12x³ + 24x² − 16x</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Suma total</div>
+        <div class="step-math">9x⁴ − 12x³ + 28x² − 16x + 16</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Integrar término a término</div>
+        <div class="step-math">9x⁵/5 − 12x⁴/4 + 28x³/3 − 16x²/2 + 16x + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= (9/5)x⁵ − 3x⁴ + (28/3)x³ − 8x² + 16x + C</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 20 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="num">20</div>
+      <div class="integral">∫ (2x − 5)² ∛(x⁴) dx</div>
+    </div>
+    <div class="card-body">
+      <div class="step">
+        <div class="step-label">Expandir (2x−5)²</div>
+        <div class="step-math">(2x−5)² = 4x² − 20x + 25</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Reescribir ∛(x⁴)</div>
+        <div class="step-math">∛(x⁴) = x^(4/3)</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Distribuir x^(4/3)</div>
+        <div class="step-math">4x²·x^(4/3) = 4x^(10/3)</div>
+      </div>
+      <div class="step">
+        <div class="step-label"></div>
+        <div class="step-math">−20x·x^(4/3) = −20x^(7/3)</div>
+      </div>
+      <div class="step">
+        <div class="step-label"></div>
+        <div class="step-math">25·x^(4/3) = 25x^(4/3)</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Integrar cada término</div>
+        <div class="step-math">4·x^(13/3)/(13/3) + (−20)·x^(10/3)/(10/3) + 25·x^(7/3)/(7/3) + C</div>
+      </div>
+      <div class="step">
+        <div class="step-label">Simplificar fracciones</div>
+        <div class="step-math">= (12/13)x^(13/3) − 6x^(10/3) + (75/7)x^(7/3) + C</div>
+      </div>
+      <div class="result-box">
+        <div class="result-label">Resultado</div>
+        <div class="result-math">= (12/13)x^(13/3) − 6x^(10/3) + (75/7)x^(7/3) + C</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>20 integrales · solución paso a paso</footer>
+
+</div>
+</body>
+</html>
