@@ -1,0 +1,107 @@
+/* ══════════════════════════════════════════
+   ESTADÍSTICAS — agregar al final de admin.css
+   ══════════════════════════════════════════ */
+
+.est-header {
+  margin-bottom: 1.5rem;
+}
+.est-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: .05em;
+  color: var(--text-dark);
+  margin: 0 0 4px;
+}
+.est-sub {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+/* KPIs */
+.est-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+.est-kpi {
+  background: var(--card-gradient);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.2rem 1.4rem;
+  box-shadow: 0 2px 10px rgba(45,107,228,.05);
+}
+.est-kpi-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.est-kpi-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.9rem;
+  letter-spacing: .03em;
+  color: var(--text-dark);
+  line-height: 1;
+}
+.est-kpi-value.accent { color: var(--accent); }
+.est-kpi-value.green  { color: var(--success); }
+
+/* Grid de tablas */
+.est-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 16px;
+  align-items: start;
+}
+.est-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.est-card {
+  background: var(--card-gradient);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.2rem 1.4rem;
+  box-shadow: 0 2px 10px rgba(45,107,228,.05);
+}
+.est-card-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+.est-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.est-table th {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 0 8px;
+  text-align: left;
+  border-bottom: 1.5px solid var(--border);
+}
+.est-table td {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dark);
+}
+.est-table tbody tr:last-child td { border-bottom: none; }
+.est-table td:not(:first-child) { font-weight: 700; }
+
+@media (max-width: 900px) {
+  .est-kpis { grid-template-columns: repeat(2, 1fr); }
+  .est-grid  { grid-template-columns: 1fr; }
+}

@@ -342,8 +342,21 @@ function openProductDetail(p) {
           </svg>
         </button>
       </div>
+      <button class="pd-btn-share" onclick="compartirPrenda(this)" data-url="">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Compartir prenda
+      </button>
     </div>
   `;
+
+  // Poner la URL en el botón compartir DESPUÉS de renderizar el HTML
+  const shareUrl = `${location.origin}/api/prenda?id=${p.id}`;
+  const shareBtn = document.querySelector('.pd-btn-share');
+  if (shareBtn) shareBtn.dataset.url = shareUrl;
+
+  // Deep link: actualizar URL con el id de la prenda
+  history.pushState({ productId: p.id }, '', `?id=${p.id}`);
+  document.title = `${p.nombre} · Bazar En Linea`;
 
   document.getElementById('pdDrawer').classList.add('open');
   document.getElementById('pdOverlay').classList.add('active');
@@ -354,6 +367,8 @@ function closePD() {
   document.getElementById('pdDrawer').classList.remove('open');
   document.getElementById('pdOverlay').classList.remove('active');
   document.body.style.overflow = '';
+  history.pushState({}, '', location.pathname);
+  document.title = 'Bazar En Linea | Prendas Disponibles';
 }
 
 function pdSetImg(idx) {
@@ -410,11 +425,34 @@ function showToast(msg) {
 }
 
 // ─── INIT ────────────────────────────────────────────────────
+// ─── COMPARTIR ───────────────────────────────────────────────
+async function compartirPrenda(btn) {
+  const url = btn.dataset.url || location.href;
+  const orig = btn.innerHTML;
+  await navigator.clipboard.writeText(url).catch(() => {});
+  btn.textContent = '✓ Link copiado';
+  setTimeout(() => { btn.innerHTML = orig; }, 2000);
+}
+
+// ─── DEEP LINK: abrir prenda directo desde URL ?id=X ─────────
+async function checkDeepLink() {
+  const id = parseInt(new URLSearchParams(location.search).get('id'));
+  if (!id) return;
+  const p = getDB().find(x => x.id === id);
+  if (p) openProductDetail(p);
+}
+
+// Botón atrás del browser cierra el drawer
+window.addEventListener('popstate', () => {
+  if (!new URLSearchParams(location.search).get('id')) closePD();
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
   await waitForDB();
   buildDropdowns();
   renderGrid();
   updateWishlistBadge();
+  checkDeepLink();
 
   // Event delegation en el grid — evita conflictos entre card-img y card-fav-btn
   document.getElementById('productGrid').addEventListener('click', e => {
