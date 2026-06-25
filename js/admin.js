@@ -5,13 +5,25 @@ const session = getSession();
 
 function logout() { removeMyActivity(); clearSession(); window.location.href = 'login.html'; }
 
+// Cierre forzado: cuando la cuenta inició sesión en otro dispositivo.
+// NO llamamos removeMyActivity() para no borrar la actividad de la sesión
+// nueva (que ahora es la legítima). Solo limpiamos esta sesión local.
+let _kicked = false;
+function forceLogout() {
+  if (_kicked) return;
+  _kicked = true;
+  toast('Tu cuenta inició sesión en otro dispositivo');
+  clearSession();
+  setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+}
+
 // ─── TABS ────────────────────────────────────────────────────
 let currentTab = 'inventario';
 
 function showTab(tab) {
   if ((tab==='vendedores'||tab==='catalogo') && !isAdmin()) return;
   currentTab = tab;
-  ['inventario','registrar','vendedores','catalogo'].forEach(t => {
+  ['inventario','registrar','vendedores','catalogo','cuenta','drops'].forEach(t => {
     const v = document.getElementById('view-'+t);
     const b = document.getElementById('tab-'+t);
     if (v) v.classList.toggle('hidden', t!==tab);
@@ -20,14 +32,22 @@ function showTab(tab) {
   if (tab==='inventario')  { clearForm(); renderAll(); }
   if (tab==='vendedores')  renderVendedores();
   if (tab==='catalogo')    renderCatalogo();
+  if (tab==='cuenta')      renderCuenta();
+  if (tab==='drops')       renderDrops();
+  if (tab==='registrar')   { setTimeout(() => { initPreviewListeners(); updatePreview(); populateDropSelect(); }, 0); }
+  closeSidebar();
 }
 
 // ─── INIT ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  document.getElementById('navUsername').textContent = session.username;
-  document.getElementById('navRole').textContent = session.role==='admin' ? 'Admin' : 'Vendedor';
+  // Sidebar perfil
+  const sidebarU = document.getElementById('sidebarUsername');
+  const sidebarR = document.getElementById('sidebarRole');
+  if (sidebarU) sidebarU.textContent = session.username;
+  if (sidebarR) sidebarR.textContent = session.role === 'admin' ? 'Admin' : 'Vendedor';
+  loadAvatarFromStorage();
 
-  ['tab-vendedores','tab-catalogo'].forEach(id => {
+  ['tab-vendedores','tab-catalogo','tab-drops'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('hidden', !isAdmin());
   });
@@ -39,8 +59,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   await updateMyActivity();
   await updateOnlineBadge();
 
+  // Validar que nuestra sesión siga vigente (no reemplazada por otro login admin)
+  if (!(await checkMySession())) return forceLogout();
+
   // Solo ping de actividad cada 20s — el badge se actualiza con el poll (3s)
-  setInterval(async () => { await updateMyActivity(); }, 20000);
+  setInterval(async () => {
+    await updateMyActivity();
+    if (!(await checkMySession())) forceLogout();
+  }, 20000);
 
   let searchTmr;
   document.getElementById('invSearch').addEventListener('input', function () {
@@ -178,9 +204,14 @@ function nextImg(e, id) {
 function renderInv() {
   const db = getDB();
   const q  = invQuery.toLowerCase().trim();
-  let items = db;
-  if (activeFilter==='disponibles') items = db.filter(p => !p.vendido);
-  if (activeFilter==='vendidos')    items = db.filter(p =>  p.vendido);
+  // Ordenar: más reciente primero. Sin fecha → usar id como proxy
+  let items = [...db].sort((a, b) => {
+    const ta = a.creadoEn ? new Date(a.creadoEn).getTime() : (a.id * 1000);
+    const tb = b.creadoEn ? new Date(b.creadoEn).getTime() : (b.id * 1000);
+    return tb - ta;
+  });
+  if (activeFilter==='disponibles') items = items.filter(p => !p.vendido);
+  if (activeFilter==='vendidos')    items = items.filter(p =>  p.vendido);
   if (q) items = items.filter(p =>
     (p.nombre||'').toLowerCase().includes(q) ||
     (p.marca||'').toLowerCase().includes(q)  ||
@@ -219,7 +250,7 @@ function renderInv() {
     ].join('');
 
     return `<div class="item-card${p.vendido?' vendido':''}" id="card-${p.id}">
-      <div class="item-img" onclick="if(event.target.tagName==='IMG'||event.target.classList.contains('item-img')){openMod(${JSON.stringify(imgs)},${idx});}">
+      <div class="item-img" data-imgs='${JSON.stringify(imgs).replace(/'/g,"&#39;")}'>
         ${imgHtml}${navHtml}${vendidoBadge}${photoCounterHtml}
       </div>
       <div class="item-body">
@@ -260,6 +291,8 @@ function editItem(id) {
   document.getElementById('f_precio').value = p.precio_venta||'';
   document.getElementById('f_costo').value  = p.costo||'';
   document.getElementById('f_estado').value = p.estado||'';
+  const descEl = document.getElementById('f_descripcion');
+  if (descEl) descEl.value = p.descripcion||'';
   const brandSel = document.getElementById('f_marca');
   if (brandSel) brandSel.value = p.marca||'';
   renderCatCheckboxes(Array.isArray(p.categorias) ? p.categorias : []);
@@ -321,6 +354,7 @@ function renderPreviews() {
       <img src="${src}" alt="">
       <button onclick="removePreview(${i})">✕</button>
     </div>`).join('');
+  updatePreview();
 }
 function removePreview(i) {
   const combined = [...editImages, ...newImages];
@@ -331,7 +365,7 @@ function removePreview(i) {
 }
 function clearForm() {
   document.getElementById('editId').value = '';
-  ['f_nombre','f_talla','f_precio','f_costo','f_estado'].forEach(id => {
+  ['f_nombre','f_talla','f_precio','f_costo','f_estado','f_descripcion','f_dropNombre'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const brandSel = document.getElementById('f_marca');
@@ -340,6 +374,9 @@ function clearForm() {
   newImages = []; editImages = [];
   renderPreviews();
   document.getElementById('formTitle').textContent = 'Nuevo Registro';
+  const useDrop = document.getElementById('f_useDrop');
+  if (useDrop) useDrop.checked = false;
+  toggleDropField();
 }
 function submitForm() {
   const nombre = document.getElementById('f_nombre').value.trim();
@@ -362,18 +399,51 @@ function submitForm() {
       p.talla  = document.getElementById('f_talla').value.trim();
       p.precio_venta = precio; p.costo = costo;
       p.estado = document.getElementById('f_estado').value.trim();
+      p.descripcion = (document.getElementById('f_descripcion')?.value||'').trim();
       if (combined.length) p.imagenes = combined;
     }
     toast('Prenda actualizada ✓');
   } else {
-    db.unshift({
+    const useDrop = document.getElementById('f_useDrop')?.checked;
+    const dropId  = document.getElementById('f_dropId')?.value;
+    const esNuevoDrop = dropId === '__nuevo__';
+    let dropIdFinal = null;
+
+    if (useDrop && dropId) {
+      if (esNuevoDrop) {
+        const dropNombre = document.getElementById('f_dropNombre')?.value.trim();
+        const dropFecha  = document.getElementById('f_dropFecha')?.value;
+        if (!dropNombre) { toast('Escribe el nombre del drop'); return; }
+        if (!dropFecha)  { toast('Elige la fecha del drop');    return; }
+        dropIdFinal = 'drop_' + Date.now();
+        const drops = getDrops();
+        drops.push({ id: dropIdFinal, nombre: dropNombre, fecha: dropFecha, prendas: [], publicado: false, creadoEn: new Date().toISOString() });
+        saveDrops(drops);
+      } else {
+        dropIdFinal = dropId;
+      }
+    }
+
+    const nuevaPrenda = {
       id: nextId(), nombre, marca, categorias,
       talla: document.getElementById('f_talla').value.trim(),
       precio_venta: precio, costo,
       estado: document.getElementById('f_estado').value.trim(),
-      imagenes: combined, vendido: false
-    });
-    toast('Prenda publicada ✓');
+      descripcion: (document.getElementById('f_descripcion')?.value||'').trim(),
+      imagenes: combined, vendido: false,
+      creadoEn: new Date().toISOString(),
+      oculto: !!dropIdFinal
+    };
+    db.unshift(nuevaPrenda);
+
+    if (dropIdFinal) {
+      const drops = getDrops();
+      const drop  = drops.find(d => d.id === dropIdFinal);
+      if (drop) { drop.prendas.push(nuevaPrenda.id); saveDrops(drops); }
+      toast('Prenda guardada en el drop ✓');
+    } else {
+      toast('Prenda publicada ✓');
+    }
   }
   saveDB(db); clearForm(); showTab('inventario');
 }
@@ -517,3 +587,448 @@ async function updateOnlineBadge() {
           </li>`).join('');
   }
 }
+
+// ─── SIDEBAR MÓVIL ───────────────────────────────────────────
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('active');
+}
+function closeSidebar() {
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('sidebarOverlay')?.classList.remove('active');
+}
+
+// ─── AVATAR (Cloudinary + localStorage) ──────────────────────
+const AVATAR_KEY = 'bazar_avatar_' + (getSession()?.username || 'user');
+
+function loadAvatarFromStorage() {
+  const url = localStorage.getItem(AVATAR_KEY);
+  setAvatarUI(url);
+}
+
+function setAvatarUI(url) {
+  // Sidebar
+  const sbImg = document.getElementById('sidebarAvatar');
+  const sbPh  = document.getElementById('sidebarAvatarPlaceholder');
+  // Cuenta
+  const ctImg = document.getElementById('cuentaAvatarImg');
+  const ctPh  = document.getElementById('cuentaAvatarPlaceholder');
+
+  if (url) {
+    if (sbImg)  { sbImg.src = url; sbImg.style.display = 'block'; }
+    if (sbPh)   sbPh.style.display = 'none';
+    if (ctImg)  { ctImg.src = url; ctImg.style.display = 'block'; }
+    if (ctPh)   ctPh.style.display = 'none';
+  } else {
+    if (sbImg)  sbImg.style.display = 'none';
+    if (sbPh)   sbPh.style.display = 'flex';
+    if (ctImg)  ctImg.style.display = 'none';
+    if (ctPh)   ctPh.style.display = 'flex';
+  }
+}
+
+async function handleAvatarUpload(file) {
+  if (!file) return;
+  toast('Subiendo foto de perfil...');
+  const r = new FileReader();
+  r.onload = async e => {
+    try {
+      const url = await uploadToCloud(e.target.result);
+      localStorage.setItem(AVATAR_KEY, url);
+      setAvatarUI(url);
+      toast('Foto de perfil actualizada ✓');
+    } catch (err) {
+      toast('Error subiendo foto: ' + err.message);
+    }
+  };
+  r.readAsDataURL(file);
+}
+
+// ─── MI CUENTA ───────────────────────────────────────────────
+function renderCuenta() {
+  const s = getSession();
+
+  // Nombre y role
+  const uEl = document.getElementById('cuentaUsername');
+  const rEl = document.getElementById('cuentaRoleBadge');
+  if (uEl) uEl.textContent = s.username;
+  if (rEl) rEl.textContent = s.role === 'admin' ? '👑 Admin' : '🛍 Vendedor';
+
+  // Permisos
+  const perms = document.getElementById('cuentaPermisos');
+  if (perms) {
+    const adminPerms = s.role === 'admin' ? `
+      <span class="perm-ok">✓ Ver ganancias</span>
+      <span class="perm-ok">✓ Gestionar catálogo</span>
+      <span class="perm-ok">✓ Gestionar vendedores</span>
+      <span class="perm-ok">✓ Eliminar prendas</span>
+    ` : `
+      <span class="perm-no">✗ Ver ganancias</span>
+      <span class="perm-no">✗ Gestionar catálogo</span>
+      <span class="perm-no">✗ Gestionar vendedores</span>
+      <span class="perm-no">✗ Eliminar prendas</span>
+    `;
+    perms.innerHTML = `
+      <span class="perm-ok">✓ Ver inventario</span>
+      <span class="perm-ok">✓ Agregar prendas</span>
+      <span class="perm-ok">✓ Editar prendas</span>
+      <span class="perm-ok">✓ Marcar vendido</span>
+      ${adminPerms}
+    `;
+  }
+
+  // Cargar avatar
+  loadAvatarFromStorage();
+}
+
+// ─── CAMBIAR CONTRASEÑA ───────────────────────────────────────
+function cambiarPassword() {
+  const actual  = document.getElementById('cp_actual').value;
+  const nueva   = document.getElementById('cp_nueva').value;
+  const confirm = document.getElementById('cp_confirm').value;
+  const errEl   = document.getElementById('cpError');
+  errEl.textContent = '';
+
+  const s     = getSession();
+  const users = getUsers();
+  const user  = users.find(u => u.username === s.username);
+
+  if (!user)                      { errEl.textContent = 'Usuario no encontrado'; return; }
+  if (user.password !== actual)   { errEl.textContent = 'La contraseña actual es incorrecta'; return; }
+  if (nueva.length < 4)           { errEl.textContent = 'Mínimo 4 caracteres'; return; }
+  if (nueva !== confirm)          { errEl.textContent = 'Las contraseñas no coinciden'; return; }
+
+  user.password = nueva;
+  saveUsers(users);
+  ['cp_actual','cp_nueva','cp_confirm'].forEach(id => document.getElementById(id).value = '');
+  toast('Contraseña actualizada ✓');
+}
+
+// ─── PREVIEW EN TIEMPO REAL ───────────────────────────────────
+let pvIdx = 0, pvImgs = [];
+
+function updatePreview() {
+  const nombre  = document.getElementById('f_nombre')?.value.trim()  || '';
+  const marca   = document.getElementById('f_marca')?.value           || '';
+  const talla   = document.getElementById('f_talla')?.value.trim()   || '';
+  const estado  = document.getElementById('f_estado')?.value.trim()  || '';
+  const precio  = document.getElementById('f_precio')?.value         || '0';
+  const desc    = document.getElementById('f_descripcion')?.value.trim() || '';
+  const cats    = getSelectedCats();
+  pvImgs        = [...editImages, ...newImages].filter(s => s && !s.startsWith('data:'));
+  // incluir también base64 para ver inmediatamente
+  const allImgs = [...editImages, ...newImages];
+
+  // Nombre
+  document.getElementById('pvName').textContent = nombre || 'Nombre de la prenda';
+
+  // Marca
+  const pvBrand = document.getElementById('pvBrand');
+  pvBrand.textContent = marca;
+  pvBrand.style.display = marca ? 'block' : 'none';
+
+  // Chips de categorías
+  const pvChips = document.getElementById('pvChips');
+  pvChips.innerHTML = cats.map(c => `<span class="cat-chip">${c}</span>`).join('');
+
+  // Talla
+  const pvTalla = document.getElementById('pvTalla');
+  const pvTallaV = document.getElementById('pvTallaVal');
+  if (talla) { pvTalla.style.display = 'flex'; pvTallaV.textContent = talla; }
+  else pvTalla.style.display = 'none';
+
+  // Estado
+  const pvEstado = document.getElementById('pvEstado');
+  const pvEstadoV = document.getElementById('pvEstadoVal');
+  if (estado) { pvEstado.style.display = 'flex'; pvEstadoV.textContent = estado; }
+  else pvEstado.style.display = 'none';
+
+  // Descripción
+  const pvDesc = document.getElementById('pvDesc');
+  if (desc) { pvDesc.style.display = 'block'; pvDesc.textContent = desc; }
+  else pvDesc.style.display = 'none';
+
+  // Precio
+  const p = parseFloat(precio);
+  document.getElementById('pvPrice').textContent = isNaN(p) ? '$0' : `$${p.toLocaleString('es-MX')}`;
+
+  // Galería
+  pvImgs = allImgs;
+  pvIdx  = Math.min(pvIdx, Math.max(allImgs.length - 1, 0));
+  pvRenderGallery();
+}
+
+function pvRenderGallery() {
+  const noPhoto = document.getElementById('pvNoPhoto');
+  const mainImg = document.getElementById('pvMainImg');
+  const thumbsEl = document.getElementById('pvThumbs');
+  const prev = document.getElementById('pvPrev');
+  const next = document.getElementById('pvNext');
+
+  if (!pvImgs.length) {
+    noPhoto.style.display = 'flex';
+    mainImg.style.display = 'none';
+    if (thumbsEl) thumbsEl.innerHTML = '';
+    if (prev) prev.style.display = 'none';
+    if (next) next.style.display = 'none';
+    return;
+  }
+
+  noPhoto.style.display = 'none';
+  mainImg.style.display = 'block';
+  mainImg.src = pvImgs[pvIdx] || '';
+
+  if (prev) prev.style.display = pvImgs.length > 1 ? 'flex' : 'none';
+  if (next) next.style.display = pvImgs.length > 1 ? 'flex' : 'none';
+
+  if (thumbsEl) {
+    thumbsEl.innerHTML = pvImgs.map((src, i) =>
+      `<button class="pdp-thumb ${i===pvIdx?'active':''}" onclick="pvSetImg(${i})">
+        <img src="${src}" alt="">
+      </button>`
+    ).join('');
+  }
+}
+
+function pvSetImg(i) {
+  pvIdx = i;
+  pvRenderGallery();
+}
+
+function pvChg(d) {
+  pvIdx = (pvIdx + d + pvImgs.length) % pvImgs.length;
+  pvRenderGallery();
+}
+
+// Enganchar listeners cuando se carga la vista registrar
+function initPreviewListeners() {
+  const ids = ['f_nombre','f_marca','f_talla','f_precio','f_estado','f_descripcion'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updatePreview);
+    if (el) el.addEventListener('change', updatePreview);
+  });
+  // Escuchar checkboxes de categorías (delegación)
+  const catsWrap = document.getElementById('f_cats_wrap');
+  if (catsWrap) catsWrap.addEventListener('change', updatePreview);
+}
+
+// renderPreviews ya llama updatePreview() internamente
+
+// ═══════════════════════════════════════════════════════════════
+//  SISTEMA DE DROPS
+// ═══════════════════════════════════════════════════════════════
+const DROPS_KEY = 'bazar_drops';
+
+function getDrops() {
+  try { return JSON.parse(localStorage.getItem(DROPS_KEY)) || []; }
+  catch { return []; }
+}
+function saveDrops(list) {
+  localStorage.setItem(DROPS_KEY, JSON.stringify(list));
+}
+
+// ── Toggle campo drop en el form ─────────────────────────────
+function toggleDropField() {
+  const checked  = document.getElementById('f_useDrop')?.checked;
+  const wrap     = document.getElementById('dropFieldWrap');
+  const submitBtn = document.getElementById('submitBtn');
+  if (!wrap) return;
+  document.querySelectorAll('.drop-field').forEach(el => el.classList.toggle('hidden', !checked));
+  if (submitBtn) submitBtn.textContent = checked ? 'GUARDAR EN DROP' : 'PUBLICAR EN BAZAR';
+  if (checked) populateDropSelect();
+}
+
+function populateDropSelect() {
+  const sel = document.getElementById('f_dropId');
+  if (!sel) return;
+  const drops = getDrops().filter(d => !d.publicado);
+  sel.innerHTML = `<option value="">-- Selecciona un drop --</option>
+    <option value="__nuevo__">+ Crear nuevo drop...</option>` +
+    drops.map(d => {
+      const fecha = new Date(d.fecha);
+      const label = fecha.toLocaleDateString('es-MX', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+      return `<option value="${d.id}">${d.nombre} · ${label} (${d.prendas.length} prendas)</option>`;
+    }).join('');
+
+  sel.onchange = () => {
+    const nuevoWrap = document.getElementById('dropNuevoWrap');
+    if (nuevoWrap) nuevoWrap.classList.toggle('hidden', sel.value !== '__nuevo__');
+  };
+}
+
+// ── Render vista Drops ────────────────────────────────────────
+function renderDrops() {
+  if (!isAdmin()) return;
+  checkDropsAutoPublish();
+  const drops = getDrops();
+  const grid  = document.getElementById('dropsGrid');
+  if (!grid) return;
+
+  if (!drops.length) {
+    grid.innerHTML = `<div class="drops-empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <p>No hay drops creados todavía.</p>
+      <p style="font-size:11px;color:var(--muted)">Ve a Registrar → activa "Agregar a un Drop" para crear uno.</p>
+    </div>`;
+    return;
+  }
+
+  // Separar pendientes y publicados
+  const pendientes = drops.filter(d => !d.publicado).sort((a,b) => new Date(a.fecha)-new Date(b.fecha));
+  const publicados  = drops.filter(d =>  d.publicado).sort((a,b) => new Date(b.fecha)-new Date(a.fecha));
+
+  grid.innerHTML = [
+    pendientes.length ? `<div class="drops-section-label">⏳ Programados</div>` : '',
+    ...pendientes.map(d => renderDropCard(d)),
+    publicados.length ? `<div class="drops-section-label" style="margin-top:2rem">✅ Publicados</div>` : '',
+    ...publicados.map(d => renderDropCard(d))
+  ].join('');
+}
+
+function renderDropCard(d) {
+  const db        = getDB();
+  const prendas   = d.prendas.map(id => db.find(p => p.id === id)).filter(Boolean);
+  const fecha     = new Date(d.fecha);
+  const ahora     = new Date();
+  const diff      = fecha - ahora;
+  const esHoy     = diff > 0 && diff < 86400000;
+  const vencido   = diff < 0 && !d.publicado;
+  const fechaStr  = fecha.toLocaleDateString('es-MX', { weekday:'short', day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+  // Countdown si es hoy
+  let countdown = '';
+  if (esHoy) {
+    const h = Math.floor(diff/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    countdown = `<div class="drop-countdown">🔥 Faltan ${h}h ${m}m</div>`;
+  }
+
+  const thumbs = prendas.slice(0,4).map(p => {
+    const img = Array.isArray(p.imagenes) && p.imagenes[0]
+      ? `<img src="${p.imagenes[0]}" alt="${p.nombre}">`
+      : `<div class="drop-thumb-placeholder"></div>`;
+    return `<div class="drop-thumb">${img}</div>`;
+  }).join('');
+  const masLabel = prendas.length > 4 ? `<div class="drop-thumb-more">+${prendas.length-4}</div>` : '';
+
+  const statusClass = d.publicado ? 'drop-status-ok' : vencido ? 'drop-status-warn' : 'drop-status-pending';
+  const statusLabel = d.publicado ? 'Publicado' : vencido ? 'Listo para publicar' : 'Programado';
+
+  const acciones = d.publicado ? `
+    <button class="drop-btn drop-btn-danger" onclick="eliminarDrop('${d.id}')">🗑 Eliminar</button>
+  ` : `
+    <button class="drop-btn drop-btn-primary" onclick="publicarDrop('${d.id}')">🚀 Publicar ahora</button>
+    <button class="drop-btn drop-btn-edit" onclick="editarDropFecha('${d.id}')">📅 Cambiar fecha</button>
+    <button class="drop-btn drop-btn-danger" onclick="eliminarDrop('${d.id}')">🗑 Cancelar drop</button>
+  `;
+
+  return `<div class="drop-card ${d.publicado ? 'drop-card-done' : ''}">
+    <div class="drop-card-header">
+      <div>
+        <div class="drop-card-name">${d.nombre}</div>
+        <div class="drop-card-fecha">${fechaStr}</div>
+      </div>
+      <span class="drop-status ${statusClass}">${statusLabel}</span>
+    </div>
+    ${countdown}
+    <div class="drop-thumbs-row">${thumbs}${masLabel}</div>
+    <div class="drop-prendas-label">${prendas.length} prenda${prendas.length!==1?'s':''}</div>
+    <div class="drop-prendas-list">
+      ${prendas.map(p => `<div class="drop-prenda-item">
+        <span>${p.nombre}</span>
+        <span class="drop-prenda-precio">$${p.precio_venta}</span>
+        <button class="drop-prenda-remove" onclick="quitarPrendaDeDrop('${d.id}',${p.id})" title="Quitar del drop">✕</button>
+      </div>`).join('')}
+    </div>
+    <div class="drop-actions">${acciones}</div>
+  </div>`;
+}
+
+// ── Publicar drop manualmente ─────────────────────────────────
+function publicarDrop(dropId) {
+  if (!confirm('¿Publicar este drop ahora? Las prendas serán visibles en la tienda.')) return;
+  const drops = getDrops();
+  const drop  = drops.find(d => d.id === dropId);
+  if (!drop) return;
+
+  const db = getDB();
+  drop.prendas.forEach(pId => {
+    const p = db.find(x => x.id === pId);
+    if (p) p.oculto = false;
+  });
+  drop.publicado = true;
+  drop.publicadoEn = new Date().toISOString();
+  saveDB(db);
+  saveDrops(drops);
+  toast(`Drop "${drop.nombre}" publicado ✓`);
+  renderDrops();
+}
+
+// ── Auto-publicar drops cuya hora ya llegó ────────────────────
+function checkDropsAutoPublish() {
+  const drops = getDrops();
+  const ahora = new Date();
+  let huboPublicacion = false;
+
+  drops.forEach(drop => {
+    if (!drop.publicado && new Date(drop.fecha) <= ahora) {
+      const db = getDB();
+      drop.prendas.forEach(pId => {
+        const p = db.find(x => x.id === pId);
+        if (p) p.oculto = false;
+      });
+      drop.publicado = true;
+      drop.publicadoEn = ahora.toISOString();
+      saveDB(db);
+      huboPublicacion = true;
+      toast(`🔥 Drop "${drop.nombre}" publicado automáticamente`);
+    }
+  });
+
+  if (huboPublicacion) saveDrops(drops);
+}
+
+// ── Quitar prenda de un drop ──────────────────────────────────
+function quitarPrendaDeDrop(dropId, prendaId) {
+  const drops = getDrops();
+  const drop  = drops.find(d => d.id === dropId);
+  if (!drop) return;
+  drop.prendas = drop.prendas.filter(id => id !== prendaId);
+  const db = getDB();
+  const p  = db.find(x => x.id === prendaId);
+  if (p) { p.oculto = false; saveDB(db); }
+  saveDrops(drops);
+  toast('Prenda quitada del drop');
+  renderDrops();
+}
+
+// ── Cambiar fecha del drop ────────────────────────────────────
+function editarDropFecha(dropId) {
+  const drops = getDrops();
+  const drop  = drops.find(d => d.id === dropId);
+  if (!drop) return;
+  const nueva = prompt('Nueva fecha y hora (YYYY-MM-DDTHH:MM):', drop.fecha.slice(0,16));
+  if (!nueva) return;
+  const fecha = new Date(nueva);
+  if (isNaN(fecha)) { toast('Fecha inválida'); return; }
+  drop.fecha = new Date(nueva).toISOString();
+  saveDrops(drops);
+  toast('Fecha actualizada ✓');
+  renderDrops();
+}
+
+// ── Eliminar drop ─────────────────────────────────────────────
+function eliminarDrop(dropId) {
+  if (!confirm('¿Eliminar este drop? Las prendas guardadas en él quedarán ocultas.')) return;
+  const drops = getDrops().filter(d => d.id !== dropId);
+  saveDrops(drops);
+  toast('Drop eliminado');
+  renderDrops();
+}
+
+// ── Chequeo automático cada minuto ───────────────────────────
+setInterval(() => {
+  checkDropsAutoPublish();
+  if (currentTab === 'drops') renderDrops();
+}, 60000);

@@ -158,7 +158,25 @@ function getSession() {
   catch { return null; }
 }
 function setSession(u) {
-  localStorage.setItem(AUTH_KEY, JSON.stringify({ id: u.id, username: u.username, role: u.role }));
+  localStorage.setItem(AUTH_KEY, JSON.stringify({
+    id: u.id, username: u.username, role: u.role, sessionToken: u.sessionToken
+  }));
+}
+
+// Verifica contra el backend que nuestra sesión siga siendo la vigente.
+// Devuelve true si sigue válida, false si fue reemplazada en otro dispositivo.
+async function checkMySession() {
+  const s = getSession();
+  if (!s || !s.sessionToken) return true; // sin token (sesión vieja): no expulsar
+  try {
+    const r = await api('/api/session-check', {
+      method: 'POST',
+      body: { username: s.username, token: s.sessionToken }
+    });
+    return r.valid !== false;
+  } catch (_) {
+    return true; // ante error de red, no cerramos sesión
+  }
 }
 function clearSession()  { localStorage.removeItem(AUTH_KEY); }
 function isAdmin()       { return getSession()?.role === 'admin'; }

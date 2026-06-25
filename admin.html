@@ -6,18 +6,74 @@
 <title>Bazar En Linea | Admin</title>
 <link rel="stylesheet" href="css/global.css">
 <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/lightbox.css">
 </head>
 <body>
 
-<nav>
-  <div class="nav-logo">BAZAR EN LINEA<span>.</span></div>
-  <div class="nav-tabs">
-    <button class="tab active" id="tab-inventario" onclick="showTab('inventario')">Inventario</button>
-    <button class="tab" id="tab-registrar"  onclick="showTab('registrar')">+ Registrar</button>
-    <button class="tab tab-admin-only" id="tab-catalogo"   onclick="showTab('catalogo')">🏷 Catálogo</button>
-    <button class="tab tab-admin-only" id="tab-vendedores" onclick="showTab('vendedores')">👥 Vendedores</button>
+<!-- ── SIDEBAR ─────────────────────────────────────────────── -->
+<aside class="sidebar" id="sidebar">
+
+  <!-- Logo -->
+  <div class="sidebar-logo">
+    <span class="sidebar-logo-text">BAZAR<span>.</span></span>
   </div>
-  <div class="nav-right">
+
+  <!-- Perfil -->
+  <div class="sidebar-profile">
+    <div class="profile-avatar-wrap" onclick="showTab('cuenta')" title="Editar perfil">
+      <img class="profile-avatar" id="sidebarAvatar" src="" alt="Foto de perfil" style="display:none">
+      <div class="profile-avatar-placeholder" id="sidebarAvatarPlaceholder">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </div>
+      <div class="profile-avatar-overlay">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </div>
+    </div>
+    <div class="profile-info">
+      <span class="profile-name" id="sidebarUsername"></span>
+      <span class="profile-role" id="sidebarRole"></span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="sidebar-nav">
+    <div class="sidebar-nav-label">Operaciones</div>
+
+    <button class="sidebar-item active" id="tab-inventario" onclick="showTab('inventario')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Inventario
+    </button>
+
+    <button class="sidebar-item" id="tab-registrar" onclick="showTab('registrar')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Registrar
+    </button>
+
+    <button class="sidebar-item tab-admin-only hidden" id="tab-catalogo" onclick="showTab('catalogo')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      Catálogo
+    </button>
+
+    <button class="sidebar-item tab-admin-only hidden" id="tab-vendedores" onclick="showTab('vendedores')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Vendedores
+    </button>
+
+    <button class="sidebar-item tab-admin-only hidden" id="tab-drops" onclick="showTab('drops')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Drops
+    </button>
+
+    <div class="sidebar-nav-label" style="margin-top:1rem">Cuenta</div>
+
+    <button class="sidebar-item" id="tab-cuenta" onclick="showTab('cuenta')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Mi Cuenta
+    </button>
+  </nav>
+
+  <!-- Footer sidebar -->
+  <div class="sidebar-footer">
     <div class="online-badge-container">
       <div class="online-badge" id="onlineBadge">
         <span class="pulse-dot"></span>
@@ -28,21 +84,41 @@
         <ul id="onlineUsersList"></ul>
       </div>
     </div>
-
-    <div class="nav-user">
-      <span class="nav-username" id="navUsername"></span>
-      <span class="nav-role-badge" id="navRole"></span>
+    <div class="sidebar-footer-actions">
+      <button class="btn-tienda" onclick="window.open('tienda.html','_blank')" title="Ver tienda">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Ver Tienda
+      </button>
+      <button class="btn-logout" onclick="logout()" title="Salir">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Salir
+      </button>
     </div>
-    <button class="btn-tienda" onclick="window.open('tienda.html','_blank')">Ver Tienda</button>
-    <button class="btn-logout" onclick="logout()">Salir</button>
   </div>
-</nav>
+</aside>
 
-<div class="main">
+<!-- ── CONTENIDO PRINCIPAL ─────────────────────────────────── -->
+<div class="admin-main" id="adminMain">
+
+  <!-- TOPBAR MÓVIL -->
+  <div class="topbar-mobile">
+    <button class="sidebar-toggle" onclick="toggleSidebar()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <span class="topbar-title">BAZAR<span>.</span></span>
+  </div>
 
   <!-- ── INVENTARIO ── -->
   <div id="view-inventario">
+    <div class="view-header">
+      <div>
+        <h1 class="view-title">Inventario</h1>
+        <p class="view-subtitle">Gestiona todas las prendas del bazar</p>
+      </div>
+    </div>
+
     <div class="stats-grid" id="statsGrid"></div>
+
     <div class="inv-toolbar">
       <div class="inv-search">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -59,6 +135,13 @@
 
   <!-- ── REGISTRAR / EDITAR ── -->
   <div id="view-registrar" class="hidden">
+    <div class="view-header">
+      <div>
+        <h1 class="view-title">Registrar Prenda</h1>
+        <p class="view-subtitle">Agrega una nueva prenda al inventario</p>
+      </div>
+    </div>
+    <div class="registrar-layout">
     <div class="form-wrap">
       <div class="form-card">
         <div class="form-title" id="formTitle">Nuevo Registro</div>
@@ -80,9 +163,8 @@
           </div>
         </div>
 
-        <!-- Categorías múltiples -->
         <div class="fg">
-          <label>Categorías <span style="color:var(--muted);font-weight:400">(selecciona una o más)</span></label>
+          <label>Categorías <span style="color:var(--muted);font-weight:400">(una o más)</span></label>
           <div class="cat-checkboxes" id="f_cats_wrap"></div>
         </div>
 
@@ -92,7 +174,7 @@
             <input type="number" id="f_precio" placeholder="$ 0.00" min="0" step="0.01">
           </div>
           <div class="fg costo">
-            <label>🔒 Costo Interno</label>
+            <label><svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Costo Interno</label>
             <input type="number" id="f_costo" placeholder="Me costó..." min="0" step="0.01">
           </div>
         </div>
@@ -102,29 +184,104 @@
           <input type="text" id="f_estado" placeholder="Nuevo con etiquetas, Como nuevo...">
         </div>
 
+        <div class="fg">
+          <label>Descripción <span style="color:var(--muted);font-weight:400">(opcional — contexto de la prenda)</span></label>
+          <textarea id="f_descripcion" placeholder="Ej. Jeans de los 90s, corte baggy, tela gruesa en perfecto estado. Ideal para look vintage..." rows="3" style="resize:vertical"></textarea>
+        </div>
+
         <div class="fg"><label>Fotos</label></div>
         <div class="upload-zone" id="uploadZone">
           <input type="file" id="fileInput" accept="image/*" multiple onchange="handleFiles(this.files)">
-          <div class="upload-icon">📷</div>
+          <div class="upload-icon"><svg class="lucide" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div>
           <div class="upload-text">Arrastra o toca para agregar fotos</div>
         </div>
         <div class="preview-strip" id="previewStrip"></div>
 
-        <button class="submit-btn" onclick="submitForm()">PUBLICAR EN BAZAR</button>
+        <!-- ── DROP ── -->
+        <div class="drop-toggle-wrap">
+          <label class="drop-toggle-label">
+            <input type="checkbox" id="f_useDrop" onchange="toggleDropField()">
+            <span class="drop-toggle-ui"></span>
+            <span>Agregar a un Drop <span style="color:var(--muted);font-weight:400">(publicación programada)</span></span>
+          </label>
+        </div>
+        <div class="fg drop-field hidden" id="dropFieldWrap">
+          <label>Drop</label>
+          <select id="f_dropId">
+            <option value="">-- Selecciona o crea un drop --</option>
+            <option value="__nuevo__">+ Crear nuevo drop...</option>
+          </select>
+        </div>
+        <div class="fg drop-field hidden" id="dropNuevoWrap">
+          <label>Nombre del Drop</label>
+          <input type="text" id="f_dropNombre" placeholder="Ej. Drop Verano 2026, Colección Streetwear...">
+          <label style="margin-top:.75rem">Fecha y hora de publicación</label>
+          <input type="datetime-local" id="f_dropFecha">
+        </div>
+
+        <button class="submit-btn" id="submitBtn" onclick="submitForm()">PUBLICAR EN BAZAR</button>
         <button class="cancel-btn" onclick="showTab('inventario')">Cancelar</button>
       </div>
     </div>
+
+    <!-- ── PREVIEW EN TIEMPO REAL ── -->
+    <div class="preview-panel" id="previewPanel">
+      <div class="preview-panel-label">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Vista previa en tienda
+      </div>
+      <!-- Replica el drawer de tienda.html -->
+      <div class="pd-preview">
+        <div class="pdp-gallery">
+          <div class="pdp-main-img" id="pvMainImgWrap">
+            <div class="pdp-no-photo" id="pvNoPhoto">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span>Sin fotos aún</span>
+            </div>
+            <img id="pvMainImg" src="" alt="" style="display:none">
+            <button class="pdp-nav pdp-prev" id="pvPrev" onclick="pvChg(-1)" style="display:none">‹</button>
+            <button class="pdp-nav pdp-next" id="pvNext" onclick="pvChg(1)" style="display:none">›</button>
+          </div>
+          <div class="pdp-thumbs" id="pvThumbs"></div>
+        </div>
+        <div class="pdp-info">
+          <div class="pdp-brand" id="pvBrand"></div>
+          <div class="pdp-name" id="pvName">Nombre de la prenda</div>
+          <div class="pdp-chips" id="pvChips"></div>
+          <div class="pdp-meta">
+            <div class="pdp-meta-row" id="pvTalla" style="display:none"><strong>Talla</strong> <span id="pvTallaVal"></span></div>
+            <div class="pdp-meta-row" id="pvEstado" style="display:none"><strong>Estado</strong> <span id="pvEstadoVal"></span></div>
+          </div>
+          <div class="pdp-desc" id="pvDesc" style="display:none"></div>
+          <div class="pdp-price" id="pvPrice">$0</div>
+          <div class="pdp-actions-preview">
+            <div class="pdp-btn-wa-mock">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.558 4.147 1.535 5.886L0 24l6.274-1.507A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.853 0-3.587-.5-5.084-1.367l-.361-.214-3.733.897.931-3.618-.235-.374A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+              Contactar por WhatsApp
+            </div>
+            <div class="pdp-btn-fav-mock">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div><!-- /registrar-layout -->
   </div>
 
-  <!-- ── CATÁLOGO (solo admin) ── -->
+  <!-- ── CATÁLOGO ── -->
   <div id="view-catalogo" class="hidden">
+    <div class="view-header">
+      <div>
+        <h1 class="view-title">Catálogo</h1>
+        <p class="view-subtitle">Administra categorías y marcas</p>
+      </div>
+    </div>
     <div class="catalogo-layout">
-
-      <!-- CATEGORÍAS -->
       <div class="catalogo-section">
         <div class="catalogo-header">
-          <span>🏷 Categorías de Ropa</span>
-          <span class="catalogo-hint">Ej: Pantalones, Playeras, Suéteres</span>
+          <span><svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg> Categorías de Ropa</span>
+          <span class="catalogo-hint">Ej: Pantalones, Playeras</span>
         </div>
         <div class="catalogo-add">
           <input type="text" id="newCatName" placeholder="Nueva categoría..." onkeydown="if(event.key==='Enter')addCat()">
@@ -132,11 +289,9 @@
         </div>
         <div class="cat-list" id="catList"></div>
       </div>
-
-      <!-- MARCAS -->
       <div class="catalogo-section">
         <div class="catalogo-header">
-          <span>👟 Marcas</span>
+          <span><svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z"/><path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z"/><path d="M16 17h4"/><path d="M4 13h4"/></svg> Marcas</span>
           <span class="catalogo-hint">Ej: Nike, Adidas, Supreme</span>
         </div>
         <div class="catalogo-add">
@@ -145,12 +300,17 @@
         </div>
         <div class="cat-list" id="brandList"></div>
       </div>
-
     </div>
   </div>
 
-  <!-- ── VENDEDORES (solo admin) ── -->
+  <!-- ── VENDEDORES ── -->
   <div id="view-vendedores" class="hidden">
+    <div class="view-header">
+      <div>
+        <h1 class="view-title">Vendedores</h1>
+        <p class="view-subtitle">Gestiona los usuarios con acceso al panel</p>
+      </div>
+    </div>
     <div class="vendedores-layout">
       <div class="form-card vendedor-form">
         <div class="form-title">Nuevo Vendedor</div>
@@ -173,20 +333,88 @@
       <div class="vendedor-list-wrap">
         <div class="vendedor-list-header"><span>Vendedores activos</span></div>
         <table class="vendedor-table">
-          <thead>
-            <tr><th>Usuario</th><th>Rol</th><th style="text-align:right">Acciones</th></tr>
-          </thead>
+          <thead><tr><th>Usuario</th><th>Rol</th><th style="text-align:right">Acciones</th></tr></thead>
           <tbody id="vendedoresTable"></tbody>
         </table>
       </div>
     </div>
   </div>
 
-</div><!-- /main -->
+  <!-- ── MI CUENTA ── -->
+  <div id="view-cuenta" class="hidden">
+    <div class="view-header">
+      <div>
+        <h1 class="view-title">Mi Cuenta</h1>
+        <p class="view-subtitle">Ajustes de perfil y seguridad</p>
+      </div>
+    </div>
+
+    <div class="cuenta-layout">
+
+      <!-- Tarjeta perfil -->
+      <div class="form-card cuenta-perfil-card">
+        <div class="cuenta-avatar-section">
+          <div class="cuenta-avatar-wrap" id="cuentaAvatarWrap">
+            <img class="cuenta-avatar" id="cuentaAvatarImg" src="" alt="Foto de perfil" style="display:none">
+            <div class="cuenta-avatar-placeholder" id="cuentaAvatarPlaceholder">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            </div>
+            <label class="cuenta-avatar-btn" for="avatarInput" title="Cambiar foto">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </label>
+            <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="handleAvatarUpload(this.files[0])">
+          </div>
+          <div class="cuenta-perfil-info">
+            <div class="cuenta-username" id="cuentaUsername"></div>
+            <div class="cuenta-role-wrap">
+              <span class="cuenta-role-badge" id="cuentaRoleBadge"></span>
+            </div>
+            <div class="cuenta-permisos" id="cuentaPermisos"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cambiar contraseña -->
+      <div class="form-card">
+        <div class="form-title">Cambiar Contraseña</div>
+        <div class="fg">
+          <label>Contraseña actual</label>
+          <input type="password" id="cp_actual" placeholder="Tu contraseña actual">
+        </div>
+        <div class="fg">
+          <label>Nueva contraseña</label>
+          <input type="password" id="cp_nueva" placeholder="Mínimo 4 caracteres">
+        </div>
+        <div class="fg">
+          <label>Confirmar nueva contraseña</label>
+          <input type="password" id="cp_confirm" placeholder="Repetir nueva contraseña">
+        </div>
+        <div class="vendedor-error" id="cpError"></div>
+        <button class="submit-btn" onclick="cambiarPassword()">ACTUALIZAR CONTRASEÑA</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── DROPS ── -->
+  <div id="view-drops" class="hidden">
+    <div class="view-header">
+      <div>
+        <h1 class="view-title">Drops</h1>
+        <p class="view-subtitle">Publicaciones programadas de prendas</p>
+      </div>
+    </div>
+    <div id="dropsGrid" class="drops-grid"></div>
+  </div>
+
+</div><!-- /admin-main -->
+
+<!-- Overlay sidebar móvil -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
 <!-- Modal imágenes -->
 <div class="modal-overlay" id="modalOv">
-  <button class="m-close" onclick="closeMod()">✕</button>
+  <button class="m-close" onclick="closeMod()"><svg class="lucide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   <button class="m-nav" id="mPrev" onclick="mChg(-1)">‹</button>
   <div class="modal-inner"><img id="modImg" src="" alt="Imagen"></div>
   <button class="m-nav" id="mNext" onclick="mChg(1)">›</button>
@@ -196,13 +424,6 @@
 
 <script src="js/db.js"></script>
 <script src="js/admin.js"></script>
+<script src="js/lightbox.js"></script>
 </body>
 </html>
-
-<!-- Modal imágenes -->
-<div class="modal-overlay" id="modalOv">
-  <button class="m-close" onclick="closeMod()">✕</button>
-  <button class="m-nav" id="mPrev" onclick="mChg(-1)">‹</button>
-  <div class="modal-inner"><img id="modImg" src="" alt="Imagen"></div>
-  <button class="m-nav" id="mNext" onclick="mChg(1)">›</button>
-</div>

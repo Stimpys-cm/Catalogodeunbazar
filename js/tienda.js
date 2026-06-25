@@ -114,6 +114,8 @@ function updateWishlistBadge() {
   badge.textContent = count;
   badge.style.display = count > 0 ? 'flex' : 'none';
   if (panelCount) panelCount.textContent = count;
+  const bn = document.getElementById('bnWlCount');
+  if (bn) { bn.textContent = count; bn.style.display = count > 0 ? 'flex' : 'none'; }
 }
 
 // ─── PANEL WISHLIST ───────────────────────────────────────────
@@ -136,13 +138,29 @@ function closeWishlistPanel() {
   document.body.style.overflow = '';
 }
 function renderWishlistPanel() {
-  const list = getWishlist();
-  const body = document.getElementById('wishlistPanelBody');
+  const list    = getWishlist();
+  const body    = document.getElementById('wishlistPanelBody');
+  const footer  = document.getElementById('wishlistPanelFooter');
+  const btnTodo = document.getElementById('wlBtnTodo');
   if (!body) return;
 
   if (!list.length) {
     body.innerHTML = '<div class="wishlist-empty">No tienes prendas guardadas aún.<br><br>Toca el ❤️ en cualquier prenda.</div>';
+    if (footer) footer.style.display = 'none';
     return;
+  }
+
+  // Mostrar botón "Preguntar por todo" con mensaje armado
+  if (footer) footer.style.display = 'block';
+  if (btnTodo) {
+    const todoMsg = encodeURIComponent(
+      'Hola! Me interesan estas prendas:\n\n' +
+      list.map((p, i) =>
+        `${i + 1}. ${p.nombre} · Talla ${p.talla || '–'} · $${p.precio_venta}`
+      ).join('\n') +
+      '\n\n¿Están disponibles?'
+    );
+    btnTodo.href = `https://wa.me/528995284602?text=${todoMsg}`;
   }
 
   body.innerHTML = list.map(p => {
@@ -150,7 +168,13 @@ function renderWishlistPanel() {
       ? `<img class="wl-item-img" src="${p.imagenes[0]}" alt="${p.nombre}" loading="lazy">`
       : `<div class="wl-item-img" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:#aaa">Sin foto</div>`;
     const waMsg = encodeURIComponent(`Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta}`);
-    return `<div class="wl-item">
+    // Serializar datos del producto de forma segura para el onclick
+    const pData = JSON.stringify(p).replace(/\\/g, '\\\\').replace(/`/g, '\\`');
+    return `<div class="wl-item" onclick="(function(e){
+        if(e.target.closest('.wl-btn-wa')||e.target.closest('.wl-btn-remove'))return;
+        closeWishlistPanel();
+        setTimeout(()=>openProductDetail(${pData.replace(/'/g, "\\'")}),320);
+      })(event)">
       ${img}
       <div class="wl-item-info">
         <div class="wl-item-name">${p.nombre}</div>
@@ -220,7 +244,7 @@ function updateActiveFilters() {
 // ─── RENDER GRID ─────────────────────────────────────────────
 function renderGrid(query) {
   if (query !== undefined) searchQuery = query;
-  let items = getDB().filter(p => !p.vendido);
+  let items = getDB().filter(p => !p.vendido && !p.oculto);
 
   const q = searchQuery.toLowerCase().trim();
   if (q) items = items.filter(p =>
@@ -275,7 +299,7 @@ function renderGrid(query) {
           </svg>
         </button>
       </div>
-      <div class="card-body">
+      <div class="card-body" data-marca="${p.marca||''}">
         <div class="card-name">${p.nombre}</div>
         <div class="card-chips">${catChips}</div>
         <div class="card-sub">Talla ${p.talla||'–'} · ${p.estado||''}</div>
@@ -330,6 +354,7 @@ function openProductDetail(p) {
         ${p.talla  ? `<span><strong>Talla</strong> ${p.talla}</span>`  : ''}
         ${p.estado ? `<span><strong>Estado</strong> ${p.estado}</span>` : ''}
       </div>
+      ${p.descripcion ? `<div class="pd-desc">${p.descripcion}</div>` : ''}
       <div class="pd-price">$${p.precio_venta}</div>
       <div class="pd-actions">
         <a href="https://wa.me/528995284602?text=${waMsg}" target="_blank" class="pd-btn-wa">

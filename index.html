@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verificación · Bazar En Línea</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad" async defer></script>
+<style>
+  :root{
+    --cream:#f7f4ef;
+    --cream-2:#edf2fb;
+    --panel:#ffffff;
+    --line:#e8e2d8;
+    --blue:#2d6be4;
+    --blue-soft:#7eb8f5;
+    --blue-tint:rgba(45,107,228,0.08);
+    --text:#1a1a1a;
+    --muted:#6b6b6b;
+    --accent:#25D366;     /* verde WhatsApp */
+    --accent-dim:#1faa52;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--cream);
+    color:var(--text);
+    font-family:"DM Sans",system-ui,sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100dvh;
+    padding:24px;
+    overflow:hidden;
+    position:relative;
+  }
+  /* marquee de fondo, guiño a la tienda */
+  .bg-marquee{
+    position:fixed;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding:48px 0;
+    pointer-events:none;
+    opacity:.06;
+    z-index:0;
+  }
+  .bg-marquee span{
+    font-family:"Bebas Neue",sans-serif;
+    font-size:clamp(48px,10vw,120px);
+    white-space:nowrap;
+    line-height:1;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+    color:var(--blue);
+  }
+  .bg-marquee .row:nth-child(2){text-align:right}
+  .card{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-width:420px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:44px 32px;
+    text-align:center;
+    box-shadow:0 24px 60px rgba(45,107,228,.10);
+  }
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:.28em;
+    text-transform:uppercase;
+    color:var(--blue);
+    font-weight:600;
+    margin-bottom:18px;
+  }
+  .logo{
+    font-family:"Bebas Neue",sans-serif;
+    font-size:44px;
+    text-transform:uppercase;
+    letter-spacing:.01em;
+    line-height:1;
+    margin-bottom:10px;
+  }
+  .logo em{color:var(--blue);font-style:normal}
+  .sub{
+    color:var(--muted);
+    font-size:14px;
+    margin-bottom:32px;
+  }
+  .widget{
+    display:flex;
+    justify-content:center;
+    min-height:70px;
+    margin-bottom:8px;
+  }
+  .status{
+    font-size:13px;
+    color:var(--muted);
+    min-height:20px;
+    margin-top:14px;
+    transition:color .2s;
+  }
+  .status.ok{color:var(--accent-dim)}
+  .status.err{color:#e53e3e}
+  .spinner{
+    display:inline-block;
+    width:14px;height:14px;
+    border:2px solid var(--cream-2);
+    border-top-color:var(--blue);
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+    vertical-align:-2px;
+    margin-right:6px;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .footer{
+    margin-top:28px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+    font-size:11px;
+    color:var(--muted);
+    letter-spacing:.04em;
+  }
+  @media (prefers-reduced-motion:reduce){
+    .spinner{animation:none}
+  }
+</style>
+</head>
+<body>
+  <div class="bg-marquee" aria-hidden="true">
+    <div class="row"><span>Streetwear · Vintage · Bazar ·&nbsp;</span></div>
+    <div class="row"><span>Prendas únicas · Envíos a México ·&nbsp;</span></div>
+  </div>
+
+  <main class="card">
+    <p class="eyebrow">Verificación de seguridad</p>
+    <h1 class="logo">Bazar <em>En Línea</em></h1>
+    <p class="sub">Confirma que eres una persona para entrar al bazar.</p>
+
+    <div class="widget">
+      <div id="turnstile-box"></div>
+    </div>
+
+    <p class="status" id="status">Cargando verificación…</p>
+
+    <p class="footer">Reynosa, Tamaulipas · © 2026</p>
+  </main>
+
+<script>
+  // ====== CONFIGURA AQUÍ ======
+  const SITE_KEY = "0x4AAAAAADqWnSm5S4M6xtx-";   // Site Key de Turnstile (pública)
+  const DESTINO  = "/tienda.html";                // a dónde redirige al verificar
+  // ============================
+
+  const statusEl = document.getElementById("status");
+
+  function setStatus(msg, cls){
+    statusEl.className = "status" + (cls ? " " + cls : "");
+    statusEl.innerHTML = msg;
+  }
+
+  function onTurnstileLoad(){
+    if (SITE_KEY === "TU_SITE_KEY_AQUI"){
+      setStatus("Falta configurar la Site Key de Turnstile.", "err");
+      return;
+    }
+    setStatus("Marca la casilla para continuar.");
+    turnstile.render("#turnstile-box", {
+      sitekey: SITE_KEY,
+      theme: "light",
+      callback: onVerified,
+      "error-callback": onError,
+      "expired-callback": onExpired
+    });
+  }
+
+  function onVerified(token){
+    setStatus('<span class="spinner"></span>Verificado. Entrando al bazar…', "ok");
+    try { sessionStorage.setItem("stiimpys_verified", "1"); } catch(e){}
+    setTimeout(() => { window.location.href = DESTINO; }, 700);
+  }
+
+  function onError(){
+    setStatus("Algo falló con la verificación. Recarga la página.", "err");
+  }
+
+  function onExpired(){
+    setStatus("La verificación caducó. Márcala de nuevo.", "err");
+  }
+
+  try {
+    if (sessionStorage.getItem("stiimpys_verified") === "1"){
+      window.location.replace(DESTINO);
+    }
+  } catch(e){}
+</script>
+</body>
+</html>

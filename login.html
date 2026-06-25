@@ -6,6 +6,35 @@
 <title>Stiimpys Bazar | Admin Access</title>
 <link rel="stylesheet" href="css/global.css">
 <link rel="stylesheet" href="css/login.css">
+<style>
+  /* Campo de contraseña con icono de ojo — paleta del login */
+  .pw-wrap{ position:relative; }
+  .pw-wrap input{ padding-right:48px !important; }
+  .pw-toggle{
+    position:absolute;
+    top:50%;
+    right:8px;
+    transform:translateY(-50%);
+    width:34px;
+    height:34px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:none;
+    background:transparent;
+    color:rgba(247,244,239,0.5);
+    cursor:pointer;
+    padding:0;
+    border-radius:8px;
+    transition:color .2s, background .2s;
+  }
+  .pw-toggle:hover{ color:#f7f4ef; background:rgba(74,144,217,0.15); }
+  .pw-toggle:focus-visible{ outline:2px solid rgba(74,144,217,.6); outline-offset:1px; }
+  .pw-toggle svg{ width:20px; height:20px; display:block; }
+  .pw-toggle .eye-off{ display:none; }
+  .pw-toggle.show .eye-on{ display:none; }
+  .pw-toggle.show .eye-off{ display:block; }
+</style>
 </head>
 <body>
 
@@ -23,13 +52,46 @@
   </div>
   <div class="form-group">
     <label>Contraseña</label>
-    <input type="password" id="password" placeholder="Ingrese su contraseña" autocomplete="current-password">
+    <div class="pw-wrap">
+      <input type="password" id="password" placeholder="Ingrese su contraseña" autocomplete="current-password">
+      <button type="button" class="pw-toggle" aria-label="Mostrar contraseña" onclick="togglePw('password', this)">
+        <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="form-group collapsible" id="overrideWrap">
+    <label>Clave maestra (admin)</label>
+    <div class="pw-wrap">
+      <input type="password" id="overrideKey" placeholder="Forzar acceso y cerrar la otra sesión" autocomplete="off">
+      <button type="button" class="pw-toggle" aria-label="Mostrar clave" onclick="togglePw('overrideKey', this)">
+        <svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+      </button>
+    </div>
   </div>
 
   <button class="btn" onclick="doLogin()">Entrar</button>
   <a href="tienda.html" class="back-link">← Volver a la tienda</a>
 </div>
 
+<script>
+  // Mostrar/ocultar contraseña
+  function togglePw(inputId, btn){
+    var inp = document.getElementById(inputId);
+    if (!inp) return;
+    if (inp.type === 'password'){
+      inp.type = 'text';
+      btn.classList.add('show');
+      btn.setAttribute('aria-label','Ocultar contraseña');
+    } else {
+      inp.type = 'password';
+      btn.classList.remove('show');
+      btn.setAttribute('aria-label','Mostrar contraseña');
+    }
+  }
+</script>
 <script src="js/db.js"></script>
 <script src="js/login.js"></script>
 </body>

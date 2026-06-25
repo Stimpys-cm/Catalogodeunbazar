@@ -1354,3 +1354,186 @@ header {
     gap: .5rem !important;
   }
 }
+/* ═══════════════════════════════════════════════════════════════
+   WISHLIST — BOTÓN PREGUNTAR POR TODO + CLICK EN ITEM
+   ═══════════════════════════════════════════════════════════════ */
+
+.wishlist-panel-footer {
+  padding: 10px 1rem;
+  border-bottom: 1.5px solid var(--border);
+  flex-shrink: 0;
+}
+
+.wl-btn-todo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: #25D366;
+  color: #fff;
+  padding: 13px 16px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  transition: opacity .2s, box-shadow .2s;
+  box-shadow: 0 3px 14px rgba(37,211,102,0.3);
+}
+.wl-btn-todo:hover { opacity: .88; box-shadow: 0 5px 22px rgba(37,211,102,0.4); }
+
+.wl-item { cursor: pointer; }
+.wl-item:active { opacity: .85; }
+
+/* ── DESCRIPCIÓN EN DRAWER ──────────────────────────────────── */
+.pd-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.65;
+  padding: 10px 14px;
+  background: rgba(45,107,228,.04);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INTERFAZ MÓVIL TIPO "BAZAR APP" (solo ≤480px)
+   No afecta la versión de escritorio. El hero azul queda igual en PC.
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+
+  /* Wishlist e Instagram del header ocultos en móvil (ya están en la barra inferior) */
+  .btn-wishlist-header { display: none !important; }
+  .header-actions .btn-ig { display: none !important; }
+
+  /* Espacio para que la barra inferior no tape contenido */
+  body { padding-bottom: 64px; }
+
+  /* ── Tarjetas estilo app ───────────────────────────────── */
+  .card {
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 6px rgba(45,107,228,0.06);
+    background: #fff;
+  }
+  .card:hover { transform: none; box-shadow: 0 1px 6px rgba(45,107,228,0.06); }
+  .card:hover .card-img img { transform: none; }
+
+  /* Foto: pegada arriba, esquinas solo superiores */
+  .card-img {
+    margin: 0;
+    border-radius: 14px 14px 0 0;
+    aspect-ratio: 1 / 1;
+  }
+
+  /* Etiqueta de marca azul flotante → oculta (la marca va como texto abajo) */
+  .card-img .brand-tag { display: none; }
+
+  /* Corazón arriba a la derecha, círculo blanco */
+  .card-fav-btn {
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    background: rgba(255,255,255,0.92);
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card-fav-btn svg { width: 15px; height: 15px; stroke: var(--text2); }
+  .card-fav-btn.active svg { stroke: var(--accent); fill: var(--accent); }
+
+  /* Cuerpo de la tarjeta */
+  .card-body { padding: 10px 12px 12px; }
+
+  /* Marca como texto pequeño arriba del nombre */
+  .card-body::before {
+    content: attr(data-marca);
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+
+  .card-name {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-bottom: 6px;
+    white-space: normal;
+  }
+
+  /* Ocultar chips, subtítulo y botón contactar en la tarjeta */
+  .card-chips,
+  .card-sub,
+  .card-body .btn-contact { display: none; }
+
+  .card-price {
+    font-size: 1.5rem;
+    color: var(--accent);
+    opacity: 1;
+  }
+
+  /* ── Barra inferior fija ───────────────────────────────── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 60px;
+    background: rgba(247,244,239,0.97);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+    z-index: 400;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .bn-item {
+    flex: 1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    letter-spacing: .02em;
+    transition: color .2s;
+  }
+  .bn-item svg { width: 22px; height: 22px; }
+  .bn-item.active { color: var(--accent); }
+  .bn-item:active { color: var(--accent); }
+  .bn-wl-wrap { position: relative; }
+  .bn-wl-count {
+    position: absolute;
+    top: -16px; right: -12px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 8px;
+    font-weight: 700;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* La barra inferior NUNCA aparece en escritorio */
+@media (min-width: 481px) {
+  .bottom-nav { display: none; }
+}

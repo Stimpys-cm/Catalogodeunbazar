@@ -116,6 +116,26 @@
   <div class="grid" id="productGrid"></div>
 </main>
 
+<!-- ── BOTTOM NAV (solo móvil) ────────────────────────────── -->
+<nav class="bottom-nav" aria-label="Navegación inferior">
+  <button class="bn-item active" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Inicio">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
+    <span>Inicio</span>
+  </button>
+  <button class="bn-item" onclick="toggleSearch()" aria-label="Buscar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <span>Buscar</span>
+  </button>
+  <button class="bn-item" onclick="toggleWishlistPanel()" aria-label="Wishlist">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    <span class="bn-wl-wrap">Wishlist<span class="bn-wl-count" id="bnWlCount" style="display:none">0</span></span>
+  </button>
+  <a class="bn-item" href="https://www.instagram.com/stiimpys" target="_blank" rel="noopener" aria-label="Instagram">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+    <span>Instagram</span>
+  </a>
+</nav>
+
 <!-- ── FOOTER ─────────────────────────────────────────────── -->
 <footer>
   <p>Bazar En Linea &copy; 2026 &nbsp;·&nbsp; Reynosa, Tamaulipas</p>
@@ -138,6 +158,15 @@
   <div class="wishlist-panel-header">
     <h3>Mi Wishlist <span class="wishlist-panel-count" id="wishlistPanelCount">0</span></h3>
     <button onclick="closeWishlistPanel()" aria-label="Cerrar">✕</button>
+  </div>
+  <div class="wishlist-panel-footer" id="wishlistPanelFooter" style="display:none">
+    <a id="wlBtnTodo" href="#" target="_blank" class="wl-btn-todo">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/>
+        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.558 4.147 1.535 5.886L0 24l6.274-1.507A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.853 0-3.587-.5-5.084-1.367l-.361-.214-3.733.897.931-3.618-.235-.374A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+      </svg>
+      Preguntar por todo
+    </a>
   </div>
   <div class="wishlist-panel-body" id="wishlistPanelBody">
     <div class="wishlist-empty">No tienes prendas guardadas aún.</div>

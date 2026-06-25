@@ -1,4 +1,4 @@
-// js/login.js — actualizado para MongoDB
+// js/login.js — sesión única por cuenta + override admin con clave maestra
 if (isLoggedIn()) window.location.href = 'admin.html';
 
 async function doLogin() {
@@ -6,6 +6,11 @@ async function doLogin() {
   const password = document.getElementById('password').value;
   const err      = document.getElementById('errorMsg');
   const btn      = document.querySelector('.btn');
+
+  // Campo de clave maestra (puede no existir aún hasta que se necesite)
+  const overrideWrap = document.getElementById('overrideWrap');
+  const overrideInp  = document.getElementById('overrideKey');
+  const override     = overrideInp ? overrideInp.value.trim() : '';
 
   err.classList.remove('visible');
   btn.textContent = 'Entrando...';
@@ -15,14 +20,34 @@ async function doLogin() {
     const res = await fetch('/api/auth', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ username, password })
+      body:    JSON.stringify({ username, password, override: override || undefined })
     });
 
     if (res.ok) {
       const user = await res.json();
       setSession(user);
       window.location.href = 'admin.html';
+      return;
+    }
+
+    // Leer el detalle del error para decidir qué mostrar
+    let data = {};
+    try { data = await res.json(); } catch (_) {}
+
+    if (res.status === 409 || res.status === 403) {
+      // Cuenta ocupada (409) o clave maestra incorrecta (403)
+      err.textContent = data.error || 'Esta cuenta ya tiene una sesión activa.';
+      err.classList.add('visible');
+
+      if (data.canUseOverride && overrideWrap) {
+        // Desplegar el campo de clave maestra con animación
+        overrideWrap.classList.add('open');
+        if (overrideInp) setTimeout(() => overrideInp.focus(), 250);
+      }
+      document.getElementById('password').value = '';
     } else {
+      // 401 u otros: credenciales incorrectas
+      err.textContent = 'Usuario o contraseña incorrectos.';
       err.classList.add('visible');
       document.getElementById('password').value = '';
     }
@@ -42,4 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('username').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('password').focus();
   });
+  const ov = document.getElementById('overrideKey');
+  if (ov) ov.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 });
