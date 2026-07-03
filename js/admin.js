@@ -20,8 +20,12 @@ function forceLogout() {
 // ─── TABS ────────────────────────────────────────────────────
 let currentTab = 'inventario';
 
-function showTab(tab) {
-  if ((tab==='vendedores'||tab==='catalogo') && !isAdmin()) return;
+// Pestañas válidas y las que requieren admin
+const TABS_VALIDAS   = ['inventario','registrar','catalogo','vendedores','drops','cuenta'];
+const TABS_SOLO_ADMIN = ['vendedores','catalogo','drops'];
+
+function showTab(tab, fromHash) {
+  if (TABS_SOLO_ADMIN.includes(tab) && !isAdmin()) return;
   currentTab = tab;
   ['inventario','registrar','vendedores','catalogo','cuenta','drops'].forEach(t => {
     const v = document.getElementById('view-'+t);
@@ -36,7 +40,38 @@ function showTab(tab) {
   if (tab==='drops')       renderDrops();
   if (tab==='registrar')   { setTimeout(() => { initPreviewListeners(); updatePreview(); populateDropSelect(); }, 0); }
   closeSidebar();
+
+  // Sincronizar el hash de la URL (admin.html#registrar, etc.)
+  // fromHash = true cuando el cambio vino de la propia URL, para no duplicar historial
+  if (!fromHash && location.hash.slice(1) !== tab) {
+    location.hash = tab;
+  }
+  // Título de la pestaña en el navegador
+  const titulos = {
+    inventario:'Inventario', registrar:'Registrar', catalogo:'Catálogo',
+    vendedores:'Vendedores', drops:'Drops', cuenta:'Mi cuenta'
+  };
+  document.title = `${titulos[tab] || 'Panel'} · Bazar En Linea`;
 }
+
+// Lee el hash de la URL y muestra esa pestaña (con validaciones)
+function aplicarHash() {
+  let tab = (location.hash || '').replace(/^#\/?/, '').trim();
+  if (!TABS_VALIDAS.includes(tab)) tab = 'inventario';
+  // Si un no-admin intenta entrar a una pestaña de admin por URL, lo mandamos a inventario
+  if (TABS_SOLO_ADMIN.includes(tab) && !isAdmin()) tab = 'inventario';
+  showTab(tab, true);
+}
+
+// Botones atrás/adelante del navegador
+window.addEventListener('hashchange', aplicarHash);
+
+// Cerrar el modal de edición con Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('reEditModal')?.classList.contains('open')) {
+    cerrarReEdicion();
+  }
+});
 
 // ─── INIT ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -56,6 +91,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   renderAll();
   populateSelects();
+
+  // Abrir la pestaña indicada en la URL (admin.html#registrar, etc.)
+  aplicarHash();
+
   await updateMyActivity();
   await updateOnlineBadge();
 
@@ -80,6 +119,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     uz.addEventListener('dragover',  e => { e.preventDefault(); uz.classList.add('drag'); });
     uz.addEventListener('dragleave', ()  => uz.classList.remove('drag'));
     uz.addEventListener('drop',      e  => { e.preventDefault(); uz.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
+  }
+
+  // Drag & drop del modal de edición
+  const ruz = document.getElementById('reUploadZone');
+  if (ruz) {
+    ruz.addEventListener('dragover',  e => { e.preventDefault(); ruz.classList.add('drag'); });
+    ruz.addEventListener('dragleave', ()  => ruz.classList.remove('drag'));
+    ruz.addEventListener('drop',      e  => { e.preventDefault(); ruz.classList.remove('drag'); reHandleFiles(e.dataTransfer.files); });
   }
 });
 
@@ -263,7 +310,7 @@ function renderInv() {
         </div>
         <div class="item-actions">
           ${vendBtn}
-          <button class="act-btn edit" onclick="editItem(${p.id})">✏️</button>
+          <button class="act-btn edit" onclick="re_editar_prenda(${p.id})">✏️</button>
           ${delBtn}
         </div>
       </div>
@@ -300,6 +347,152 @@ function editItem(id) {
   renderPreviews();
   document.getElementById('formTitle').textContent = 'Editar Prenda';
   showTab('registrar');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EDICIÓN EN MODAL — re_editar_prenda (edita en sitio, sin ir a Registrar)
+// ═══════════════════════════════════════════════════════════════
+let reEditImgs = [];   // imágenes actuales de la prenda en edición (URLs o base64)
+
+function re_editar_prenda(id) {
+  const p = getDB().find(x => x.id === id);
+  if (!p) { toast('No se encontró la prenda'); return; }
+
+  // Poblar marca
+  const brandSel = document.getElementById('re_marca');
+  if (brandSel) {
+    brandSel.innerHTML = `<option value="">Sin marca</option>` +
+      getBrands().map(b => `<option value="${b.nombre}">${b.nombre}</option>`).join('');
+    brandSel.value = p.marca || '';
+  }
+
+  // Poblar categorías (checkboxes)
+  reRenderCatChecks(Array.isArray(p.categorias) ? p.categorias : []);
+
+  // Campos de texto
+  document.getElementById('re_editId').value      = id;
+  document.getElementById('re_nombre').value      = p.nombre || '';
+  document.getElementById('re_talla').value       = p.talla || '';
+  document.getElementById('re_precio').value      = p.precio_venta ?? '';
+  document.getElementById('re_costo').value       = p.costo ?? '';
+  document.getElementById('re_estado').value      = p.estado || '';
+  document.getElementById('re_descripcion').value = p.descripcion || '';
+
+  // Fotos
+  reEditImgs = Array.isArray(p.imagenes) ? [...p.imagenes] : [];
+  reRenderPreviews();
+
+  document.getElementById('reEditSub').textContent = `Editando: ${p.nombre || 'prenda'}`;
+
+  // Abrir modal
+  document.getElementById('reEditOverlay').classList.add('active');
+  document.getElementById('reEditModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarReEdicion() {
+  document.getElementById('reEditOverlay').classList.remove('active');
+  document.getElementById('reEditModal').classList.remove('open');
+  document.body.style.overflow = '';
+  reEditImgs = [];
+}
+
+function reRenderCatChecks(selected = []) {
+  const wrap = document.getElementById('re_cats_wrap');
+  if (!wrap) return;
+  const cats = getCats();
+  if (!cats.length) {
+    wrap.innerHTML = '<span style="font-size:11px;color:var(--muted)">No hay categorías. Créalas en la pestaña Catálogo.</span>';
+    return;
+  }
+  wrap.innerHTML = cats.map(c => `
+    <label class="cat-check">
+      <input type="checkbox" value="${c.nombre}" ${selected.includes(c.nombre)?'checked':''}>
+      <span>${c.nombre}</span>
+    </label>`).join('');
+}
+
+function reGetSelectedCats() {
+  return [...document.querySelectorAll('#re_cats_wrap input:checked')].map(i => i.value);
+}
+
+// Fotos del modal (independiente del formulario de registrar)
+function reHandleFiles(files) {
+  const fileArr = Array.from(files);
+  const input = document.getElementById('reFileInput');
+  if (input) input.value = '';
+  fileArr.forEach(file => {
+    const r = new FileReader();
+    r.onload = async e => {
+      const base64 = e.target.result;
+      const idx = reEditImgs.length;
+      reEditImgs.push(base64);          // preview inmediata
+      reRenderPreviews();
+      try {
+        toast('Subiendo foto...');
+        const url = await uploadToCloud(base64);
+        reEditImgs[idx] = url;          // reemplaza por URL de Cloudinary
+        reRenderPreviews();
+        toast('Foto subida ✓');
+      } catch (err) {
+        toast('Error subiendo foto: ' + err.message);
+        reEditImgs.splice(idx, 1);
+        reRenderPreviews();
+      }
+    };
+    r.readAsDataURL(file);
+  });
+}
+
+function reRenderPreviews() {
+  const strip = document.getElementById('rePreviewStrip');
+  if (!strip) return;
+  strip.innerHTML = reEditImgs.map((src, i) => `
+    <div class="preview-thumb">
+      <img src="${src}" alt="">
+      <button onclick="reRemovePreview(${i})">✕</button>
+    </div>`).join('');
+}
+
+function reRemovePreview(i) {
+  reEditImgs.splice(i, 1);
+  reRenderPreviews();
+}
+
+function guardarReEdicion() {
+  const id     = parseInt(document.getElementById('re_editId').value) || 0;
+  const nombre = document.getElementById('re_nombre').value.trim();
+  const precio = parseFloat(document.getElementById('re_precio').value);
+  const costo  = parseFloat(document.getElementById('re_costo').value);
+
+  if (!id)                    { toast('Prenda inválida'); return; }
+  if (!nombre)                { toast('El nombre es obligatorio'); return; }
+  if (isNaN(precio)||precio<0){ toast('Precio inválido'); return; }
+  if (isNaN(costo) ||costo <0){ toast('Costo inválido');  return; }
+
+  // Evitar guardar con fotos aún subiendo (base64 sin reemplazar por URL)
+  const subiendo = reEditImgs.some(s => typeof s === 'string' && s.startsWith('data:'));
+  if (subiendo) { toast('Espera a que terminen de subir las fotos'); return; }
+
+  const db = getDB();
+  const p  = db.find(x => x.id === id);
+  if (!p) { toast('No se encontró la prenda'); return; }
+
+  // Actualizar SOLO esta prenda — sin crear una nueva
+  p.nombre       = nombre;
+  p.marca        = document.getElementById('re_marca').value;
+  p.categorias   = reGetSelectedCats();
+  p.talla        = document.getElementById('re_talla').value.trim();
+  p.precio_venta = precio;
+  p.costo        = costo;
+  p.estado       = document.getElementById('re_estado').value.trim();
+  p.descripcion  = document.getElementById('re_descripcion').value.trim();
+  p.imagenes     = [...reEditImgs];
+
+  saveDB(db);
+  cerrarReEdicion();
+  renderAll();
+  toast('Cambios guardados ✓');
 }
 
 // ─── FORM ────────────────────────────────────────────────────

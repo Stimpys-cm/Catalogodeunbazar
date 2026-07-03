@@ -109,11 +109,54 @@
     <p>Streetwear · Vintage · Bazar</p>
   </section>
 
-  <div class="toolbar">
-    <span id="countLabel">Cargando...</span>
+  <div class="shop-toolbar">
+    <div class="shop-toolbar-left">
+      <button class="filters-fab" id="filtersFab" onclick="openFilterDrawer()" aria-label="Abrir filtros">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+        Filtros
+      </button>
+      <span id="countLabel">Cargando...</span>
+    </div>
+    <div class="sort-wrap">
+      <button class="sort-btn" id="sortBtn" onclick="toggleSort(event)">
+        <span class="sort-lead">Ordenar:</span> <span id="sortLabel">Más recientes</span>
+        <span class="sort-caret" aria-hidden="true">▾</span>
+      </button>
+      <div class="sort-menu" id="sortMenu">
+        <button class="sort-opt" data-sort="recent"    onclick="setSort('recent',this)">Más recientes</button>
+        <button class="sort-opt" data-sort="priceLow"  onclick="setSort('priceLow',this)">Precio: menor a mayor</button>
+        <button class="sort-opt" data-sort="priceHigh" onclick="setSort('priceHigh',this)">Precio: mayor a menor</button>
+        <button class="sort-opt" data-sort="brand"     onclick="setSort('brand',this)">Marca (A-Z)</button>
+      </div>
+    </div>
   </div>
 
-  <div class="grid" id="productGrid"></div>
+  <div class="shop-layout">
+    <!-- Sidebar de filtros (desktop) -->
+    <aside class="shop-sidebar" id="shopSidebar">
+      <div class="sidebar-head">
+        <h3>Filtros</h3>
+        <button class="sidebar-clear" onclick="clearShopFilters()">Limpiar</button>
+      </div>
+      <div id="sidebarFilters"></div>
+    </aside>
+
+    <div class="grid" id="productGrid"></div>
+  </div>
+
+  <!-- Drawer de filtros (móvil) -->
+  <div class="filter-scrim" id="filterScrim" onclick="closeFilterDrawer()"></div>
+  <aside class="filter-drawer" id="filterDrawer" aria-label="Filtros">
+    <div class="filter-drawer-head">
+      <h3>Filtros</h3>
+      <button onclick="closeFilterDrawer()" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="filter-drawer-body" id="sidebarFiltersMobile"></div>
+    <div class="filter-drawer-foot">
+      <button class="fd-clear" onclick="clearShopFilters()">Limpiar</button>
+      <button class="fd-apply" onclick="closeFilterDrawer()">Ver <span id="fdCount">0</span></button>
+    </div>
+  </aside>
 </main>
 
 <!-- ── BOTTOM NAV (solo móvil) ────────────────────────────── -->

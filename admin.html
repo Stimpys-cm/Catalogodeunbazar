@@ -7,6 +7,30 @@
 <link rel="stylesheet" href="css/global.css">
 <link rel="stylesheet" href="css/admin.css">
   <link rel="stylesheet" href="css/lightbox.css">
+<style>
+/* ══ MODAL EDITAR PRENDA ══ */
+.re-overlay{position:fixed;inset:0;background:rgba(26,31,46,.5);backdrop-filter:blur(3px);z-index:600;opacity:0;pointer-events:none;transition:opacity .28s;}
+.re-overlay.active{opacity:1;pointer-events:auto;}
+.re-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-48%) scale(.98);width:560px;max-width:calc(100vw - 32px);max-height:92dvh;background:var(--card,#faf8f4);border:1.5px solid var(--border,#d4cfc6);border-radius:20px;box-shadow:0 24px 70px rgba(45,107,228,.22);z-index:601;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .28s,transform .3s cubic-bezier(.16,1,.3,1);overflow:hidden;}
+.re-modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
+.re-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:22px 24px 16px;border-bottom:1px solid var(--border,#d4cfc6);}
+.re-modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;letter-spacing:.03em;color:var(--text-dark,#1a1f2e);margin:0;line-height:1;}
+.re-modal-sub{font-size:12px;color:var(--muted,#8a8178);margin:6px 0 0;}
+.re-close{width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:none;border:none;border-radius:50%;cursor:pointer;color:var(--muted,#8a8178);transition:background .2s,color .2s;}
+.re-close:hover{background:rgba(0,0,0,.06);color:var(--text-dark,#1a1f2e);}
+.re-modal-body{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:16px;}
+.re-modal-foot{display:flex;gap:12px;padding:16px 24px;border-top:1px solid var(--border,#d4cfc6);background:rgba(255,255,255,.6);flex-shrink:0;}
+.re-cancel{flex:0 0 auto;padding:13px 22px;border:1.5px solid var(--border,#d4cfc6);background:#fff;border-radius:12px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;color:var(--text-dark,#1a1f2e);cursor:pointer;transition:border-color .2s;}
+.re-cancel:hover{border-color:var(--muted,#8a8178);}
+.re-save{flex:1;padding:13px 22px;border:none;background:var(--accent-gradient,linear-gradient(135deg,#2d6be4,#4a90d9));color:#fff;border-radius:12px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;letter-spacing:.03em;cursor:pointer;box-shadow:0 4px 16px rgba(45,107,228,.3);transition:opacity .2s,box-shadow .2s;}
+.re-save:hover{opacity:.9;box-shadow:0 6px 22px rgba(45,107,228,.4);}
+@media (max-width:600px){
+  .re-modal{top:auto;bottom:0;left:0;transform:translateY(100%);width:100vw;max-width:100vw;max-height:94dvh;border-radius:22px 22px 0 0;border-bottom:none;}
+  .re-modal.open{transform:translateY(0);}
+  .re-modal::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:42px;height:5px;border-radius:3px;background:var(--border,#d4cfc6);z-index:5;}
+  .re-modal-head{padding-top:26px;}
+}
+</style>
 </head>
 <body>
 
@@ -418,6 +442,79 @@
   <button class="m-nav" id="mPrev" onclick="mChg(-1)">‹</button>
   <div class="modal-inner"><img id="modImg" src="" alt="Imagen"></div>
   <button class="m-nav" id="mNext" onclick="mChg(1)">›</button>
+</div>
+
+<!-- ══ MODAL EDITAR PRENDA ══════════════════════════════════════ -->
+<div class="re-overlay" id="reEditOverlay" onclick="cerrarReEdicion()"></div>
+<div class="re-modal" id="reEditModal" role="dialog" aria-label="Editar prenda">
+  <div class="re-modal-head">
+    <div>
+      <h2 class="re-modal-title">Editar prenda</h2>
+      <p class="re-modal-sub" id="reEditSub">Modifica los datos y guarda</p>
+    </div>
+    <button class="re-close" onclick="cerrarReEdicion()" aria-label="Cerrar">
+      <svg class="lucide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="re-modal-body">
+    <input type="hidden" id="re_editId">
+
+    <div class="fg">
+      <label>Nombre de la prenda</label>
+      <input type="text" id="re_nombre" placeholder="Ej. Pantalón Cargo Dickies">
+    </div>
+
+    <div class="form-row">
+      <div class="fg">
+        <label>Marca</label>
+        <select id="re_marca"><option value="">Sin marca</option></select>
+      </div>
+      <div class="fg">
+        <label>Talla</label>
+        <input type="text" id="re_talla" placeholder="M, L, 32...">
+      </div>
+    </div>
+
+    <div class="fg">
+      <label>Categorías <span style="color:var(--muted);font-weight:400">(una o más)</span></label>
+      <div class="cat-checkboxes" id="re_cats_wrap"></div>
+    </div>
+
+    <div class="form-row">
+      <div class="fg">
+        <label>Precio de Venta</label>
+        <input type="number" id="re_precio" placeholder="$ 0.00" min="0" step="0.01">
+      </div>
+      <div class="fg costo">
+        <label>Costo Interno</label>
+        <input type="number" id="re_costo" placeholder="Me costó..." min="0" step="0.01">
+      </div>
+    </div>
+
+    <div class="fg">
+      <label>Estado</label>
+      <input type="text" id="re_estado" placeholder="Nuevo con etiquetas, Como nuevo...">
+    </div>
+
+    <div class="fg">
+      <label>Descripción <span style="color:var(--muted);font-weight:400">(opcional)</span></label>
+      <textarea id="re_descripcion" placeholder="Contexto de la prenda..." rows="3" style="resize:vertical"></textarea>
+    </div>
+
+    <div class="fg"><label>Fotos</label></div>
+    <div class="upload-zone" id="reUploadZone">
+      <input type="file" id="reFileInput" accept="image/*" multiple onchange="reHandleFiles(this.files)">
+      <div class="upload-icon"><svg class="lucide" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div>
+      <div class="upload-text">Arrastra o toca para agregar fotos</div>
+    </div>
+    <div class="preview-strip" id="rePreviewStrip"></div>
+  </div>
+
+  <div class="re-modal-foot">
+    <button class="re-cancel" onclick="cerrarReEdicion()">Cancelar</button>
+    <button class="re-save" onclick="guardarReEdicion()">Guardar cambios</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
