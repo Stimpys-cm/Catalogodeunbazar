@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Validar que nuestra sesión siga vigente (no reemplazada por otro login admin)
   if (!(await checkMySession())) return forceLogout();
 
-  // Solo ping de actividad cada 20s — el badge se actualiza con el poll (3s)
+  // Solo ping de actividad cada 20s — el badge se actualiza con el poll (10s)
   setInterval(async () => {
     await updateMyActivity();
     if (!(await checkMySession())) forceLogout();
@@ -875,26 +875,31 @@ function renderCuenta() {
 }
 
 // ─── CAMBIAR CONTRASEÑA ───────────────────────────────────────
-function cambiarPassword() {
+// La verificación de la contraseña actual se hace en el servidor
+// (api/change-password.js): el frontend ya no recibe las contraseñas.
+async function cambiarPassword() {
   const actual  = document.getElementById('cp_actual').value;
   const nueva   = document.getElementById('cp_nueva').value;
   const confirm = document.getElementById('cp_confirm').value;
   const errEl   = document.getElementById('cpError');
   errEl.textContent = '';
 
-  const s     = getSession();
-  const users = getUsers();
-  const user  = users.find(u => u.username === s.username);
+  const s = getSession();
+  if (!s)                { errEl.textContent = 'Sesión no encontrada'; return; }
+  if (!actual)           { errEl.textContent = 'Escribe tu contraseña actual'; return; }
+  if (nueva.length < 4)  { errEl.textContent = 'Mínimo 4 caracteres'; return; }
+  if (nueva !== confirm) { errEl.textContent = 'Las contraseñas no coinciden'; return; }
 
-  if (!user)                      { errEl.textContent = 'Usuario no encontrado'; return; }
-  if (user.password !== actual)   { errEl.textContent = 'La contraseña actual es incorrecta'; return; }
-  if (nueva.length < 4)           { errEl.textContent = 'Mínimo 4 caracteres'; return; }
-  if (nueva !== confirm)          { errEl.textContent = 'Las contraseñas no coinciden'; return; }
-
-  user.password = nueva;
-  saveUsers(users);
-  ['cp_actual','cp_nueva','cp_confirm'].forEach(id => document.getElementById(id).value = '');
-  toast('Contraseña actualizada ✓');
+  try {
+    await api('/api/change-password', {
+      method: 'POST',
+      body: { username: s.username, actual, nueva }
+    });
+    ['cp_actual','cp_nueva','cp_confirm'].forEach(id => document.getElementById(id).value = '');
+    toast('Contraseña actualizada ✓');
+  } catch (err) {
+    errEl.textContent = err.message || 'No se pudo cambiar la contraseña';
+  }
 }
 
 // ─── PREVIEW EN TIEMPO REAL ───────────────────────────────────

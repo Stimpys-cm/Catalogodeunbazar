@@ -56,9 +56,30 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'body.list debe ser array' });
       }
       const col = db.collection(colName);
+
+      // Para 'usuarios': el frontend ya NO recibe password/sessionToken
+      // (ver api/sync.js). Al reemplazar la colección, preservamos esos
+      // campos sensibles desde la BD para no borrarlos. Si el cliente envía
+      // una password nueva (alta de vendedor / reset), esa sí se respeta.
+      let toInsert = list;
+      if (colName === 'usuarios') {
+        const prev  = await col.find({}).toArray();
+        const byId  = new Map(prev.map(u => [u.id, u]));
+        toInsert = list.map(u => {
+          const old = byId.get(u.id);
+          return {
+            ...u,
+            password:     (u.password != null && u.password !== '')
+                            ? u.password
+                            : (old ? old.password : u.password),
+            sessionToken: old ? old.sessionToken : u.sessionToken,
+          };
+        });
+      }
+
       await col.deleteMany({});
-      if (list.length > 0) await col.insertMany(list);
-      return res.status(200).json({ ok: true, count: list.length });
+      if (toInsert.length > 0) await col.insertMany(toInsert);
+      return res.status(200).json({ ok: true, count: toInsert.length });
     }
 
     return res.status(405).json({ error: 'Método no permitido' });

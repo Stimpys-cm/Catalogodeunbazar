@@ -510,6 +510,71 @@ header {
   letter-spacing: .2em;
   text-transform: uppercase;
 }
+.empty-icon {
+  width: 46px;
+  height: 46px;
+  margin: 0 auto 1.1rem;
+  color: var(--accent);
+  opacity: .55;
+}
+.empty-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: var(--text2);
+  margin-bottom: .4rem;
+}
+.empty-sub { font-size: 11px; letter-spacing: .1em; margin-bottom: 1.4rem; }
+.empty-cta {
+  display: inline-block;
+  background: var(--accent-gradient);
+  color: #fff;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 30px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(45, 107, 228, 0.25);
+  transition: opacity .2s, box-shadow .2s;
+}
+.empty-cta:hover { opacity: .9; box-shadow: 0 5px 20px rgba(45, 107, 228, 0.38); }
+
+/* ── SKELETON (carga) ────────────────────────────────────────── */
+.skeleton-card {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 3px 18px rgba(45, 107, 228, 0.05);
+}
+.skeleton-card .sk-img {
+  margin: 14px 14px 0;
+  border-radius: 12px;
+  aspect-ratio: 3/4;
+}
+.skeleton-card .sk-body { padding: 1.1rem 1.4rem 1.4rem; }
+.skeleton-card .sk-line {
+  height: 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}
+.skeleton-card .sk-line.short { width: 45%; }
+.skeleton-card .sk-line.price { width: 60%; height: 26px; margin-top: 4px; }
+.sk-img, .sk-line {
+  background: linear-gradient(100deg, #edf2fb 30%, #e2e9f5 50%, #edf2fb 70%);
+  background-size: 200% 100%;
+  animation: skShimmer 1.3s ease-in-out infinite;
+}
+@keyframes skShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sk-img, .sk-line { animation: none; }
+}
 
 /* ── FOOTER ──────────────────────────────────────────────────── */
 footer {

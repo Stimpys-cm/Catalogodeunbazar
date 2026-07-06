@@ -48,7 +48,7 @@ let _hActivos = '';
 
 function _h(arr) { return JSON.stringify(arr); }
 
-// ── Polling: UNA sola petición cada 3 segundos ───────────────
+// ── Polling: UNA sola petición cada 10 segundos ──────────────
 async function _poll() {
   try {
     const data = await api('/api/sync');
@@ -90,7 +90,7 @@ _loadAll().then(() => {
   _hBrands = _h(_brands);
   _hUsers  = _h(_users);
   _hActivos = _h(_activos);
-  setInterval(_poll, 10000); // 3 segundos
+  setInterval(_poll, 10000); // 10 segundos
 });
 
 window.waitForDB = () => new Promise(resolve => {

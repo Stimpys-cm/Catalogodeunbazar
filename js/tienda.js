@@ -197,7 +197,7 @@ function renderWishlistPanel() {
 
   body.innerHTML = list.map(p => {
     const img = Array.isArray(p.imagenes) && p.imagenes[0]
-      ? `<img class="wl-item-img" src="${p.imagenes[0]}" alt="${p.nombre}" loading="lazy">`
+      ? `<img class="wl-item-img" src="${p.imagenes[0]}" alt="${esc(p.nombre)}" loading="lazy">`
       : `<div class="wl-item-img" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:#aaa">Sin foto</div>`;
     const waMsg = encodeURIComponent(`Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta}`);
     // Serializar datos del producto de forma segura para el onclick
@@ -209,9 +209,9 @@ function renderWishlistPanel() {
       })(event)">
       ${img}
       <div class="wl-item-info">
-        <div class="wl-item-name">${p.nombre}</div>
-        <div class="wl-item-sub">Talla ${p.talla||'–'} · ${p.estado||''}</div>
-        <span class="wl-item-price">$${p.precio_venta}</span>
+        <div class="wl-item-name">${esc(p.nombre)}</div>
+        <div class="wl-item-sub">Talla ${esc(p.talla||'–')} · ${esc(p.estado||'')}</div>
+        <span class="wl-item-price">${money(p.precio_venta)}</span>
         <div class="wl-item-actions">
           <a href="https://wa.me/528995284602?text=${waMsg}" target="_blank" class="wl-btn-wa">WhatsApp</a>
           <button class="wl-btn-remove" onclick="removeFromWishlist('${p.id}')" aria-label="Eliminar">✕</button>
@@ -293,6 +293,26 @@ function tiempoDesde(p) {
 }
 const money = n => '$' + Number(n||0).toLocaleString('es-MX');
 
+// Escapa texto para insertarlo con seguridad en HTML/atributos
+// (evita que nombres con comillas o < > rompan el markup o inyecten HTML)
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+// Skeletons de carga: se muestran mientras llega el primer fetch a la BD
+function renderSkeletons(n = 8) {
+  const grid = document.getElementById('productGrid');
+  if (!grid) return;
+  grid.innerHTML = Array.from({ length: n }, () => `
+    <div class="skeleton-card">
+      <div class="sk-img"></div>
+      <div class="sk-body">
+        <div class="sk-line short"></div>
+        <div class="sk-line"></div>
+        <div class="sk-line price"></div>
+      </div>
+    </div>`).join('');
+}
+
 // ─── RENDER GRID ─────────────────────────────────────────────
 function renderGrid(query) {
   if (query !== undefined) searchQuery = query;
@@ -331,16 +351,24 @@ function renderGrid(query) {
   if (fdCount) fdCount.textContent = items.length;
 
   if (!items.length) {
-    grid.innerHTML = '<div class="empty">No hay prendas con esos filtros</div>';
+    const hayFiltros = filterCat || filterBrand || searchQuery.trim() ||
+      shopFilters.tallas.size || shopFilters.marcas.size || shopFilters.estados.size ||
+      shopFilters.maxPrecio !== shopPriceMax;
+    grid.innerHTML = `<div class="empty">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <div class="empty-title">Sin resultados</div>
+      <div class="empty-sub">${hayFiltros ? 'No hay prendas con esos filtros.' : 'Aún no hay prendas disponibles. ¡Vuelve pronto!'}</div>
+      ${hayFiltros ? '<button class="empty-cta" onclick="clearShopFilters();clearFilters();closeSearch()">Limpiar filtros</button>' : ''}
+    </div>`;
     return;
   }
 
   grid.innerHTML = items.map(p => {
     const imgs    = Array.isArray(p.imagenes) ? p.imagenes : [];
     const imgHtml = imgs[0]
-      ? `<img src="${imgs[0]}" alt="${p.nombre}" loading="lazy">`
+      ? `<img src="${imgs[0]}" alt="${esc(p.nombre)}" loading="lazy">`
       : `<div class="no-photo">Sin foto</div>`;
-    const marcaTag  = p.marca ? `<div class="brand-tag">${p.marca}</div>` : '';
+    const marcaTag  = p.marca ? `<div class="brand-tag">${esc(p.marca)}</div>` : '';
     const waMsg     = encodeURIComponent(`Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta}`);
     const favActive = isWishlisted(p._id || p.id) ? 'active' : '';
     const favId     = p._id || p.id;
@@ -372,12 +400,12 @@ function renderGrid(query) {
       <div class="card-body" data-marca="${p.marca||''}">
         <div class="card-row">
           <div class="card-titles">
-            <div class="card-brand">${p.marca||''}</div>
-            <div class="card-name">${p.nombre}</div>
+            <div class="card-brand">${esc(p.marca||'')}</div>
+            <div class="card-name">${esc(p.nombre)}</div>
           </div>
-          <div class="card-price">$${p.precio_venta}</div>
+          <div class="card-price">${money(p.precio_venta)}</div>
         </div>
-        <div class="card-sub"><span class="size-tag">Talla ${p.talla||'–'}</span>${p.estado?' · '+p.estado:''}</div>
+        <div class="card-sub"><span class="size-tag">Talla ${esc(p.talla||'–')}</span>${p.estado?' · '+esc(p.estado):''}</div>
         <div class="card-foot">
           <span class="card-loc">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -499,7 +527,7 @@ function openProductDetail(p) {
   pdIdx  = 0;
   const favActive = isWishlisted(p.id) ? 'active' : '';
   const cats      = Array.isArray(p.categorias) ? p.categorias : [];
-  const catChips  = cats.map(c => `<span class="cat-chip">${c}</span>`).join('');
+  const catChips  = cats.map(c => `<span class="cat-chip">${esc(c)}</span>`).join('');
   const waMsg     = encodeURIComponent(`Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta}`);
   const productData = JSON.stringify(p).replace(/'/g, '&#39;');
 
@@ -532,11 +560,11 @@ function openProductDetail(p) {
           const simg = (Array.isArray(s.imagenes) && s.imagenes[0]) ? s.imagenes[0] : '';
           const sData = JSON.stringify(s).replace(/'/g, '&#39;');
           return `<button class="pd-sim-card" data-product='${sData}' onclick="openProductDetail(JSON.parse(this.dataset.product))">
-            <div class="pd-sim-img">${simg ? `<img src="${simg}" alt="${s.nombre}" loading="lazy">` : `<span class="pd-sim-nophoto">Sin foto</span>`}</div>
+            <div class="pd-sim-img">${simg ? `<img src="${simg}" alt="${esc(s.nombre)}" loading="lazy">` : `<span class="pd-sim-nophoto">Sin foto</span>`}</div>
             <div class="pd-sim-info">
-              ${s.marca ? `<span class="pd-sim-brand">${s.marca}</span>` : ''}
-              <span class="pd-sim-name">${s.nombre}</span>
-              <span class="pd-sim-price">$${s.precio_venta}</span>
+              ${s.marca ? `<span class="pd-sim-brand">${esc(s.marca)}</span>` : ''}
+              <span class="pd-sim-name">${esc(s.nombre)}</span>
+              <span class="pd-sim-price">${money(s.precio_venta)}</span>
             </div>
           </button>`;
         }).join('')}
@@ -557,16 +585,16 @@ function openProductDetail(p) {
     <div class="pd-info">
       <div class="pd-info-scroll">
         <div class="pd-head">
-          ${p.marca ? `<div class="pd-brand">${p.marca}</div>` : ''}
-          <h2 class="pd-name">${p.nombre}</h2>
+          ${p.marca ? `<div class="pd-brand">${esc(p.marca)}</div>` : ''}
+          <h2 class="pd-name">${esc(p.nombre)}</h2>
           ${cats.length ? `<div class="pd-chips">${catChips}</div>` : ''}
         </div>
 
-        <div class="pd-price">$${p.precio_venta}</div>
+        <div class="pd-price">${money(p.precio_venta)}</div>
 
         <div class="pd-specs">
-          ${p.talla  ? `<div class="pd-spec"><span class="pd-spec-k">Talla</span><span class="pd-spec-v">${p.talla}</span></div>`  : ''}
-          ${p.estado ? `<div class="pd-spec"><span class="pd-spec-k">Estado</span><span class="pd-spec-v">${p.estado}</span></div>` : ''}
+          ${p.talla  ? `<div class="pd-spec"><span class="pd-spec-k">Talla</span><span class="pd-spec-v">${esc(p.talla)}</span></div>`  : ''}
+          ${p.estado ? `<div class="pd-spec"><span class="pd-spec-k">Estado</span><span class="pd-spec-v">${esc(p.estado)}</span></div>` : ''}
           <div class="pd-spec"><span class="pd-spec-k">Ubicación</span><span class="pd-spec-v">Reynosa, Tamps.</span></div>
         </div>
 
@@ -721,6 +749,7 @@ window.addEventListener('popstate', () => {
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
+  renderSkeletons();          // placeholders mientras carga la BD
   await waitForDB();
   buildDropdowns();
   buildShopFilters();

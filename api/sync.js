@@ -38,7 +38,10 @@ export default async function handler(req, res) {
       inventario: inv.map(normalize),
       categorias: cats.map(normalize),
       marcas:     brands.map(normalize),
-      usuarios:   users.map(normalize),
+      // Nunca exponer password ni sessionToken al público: este endpoint no
+      // tiene autenticación. La verificación de contraseñas vive en el backend
+      // (api/auth.js, api/change-password.js, api/session-check.js).
+      usuarios:   users.map(publicUser),
       activos:    activos.map(u => ({ username: u.username, lastActive: u.lastActive })),
     };
     _cacheTime = now;
@@ -56,3 +59,8 @@ export default async function handler(req, res) {
 }
 
 function normalize({ _id, ...rest }) { return rest; }
+
+// Solo campos no sensibles del usuario (sin password ni sessionToken)
+function publicUser(u) {
+  return { id: u.id, username: u.username, role: u.role };
+}
