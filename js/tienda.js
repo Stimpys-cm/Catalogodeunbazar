@@ -480,13 +480,24 @@ function wireShopFilters(scope) {
     pl.onclick = ()=>{ toggleShopSet(pl.dataset.key, pl.dataset.val); syncShopFilters(); renderGrid(); };
   });
   const range = scope.querySelector('.fprice-range');
-  if (range) range.oninput = ()=>{ shopFilters.maxPrecio = Number(range.value); syncShopFilters(); renderGrid(); };
+  if (range) {
+    updateRangeFill(range);
+    range.oninput = ()=>{ shopFilters.maxPrecio = Number(range.value); updateRangeFill(range); syncShopFilters(); renderGrid(); };
+  }
+}
+// Pinta el relleno azul del slider según su valor (0 → --pct)
+function updateRangeFill(range){
+  const min = Number(range.min) || 0;
+  const max = Number(range.max) || 100;
+  const val = Number(range.value);
+  const pct = max > min ? ((val - min) / (max - min)) * 100 : 100;
+  range.style.setProperty('--pct', pct + '%');
 }
 function toggleShopSet(key,val){ shopFilters[key].has(val) ? shopFilters[key].delete(val) : shopFilters[key].add(val); }
 function syncShopFilters(){
   document.querySelectorAll('.fchk').forEach(c=> c.checked = shopFilters[c.dataset.key].has(c.dataset.val));
   document.querySelectorAll('.fpill').forEach(p=> p.classList.toggle('active', shopFilters[p.dataset.key].has(p.dataset.val)));
-  document.querySelectorAll('.fprice-range').forEach(r=> r.value = shopFilters.maxPrecio);
+  document.querySelectorAll('.fprice-range').forEach(r=> { r.value = shopFilters.maxPrecio; updateRangeFill(r); });
   document.querySelectorAll('.fprice-val').forEach(v=> v.textContent = money(shopFilters.maxPrecio));
 }
 function clearShopFilters(){

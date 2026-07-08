@@ -86,7 +86,7 @@
       Vendedores
     </button>
 
-    <button class="sidebar-item tab-admin-only hidden" id="tab-drops" onclick="showTab('drops')">
+    <button class="sidebar-item" id="tab-drops" onclick="showTab('drops')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       Drops
     </button>
@@ -96,6 +96,11 @@
     <button class="sidebar-item" id="tab-cuenta" onclick="showTab('cuenta')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       Mi Cuenta
+    </button>
+
+    <button class="sidebar-item tab-admin-only hidden" id="tab-sistema" onclick="showTab('sistema')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M12 4v16"/><rect x="3" y="4" width="6" height="16" rx="1"/><path d="M16 8h5"/><path d="M16 12h5"/></svg>
+      Sistema
     </button>
   </nav>
 
@@ -340,29 +345,67 @@
     </div>
     <div class="vendedores-layout">
       <div class="form-card vendedor-form">
-        <div class="form-title">Nuevo Vendedor</div>
-        <p class="vendedor-hint">Los vendedores pueden ver inventario, agregar, editar y marcar ventas. No tienen acceso a ganancias, catálogo ni esta sección.</p>
+        <div class="form-title">Nuevo Perfil</div>
+        <p class="vendedor-hint">Crea un perfil de acceso al panel. Elige el rol según los permisos que necesite la persona.</p>
+
         <div class="fg">
-          <label>Usuario</label>
-          <input type="text" id="v_username" placeholder="Ej. juan_vendedor">
+          <label>Nombre</label>
+          <input type="text" id="v_username" placeholder="Ej. Juan" autocomplete="off" oninput="validarPerfilForm()">
+          <span class="fg-hint" id="v_username_hint">Solo letras, sin espacios ni símbolos</span>
         </div>
+
+        <div class="fg">
+          <label>Rol</label>
+          <div class="role-select" id="v_roleSelect">
+            <button type="button" class="role-opt active" data-role="vendedor" onclick="seleccionarRol('vendedor')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              Vendedor
+            </button>
+            <button type="button" class="role-opt" data-role="admin" onclick="seleccionarRol('admin')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Admin
+            </button>
+          </div>
+        </div>
+
         <div class="fg">
           <label>Contraseña</label>
-          <input type="password" id="v_password" placeholder="Mínimo 4 caracteres">
+          <div class="pw-wrap">
+            <input type="password" id="v_password" placeholder="Contraseña segura" autocomplete="new-password" oninput="validarPerfilForm()">
+            <button type="button" class="pw-eye" onclick="togglePw('v_password', this)" tabindex="-1" aria-label="Mostrar contraseña">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="pw-meter" id="v_pwMeter"><span></span></div>
+          <ul class="pw-reqs" id="v_pwReqs">
+            <li data-req="len"><span class="pw-dot"></span>Mínimo 8 caracteres</li>
+            <li data-req="upper"><span class="pw-dot"></span>Una mayúscula</li>
+            <li data-req="lower"><span class="pw-dot"></span>Una minúscula</li>
+            <li data-req="num"><span class="pw-dot"></span>Un número</li>
+            <li data-req="sym"><span class="pw-dot"></span>Un símbolo (!@#$...)</li>
+          </ul>
         </div>
+
         <div class="fg">
           <label>Confirmar Contraseña</label>
-          <input type="password" id="v_confirm" placeholder="Repetir contraseña">
+          <div class="pw-wrap">
+            <input type="password" id="v_confirm" placeholder="Repetir contraseña" autocomplete="new-password" oninput="validarPerfilForm()">
+            <button type="button" class="pw-eye" onclick="togglePw('v_confirm', this)" tabindex="-1" aria-label="Mostrar contraseña">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <span class="fg-hint" id="v_match_hint"></span>
         </div>
+
         <div class="vendedor-error" id="vendedorError"></div>
-        <button class="submit-btn" onclick="createVendedor()">CREAR VENDEDOR</button>
+        <button class="submit-btn" id="v_submitBtn" onclick="createVendedor()">CREAR PERFIL</button>
       </div>
       <div class="vendedor-list-wrap">
-        <div class="vendedor-list-header"><span>Vendedores activos</span></div>
-        <table class="vendedor-table">
-          <thead><tr><th>Usuario</th><th>Rol</th><th style="text-align:right">Acciones</th></tr></thead>
-          <tbody id="vendedoresTable"></tbody>
-        </table>
+        <div class="vendedor-list-header">
+          <span>Vendedores activos</span>
+          <span class="vendedor-count" id="vendedorCount"></span>
+        </div>
+        <div class="vendedor-grid" id="vendedoresGrid"></div>
       </div>
     </div>
   </div>
@@ -401,6 +444,38 @@
         </div>
       </div>
 
+      <!-- Datos de la cuenta -->
+      <div class="form-card">
+        <div class="form-title">Datos de la cuenta</div>
+        <div class="cuenta-info" id="cuentaInfo"></div>
+      </div>
+
+      <!-- Preferencias -->
+      <div class="form-card">
+        <div class="form-title">Preferencias</div>
+        <label class="pref-row">
+          <div class="pref-text">
+            <span class="pref-name">Confirmar antes de eliminar</span>
+            <span class="pref-desc">Pide confirmación al borrar una prenda</span>
+          </div>
+          <input type="checkbox" id="pref_confirm_del" class="pref-switch" onchange="onPrefChange('pref_confirm_del')">
+        </label>
+        <label class="pref-row">
+          <div class="pref-text">
+            <span class="pref-name">Sonido en acciones</span>
+            <span class="pref-desc">Reproduce un sonido al guardar o vender</span>
+          </div>
+          <input type="checkbox" id="pref_sonido" class="pref-switch" onchange="onPrefChange('pref_sonido')">
+        </label>
+        <label class="pref-row">
+          <div class="pref-text">
+            <span class="pref-name">Vista compacta</span>
+            <span class="pref-desc">Reduce el espaciado del inventario</span>
+          </div>
+          <input type="checkbox" id="pref_compacto" class="pref-switch" onchange="onPrefChange('pref_compacto')">
+        </label>
+      </div>
+
       <!-- Cambiar contraseña -->
       <div class="form-card">
         <div class="form-title">Cambiar Contraseña</div>
@@ -432,6 +507,55 @@
       </div>
     </div>
     <div id="dropsGrid" class="drops-grid"></div>
+  </div>
+
+  <!-- ── SISTEMA (solo admin) ── -->
+  <div id="view-sistema" class="hidden">
+    <div class="view-header">
+      <div>
+        <h1 class="view-title">Sistema</h1>
+        <p class="view-subtitle">Rendimiento, revisión de módulos y errores</p>
+      </div>
+      <button class="submit-btn sistema-refresh" onclick="renderSistema()" style="width:auto;padding:10px 22px">
+        Volver a revisar
+      </button>
+    </div>
+
+    <!-- Rendimiento -->
+    <div class="form-card">
+      <div class="form-title">Rendimiento</div>
+      <div class="sistema-metrics" id="sistemaMetrics"></div>
+    </div>
+
+    <!-- Revisión de módulos -->
+    <div class="form-card">
+      <div class="form-title">Revisión de módulos</div>
+      <div class="sistema-modules" id="sistemaModules"></div>
+    </div>
+
+    <!-- Verificar errores -->
+    <div class="form-card">
+      <div class="form-title">Verificación de errores</div>
+      <div class="sistema-errores" id="sistemaErrores"></div>
+    </div>
+
+    <!-- Registro de actividad (logs) -->
+    <div class="form-card">
+      <div class="form-title">Registro de actividad</div>
+      <div class="logs-filtros">
+        <select id="logFiltroUsuario" class="logs-select" onchange="renderLogs()"></select>
+        <select id="logFiltroAccion" class="logs-select" onchange="renderLogs()"></select>
+      </div>
+      <div class="logs-lista" id="logsLista"></div>
+      <div class="logs-paginacion" id="logsPaginacion"></div>
+    </div>
+
+    <!-- Respaldo de logs archivados -->
+    <div class="form-card">
+      <div class="form-title">Respaldo de actividad</div>
+      <p class="respaldo-desc">Cuando el registro llega a su límite, los registros más antiguos se archivan en tandas. Cada respaldo se puede descargar como archivo de texto. Los archivados se eliminan solos tras 15 días para optimizar la base de datos.</p>
+      <div class="respaldo-lista" id="respaldoLista"></div>
+    </div>
   </div>
 
 </div><!-- /admin-main -->

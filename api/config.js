@@ -4,7 +4,7 @@
 
 import { getDB } from './_db.js';
 
-const COLS = ['categorias', 'marcas', 'usuarios'];
+const COLS = ['categorias', 'marcas', 'usuarios', 'drops'];
 
 const DEFAULTS = {
   categorias: [
@@ -73,12 +73,24 @@ export default async function handler(req, res) {
                             ? u.password
                             : (old ? old.password : u.password),
             sessionToken: old ? old.sessionToken : u.sessionToken,
+            // Preservar avatar viejo si el cliente no lo envía
+            avatar:       (u.avatar !== undefined) ? u.avatar : (old ? old.avatar : null),
           };
         });
+
+        // Protección: el admin principal (id 1 o username 'admin') NUNCA se
+        // elimina. Si no viene en la lista, lo re-inyectamos desde la BD.
+        const hayPrincipal = toInsert.some(u => u.id === 1 || (u.username && u.username.toLowerCase() === 'admin'));
+        if (!hayPrincipal) {
+          const principal = prev.find(u => u.id === 1 || (u.username && u.username.toLowerCase() === 'admin'));
+          if (principal) toInsert.push(principal);
+        }
       }
 
       await col.deleteMany({});
       if (toInsert.length > 0) await col.insertMany(toInsert);
+      // Invalidar el caché del sync para que nadie reciba datos viejos
+      try { global._syncCache = null; global._syncCacheTime = 0; } catch (_) {}
       return res.status(200).json({ ok: true, count: toInsert.length });
     }
 

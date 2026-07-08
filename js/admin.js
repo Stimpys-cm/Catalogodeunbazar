@@ -21,13 +21,13 @@ function forceLogout() {
 let currentTab = 'inventario';
 
 // Pestañas válidas y las que requieren admin
-const TABS_VALIDAS   = ['inventario','registrar','catalogo','vendedores','drops','cuenta'];
-const TABS_SOLO_ADMIN = ['vendedores','catalogo','drops'];
+const TABS_VALIDAS   = ['inventario','registrar','catalogo','vendedores','drops','cuenta','sistema'];
+const TABS_SOLO_ADMIN = ['vendedores','catalogo','sistema'];
 
 function showTab(tab, fromHash) {
   if (TABS_SOLO_ADMIN.includes(tab) && !isAdmin()) return;
   currentTab = tab;
-  ['inventario','registrar','vendedores','catalogo','cuenta','drops'].forEach(t => {
+  ['inventario','registrar','vendedores','catalogo','cuenta','drops','sistema'].forEach(t => {
     const v = document.getElementById('view-'+t);
     const b = document.getElementById('tab-'+t);
     if (v) v.classList.toggle('hidden', t!==tab);
@@ -38,6 +38,7 @@ function showTab(tab, fromHash) {
   if (tab==='catalogo')    renderCatalogo();
   if (tab==='cuenta')      renderCuenta();
   if (tab==='drops')       renderDrops();
+  if (tab==='sistema')     renderSistema();
   if (tab==='registrar')   { setTimeout(() => { initPreviewListeners(); updatePreview(); populateDropSelect(); }, 0); }
   closeSidebar();
 
@@ -49,7 +50,7 @@ function showTab(tab, fromHash) {
   // Título de la pestaña en el navegador
   const titulos = {
     inventario:'Inventario', registrar:'Registrar', catalogo:'Catálogo',
-    vendedores:'Vendedores', drops:'Drops', cuenta:'Mi cuenta'
+    vendedores:'Vendedores', drops:'Drops', cuenta:'Mi cuenta', sistema:'Sistema'
   };
   document.title = `${titulos[tab] || 'Panel'} · Bazar En Linea`;
 }
@@ -82,12 +83,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (sidebarR) sidebarR.textContent = session.role === 'admin' ? 'Admin' : 'Vendedor';
   loadAvatarFromStorage();
 
-  ['tab-vendedores','tab-catalogo','tab-drops'].forEach(id => {
+  // Aplicar preferencia de vista compacta desde el inicio
+  if (typeof pref === 'function' && pref('compacto')) {
+    document.body.classList.add('vista-compacta');
+  }
+
+  ['tab-vendedores','tab-catalogo','tab-sistema'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('hidden', !isAdmin());
   });
 
   await waitForDB();   // espera el primer fetch a MongoDB
+
+  // Migración única: si el servidor no tiene drops pero hay drops locales
+  // viejos en este navegador, subirlos una sola vez.
+  try {
+    if (isAdmin() && getDrops().length === 0) {
+      const local = JSON.parse(localStorage.getItem('bazar_drops') || '[]');
+      if (Array.isArray(local) && local.length) {
+        saveDrops(local);
+        localStorage.removeItem('bazar_drops');
+        toast('Drops migrados al servidor');
+      }
+    }
+  } catch (_) {}
 
   renderAll();
   populateSelects();
@@ -134,7 +153,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 window.addEventListener('db:inventario', () => {
   if (currentTab === 'inventario') {
     renderAll();
-    toast('Inventario actualizado 🔄');
   }
 });
 
@@ -152,6 +170,7 @@ window.addEventListener('db:marcas', () => {
 
 window.addEventListener('db:usuarios', () => {
   if (currentTab === 'vendedores') renderVendedores();
+  loadAvatarFromStorage();   // por si cambió mi avatar desde otro dispositivo
 });
 
 // Activos se actualiza automáticamente con el poll de /api/sync
@@ -286,8 +305,8 @@ function renderInv() {
 
     const vendBtn = p.vendido
       ? `<button class="act-btn unsell" onclick="toggleVenta(${p.id},0)">Reactivar</button>`
-      : `<button class="act-btn sell"   onclick="toggleVenta(${p.id},1)">Vendido ✓</button>`;
-    const delBtn    = isAdmin() ? `<button class="act-btn del" onclick="delItem(${p.id})">🗑</button>` : '';
+      : `<button class="act-btn sell"   onclick="toggleVenta(${p.id},1)">Vendido ${IC_CHECK}</button>`;
+    const delBtn    = `<button class="act-btn del" onclick="delItem(${p.id})">${IC_TRASH}</button>`;
     const costoHtml = isAdmin() ? `<span class="item-costo">Costo: $${p.costo}</span>` : '';
 
     const cats    = Array.isArray(p.categorias) ? p.categorias : [];
@@ -310,7 +329,7 @@ function renderInv() {
         </div>
         <div class="item-actions">
           ${vendBtn}
-          <button class="act-btn edit" onclick="re_editar_prenda(${p.id})">✏️</button>
+          <button class="act-btn edit" onclick="re_editar_prenda(${p.id})">${IC_EDIT}</button>
           ${delBtn}
         </div>
       </div>
@@ -321,13 +340,103 @@ function renderInv() {
 // ─── ACCIONES ────────────────────────────────────────────────
 function toggleVenta(id, estado) {
   const db = getDB(), p = db.find(x => x.id===id);
-  if (p) { p.vendido = !!estado; saveDB(db); renderAll(); toast(estado ? 'Marcado como vendido ✓' : 'Reactivado'); }
+  if (p) {
+    p.vendido = !!estado; saveDB(db); renderAll();
+    registrarLog(estado ? 'vender' : 'reactivar', p.nombre || ('#'+id),
+                 estado ? `Precio venta: $${p.precio_venta ?? '-'}` : '');
+    playActionSound(estado ? 'sell' : 'ok');
+    toast(estado ? 'Marcado como vendido' : 'Reactivado');
+  }
 }
-function delItem(id) {
-  if (!isAdmin()) { toast('Sin permisos'); return; }
-  if (!confirm('¿Eliminar esta prenda?')) return;
-  saveDB(getDB().filter(x => x.id!==id));
+async function delItem(id) {
+  const admin = isAdmin();
+  const prenda = getDB().find(x => x.id===id);
+  // Respeta la preferencia "Confirmar antes de eliminar"
+  if (pref('confirm_del')) {
+    const segundos = admin ? 5 : 13;   // vendedor: cooldown mayor por seguridad
+    const ok = await modalEliminarPrenda(prenda, segundos);
+    if (!ok) return;
+  }
+
+  // Borrado en el servidor (valida el límite por hora para vendedores)
+  try {
+    const s = getSession();
+    const r = await api('/api/acciones?op=borrar-prenda', {
+      method: 'POST',
+      body: { id, usuario: s.username, rol: s.role }
+    });
+    if (!r.ok) { toast('No se pudo eliminar'); return; }
+  } catch (e) {
+    // El servidor devuelve 429 si se pasó del límite
+    toast(e.message || 'No se pudo eliminar');
+    playActionSound('error');
+    return;
+  }
+
+  // Reflejar en local sin re-enviar todo el inventario (ya se borró en el server)
+  _actualizarInventarioLocal(getDB().filter(x => x.id!==id));
+  registrarLog('eliminar', prenda?.nombre || ('#'+id), prenda?.marca ? `Marca: ${prenda.marca}` : '');
+  playActionSound('del');
   renderAll(); toast('Prenda eliminada');
+}
+
+// Modal de confirmación premium para eliminar prenda (cooldown configurable)
+function modalEliminarPrenda(prenda, segundos = 5) {
+  return new Promise(resolve => {
+    document.getElementById('modalEliminar')?.remove();
+
+    const nombre = prenda?.nombre ? escapeHtml(prenda.nombre) : 'esta prenda';
+    const ov = document.createElement('div');
+    ov.id = 'modalEliminar';
+    ov.className = 'del-modal-ov';
+    ov.innerHTML = `
+      <div class="del-modal">
+        <div class="del-modal-icon">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        </div>
+        <div class="del-modal-title">¿Eliminar prenda?</div>
+        <div class="del-modal-text">Estás por eliminar <strong>${nombre}</strong>. Esta acción no se puede deshacer.</div>
+        <div class="del-modal-actions">
+          <button class="del-modal-cancel" id="delCancel">Cancelar</button>
+          <button class="del-modal-confirm" id="delConfirm" disabled>
+            <span id="delConfirmTxt">Espera ${segundos}s</span>
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+    requestAnimationFrame(() => ov.classList.add('show'));
+
+    const btn    = ov.querySelector('#delConfirm');
+    const btnTxt = ov.querySelector('#delConfirmTxt');
+    const cancel = ov.querySelector('#delCancel');
+
+    let restante = segundos;
+    const tick = setInterval(() => {
+      restante--;
+      if (restante > 0) {
+        btnTxt.textContent = `Espera ${restante}s`;
+      } else {
+        clearInterval(tick);
+        btn.disabled = false;
+        btn.classList.add('ready');
+        btnTxt.textContent = 'Eliminar';
+      }
+    }, 1000);
+
+    const cerrar = (valor) => {
+      clearInterval(tick);
+      ov.classList.remove('show');
+      setTimeout(() => ov.remove(), 200);
+      resolve(valor);
+    };
+
+    btn.onclick    = () => { if (!btn.disabled) cerrar(true); };
+    cancel.onclick = () => cerrar(false);
+    ov.onclick     = (e) => { if (e.target === ov) cerrar(false); };
+    document.addEventListener('keydown', function esc(e){
+      if (e.key === 'Escape') { document.removeEventListener('keydown', esc); cerrar(false); }
+    });
+  });
 }
 function editItem(id) {
   const p = getDB().find(x => x.id===id); if (!p) return;
@@ -433,7 +542,7 @@ function reHandleFiles(files) {
         const url = await uploadToCloud(base64);
         reEditImgs[idx] = url;          // reemplaza por URL de Cloudinary
         reRenderPreviews();
-        toast('Foto subida ✓');
+        toast('Foto subida');
       } catch (err) {
         toast('Error subiendo foto: ' + err.message);
         reEditImgs.splice(idx, 1);
@@ -450,7 +559,7 @@ function reRenderPreviews() {
   strip.innerHTML = reEditImgs.map((src, i) => `
     <div class="preview-thumb">
       <img src="${src}" alt="">
-      <button onclick="reRemovePreview(${i})">✕</button>
+      <button onclick="reRemovePreview(${i})">${IC_X}</button>
     </div>`).join('');
 }
 
@@ -478,6 +587,9 @@ function guardarReEdicion() {
   const p  = db.find(x => x.id === id);
   if (!p) { toast('No se encontró la prenda'); return; }
 
+  // Guardar estado anterior para comparar
+  const antes = { nombre:p.nombre, precio_venta:p.precio_venta, costo:p.costo, talla:p.talla, marca:p.marca, estado:p.estado, categorias:p.categorias, imagenes:p.imagenes };
+
   // Actualizar SOLO esta prenda — sin crear una nueva
   p.nombre       = nombre;
   p.marca        = document.getElementById('re_marca').value;
@@ -490,9 +602,11 @@ function guardarReEdicion() {
   p.imagenes     = [...reEditImgs];
 
   saveDB(db);
+  registrarLog('editar', nombre, diffPrenda(antes, p));
+  playActionSound('ok');
   cerrarReEdicion();
   renderAll();
-  toast('Cambios guardados ✓');
+  toast('Cambios guardados');
 }
 
 // ─── FORM ────────────────────────────────────────────────────
@@ -530,7 +644,7 @@ function handleFiles(files) {
         // Reemplazar base64 con URL de Cloudinary
         newImages[tempIdx] = url;
         renderPreviews();
-        toast('Foto subida ✓');
+        toast('Foto subida');
       } catch (err) {
         toast('Error subiendo foto: ' + err.message);
         newImages.splice(tempIdx, 1);
@@ -545,7 +659,7 @@ function renderPreviews() {
   document.getElementById('previewStrip').innerHTML = combined.map((src, i) => `
     <div class="preview-thumb">
       <img src="${src}" alt="">
-      <button onclick="removePreview(${i})">✕</button>
+      <button onclick="removePreview(${i})">${IC_X}</button>
     </div>`).join('');
   updatePreview();
 }
@@ -571,6 +685,50 @@ function clearForm() {
   if (useDrop) useDrop.checked = false;
   toggleDropField();
 }
+// Arma un texto con los datos clave de una prenda (para logs de "subir")
+function detallePrenda({ precio, costo, talla, categorias }) {
+  const cats = Array.isArray(categorias)
+    ? categorias.map(c => (typeof c === 'object' ? c.nombre : c)).filter(Boolean).join(', ')
+    : '';
+  const partes = [];
+  if (precio != null && !isNaN(precio)) partes.push(`Precio: $${precio}`);
+  if (costo  != null && !isNaN(costo))  partes.push(`Costo: $${costo}`);
+  if (talla)  partes.push(`Talla: ${talla}`);
+  if (cats)   partes.push(`Cat: ${cats}`);
+  return partes.join(' · ');
+}
+
+// Compara la prenda anterior con los valores nuevos y devuelve solo lo que cambió
+function diffPrenda(anterior, nuevo) {
+  const catsTxt = arr => (Array.isArray(arr)
+    ? arr.map(c => (typeof c === 'object' ? c.nombre : c)).filter(Boolean).join(', ')
+    : '');
+  const campos = [
+    ['Nombre', anterior.nombre,       nuevo.nombre],
+    ['Precio', anterior.precio_venta, nuevo.precio_venta, true],
+    ['Costo',  anterior.costo,        nuevo.costo, true],
+    ['Talla',  anterior.talla,        nuevo.talla],
+    ['Marca',  anterior.marca,        nuevo.marca],
+    ['Estado', anterior.estado,       nuevo.estado],
+    ['Cat',    catsTxt(anterior.categorias), catsTxt(nuevo.categorias)],
+  ];
+  const cambios = [];
+  for (const [label, viejo, nvo, money] of campos) {
+    const a = viejo == null ? '' : String(viejo);
+    const b = nvo   == null ? '' : String(nvo);
+    if (a !== b) {
+      const fa = money ? `$${a || 0}` : (a || '—');
+      const fb = money ? `$${b || 0}` : (b || '—');
+      cambios.push(`${label}: ${fa} → ${fb}`);
+    }
+  }
+  // Detectar cambio de imágenes (cantidad)
+  const nA = Array.isArray(anterior.imagenes) ? anterior.imagenes.length : 0;
+  const nB = Array.isArray(nuevo.imagenes)    ? nuevo.imagenes.length    : 0;
+  if (nB && nA !== nB) cambios.push(`Fotos: ${nA} → ${nB}`);
+  return cambios.length ? cambios.join(' · ') : 'Sin cambios de datos';
+}
+
 function submitForm() {
   const nombre = document.getElementById('f_nombre').value.trim();
   const precio = parseFloat(document.getElementById('f_precio').value);
@@ -587,15 +745,20 @@ function submitForm() {
 
   if (editId) {
     const p = db.find(x => x.id===editId);
+    let cambios = 'Sin cambios de datos';
     if (p) {
+      const antes = { nombre:p.nombre, precio_venta:p.precio_venta, costo:p.costo, talla:p.talla, marca:p.marca, estado:p.estado, categorias:p.categorias, imagenes:p.imagenes };
       p.nombre = nombre; p.marca = marca; p.categorias = categorias;
       p.talla  = document.getElementById('f_talla').value.trim();
       p.precio_venta = precio; p.costo = costo;
       p.estado = document.getElementById('f_estado').value.trim();
       p.descripcion = (document.getElementById('f_descripcion')?.value||'').trim();
       if (combined.length) p.imagenes = combined;
+      cambios = diffPrenda(antes, p);
     }
-    toast('Prenda actualizada ✓');
+    registrarLog('editar', nombre, cambios);
+    playActionSound('ok');
+    toast('Prenda actualizada');
   } else {
     const useDrop = document.getElementById('f_useDrop')?.checked;
     const dropId  = document.getElementById('f_dropId')?.value;
@@ -608,10 +771,16 @@ function submitForm() {
         const dropFecha  = document.getElementById('f_dropFecha')?.value;
         if (!dropNombre) { toast('Escribe el nombre del drop'); return; }
         if (!dropFecha)  { toast('Elige la fecha del drop');    return; }
+        if (new Date(dropFecha).getTime() <= Date.now()) {
+          toast('La fecha del drop debe ser futura');
+          return;
+        }
         dropIdFinal = 'drop_' + Date.now();
         const drops = getDrops();
         drops.push({ id: dropIdFinal, nombre: dropNombre, fecha: dropFecha, prendas: [], publicado: false, creadoEn: new Date().toISOString() });
         saveDrops(drops);
+        registrarLog('drop_crear', dropNombre, `Fecha: ${dropFecha}`);
+        playActionSound('ok');
       } else {
         dropIdFinal = dropId;
       }
@@ -629,13 +798,18 @@ function submitForm() {
     };
     db.unshift(nuevaPrenda);
 
+    const talla = document.getElementById('f_talla').value.trim();
     if (dropIdFinal) {
       const drops = getDrops();
       const drop  = drops.find(d => d.id === dropIdFinal);
       if (drop) { drop.prendas.push(nuevaPrenda.id); saveDrops(drops); }
-      toast('Prenda guardada en el drop ✓');
+      registrarLog('subir', nombre, `${detallePrenda({ precio, costo, talla, categorias })} · En drop "${drop ? drop.nombre : ''}"`);
+      playActionSound('ok');
+      toast('Prenda guardada en el drop');
     } else {
-      toast('Prenda publicada ✓');
+      registrarLog('subir', nombre, `Marca: ${marca} · ${detallePrenda({ precio, costo, talla, categorias })}`);
+      playActionSound('ok');
+      toast('Prenda publicada');
     }
   }
   saveDB(db); clearForm(); showTab('inventario');
@@ -644,47 +818,285 @@ function submitForm() {
 // ─── VENDEDORES ──────────────────────────────────────────────
 function renderVendedores() {
   if (!isAdmin()) return;
-  const users = getUsers().filter(u => u.role==='vendedor');
-  const tbody = document.getElementById('vendedoresTable');
-  tbody.innerHTML = !users.length
-    ? `<tr><td colspan="3" style="text-align:center;padding:2rem;color:var(--muted);font-size:12px;letter-spacing:.1em;text-transform:uppercase">No hay vendedores creados</td></tr>`
-    : users.map(u => `<tr>
-        <td>${u.username}</td>
-        <td><span class="role-badge vendedor">Vendedor</span></td>
-        <td><div style="display:flex;gap:6px;justify-content:flex-end">
-          <button class="act-btn edit" onclick="resetPassword(${u.id})" title="Cambiar contraseña">🔑</button>
-          <button class="act-btn del"  onclick="deleteVendedor(${u.id})" title="Eliminar">🗑</button>
-        </div></td>
-      </tr>`).join('');
+  // Ajustar el selector de rol: solo el admin principal puede crear admins
+  const btnAdminRol = document.querySelector('#v_roleSelect .role-opt[data-role="admin"]');
+  if (btnAdminRol) {
+    if (soyAdminPrincipal()) {
+      btnAdminRol.style.display = '';
+    } else {
+      btnAdminRol.style.display = 'none';
+      // Forzar que quede seleccionado "vendedor"
+      if (_rolNuevoPerfil === 'admin') seleccionarRol('vendedor');
+    }
+  }
+  // Mostrar todos los perfiles (admins y vendedores). Admins primero.
+  const users = getUsers().slice().sort((a, b) => {
+    const rank = u => (esAdminPrincipal(u) ? 0 : u.role === 'admin' ? 1 : 2);
+    return rank(a) - rank(b);
+  });
+  const grid = document.getElementById('vendedoresGrid');
+  const countEl = document.getElementById('vendedorCount');
+  if (!grid) return;
+
+  if (countEl) countEl.textContent = users.length ? `${users.length}` : '';
+
+  // Usuarios en línea (para el punto verde)
+  const activos = (typeof _activos !== 'undefined' && Array.isArray(_activos)) ? _activos : [];
+  const onlineSet = new Set(activos.map(a => a.username));
+
+  if (!users.length) {
+    grid.innerHTML = `<div class="vendedor-empty">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+      <span>Aún no hay perfiles</span>
+      <small>Crea el primero con el formulario</small>
+    </div>`;
+    return;
+  }
+
+  const IC_SHIELD_SM = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+  const IC_BAG_SM = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+
+  grid.innerHTML = users.map((u, i) => {
+    const online = onlineSet.has(u.username);
+    const inicial = (u.username || '?').charAt(0).toUpperCase();
+    const avatar = u.avatar
+      ? `<img src="${u.avatar}" alt="${escapeHtml(u.username)}" class="vend-avatar-img">`
+      : `<div class="vend-avatar-ph">${escapeHtml(inicial)}</div>`;
+    const esAdmin = u.role === 'admin';
+    const principal = esAdminPrincipal(u);
+    const rolIco = esAdmin ? IC_SHIELD_SM : IC_BAG_SM;
+    const rolTxt = principal ? 'Admin principal' : (esAdmin ? 'Admin' : 'Vendedor');
+
+    // Acciones según permisos
+    const s = getSession();
+    const esYo = s && (u.id === s.id || u.username === s.username);
+    let acciones;
+    if (principal) {
+      // Admin principal: siempre protegido (candado)
+      acciones = `<span class="vend-locked" title="Cuenta protegida">
+           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+         </span>`;
+    } else if (esYo) {
+      // Tu propio perfil: puedes cambiar tu contraseña pero no eliminarte
+      acciones = `<button class="vend-act key" onclick="resetPassword(${u.id})" title="Cambiar contraseña">${IC_KEY}</button>`;
+    } else if (esAdmin && !soyAdminPrincipal()) {
+      // Otro admin, pero tú no eres el principal: solo cambiar contraseña, sin eliminar
+      acciones = `<button class="vend-act key" onclick="resetPassword(${u.id})" title="Cambiar contraseña">${IC_KEY}</button>`;
+    } else {
+      // Caso normal: cambiar contraseña y eliminar
+      acciones = `<button class="vend-act key" onclick="resetPassword(${u.id})" title="Cambiar contraseña">${IC_KEY}</button>
+         <button class="vend-act del" onclick="deleteVendedor(${u.id})" title="Eliminar">${IC_TRASH}</button>`;
+    }
+
+    return `<div class="vend-card ${esAdmin ? 'is-admin' : ''} ${principal ? 'is-principal' : ''}" style="animation-delay:${Math.min(i*40,300)}ms">
+      <div class="vend-avatar ${online ? 'online' : ''}">
+        ${avatar}
+        ${online ? '<span class="vend-online-dot" title="En línea"></span>' : ''}
+      </div>
+      <div class="vend-info">
+        <div class="vend-name">${escapeHtml(u.username)}</div>
+        <div class="vend-role ${esAdmin ? 'role-admin' : ''}">
+          ${rolIco}
+          ${rolTxt}${online ? ' · <span class="vend-online-txt">en línea</span>' : ''}
+        </div>
+      </div>
+      <div class="vend-actions">${acciones}</div>
+    </div>`;
+  }).join('');
 }
-function createVendedor() {
-  const username = document.getElementById('v_username').value.trim();
-  const password = document.getElementById('v_password').value;
-  const confirm  = document.getElementById('v_confirm').value;
-  const errEl    = document.getElementById('vendedorError');
+// Rol seleccionado para el nuevo perfil
+let _rolNuevoPerfil = 'vendedor';
+function seleccionarRol(rol) {
+  _rolNuevoPerfil = rol;
+  document.querySelectorAll('#v_roleSelect .role-opt').forEach(b => {
+    b.classList.toggle('active', b.dataset.role === rol);
+  });
+}
+
+// Mostrar/ocultar contraseña
+function togglePw(inputId, btn) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  const ver = el.type === 'password';
+  el.type = ver ? 'text' : 'password';
+  btn.classList.toggle('showing', ver);
+}
+
+// Reglas de contraseña
+function checkPassword(pw) {
+  return {
+    len:   pw.length >= 8,
+    upper: /[A-Z]/.test(pw),
+    lower: /[a-z]/.test(pw),
+    num:   /[0-9]/.test(pw),
+    sym:   /[^A-Za-z0-9]/.test(pw),
+  };
+}
+// Nombre: solo letras (incluye acentos), 2-20 caracteres, sin espacios
+function nombreValido(n) {
+  return /^[A-Za-zÁÉÍÓÚáéíóúÑñ]{2,20}$/.test(n);
+}
+
+// Validación en vivo del formulario de nuevo perfil
+function validarPerfilForm() {
+  const username = document.getElementById('v_username')?.value.trim() || '';
+  const pw       = document.getElementById('v_password')?.value || '';
+  const conf     = document.getElementById('v_confirm')?.value || '';
+
+  // Nombre
+  const uHint = document.getElementById('v_username_hint');
+  if (uHint) {
+    if (!username) { uHint.textContent = 'Solo letras, sin espacios ni símbolos'; uHint.className = 'fg-hint'; }
+    else if (nombreValido(username)) { uHint.textContent = 'Nombre válido'; uHint.className = 'fg-hint ok'; }
+    else { uHint.textContent = 'Solo letras (2-20), sin espacios ni números'; uHint.className = 'fg-hint bad'; }
+  }
+
+  // Requisitos de contraseña
+  const reqs = checkPassword(pw);
+  const cumplidos = Object.values(reqs).filter(Boolean).length;
+  document.querySelectorAll('#v_pwReqs li').forEach(li => {
+    li.classList.toggle('ok', !!reqs[li.dataset.req]);
+  });
+  // Medidor de fuerza
+  const meter = document.querySelector('#v_pwMeter span');
+  if (meter) {
+    const pct = (cumplidos / 5) * 100;
+    meter.style.width = pct + '%';
+    meter.className = cumplidos <= 2 ? 'weak' : cumplidos <= 4 ? 'medium' : 'strong';
+  }
+
+  // Coincidencia
+  const mHint = document.getElementById('v_match_hint');
+  if (mHint) {
+    if (!conf) { mHint.textContent = ''; mHint.className = 'fg-hint'; }
+    else if (pw === conf) { mHint.textContent = 'Las contraseñas coinciden'; mHint.className = 'fg-hint ok'; }
+    else { mHint.textContent = 'No coinciden'; mHint.className = 'fg-hint bad'; }
+  }
+  return { username, pw, conf, reqs, cumplidos };
+}
+
+async function createVendedor() {
+  const btn   = document.getElementById('v_submitBtn');
+  const errEl = document.getElementById('vendedorError');
   errEl.textContent = '';
-  if (!username)              { errEl.textContent = 'El usuario es obligatorio'; return; }
-  if (password.length < 4)    { errEl.textContent = 'Mínimo 4 caracteres'; return; }
-  if (password !== confirm)   { errEl.textContent = 'Las contraseñas no coinciden'; return; }
-  const users = getUsers();
-  if (users.find(u => u.username===username)) { errEl.textContent = 'Ese usuario ya existe'; return; }
-  users.push({ id: nextUserId(), username, password, role: 'vendedor' });
-  saveUsers(users);
+  const { username, pw, conf, cumplidos } = validarPerfilForm();
+
+  // Validaciones (frontend)
+  if (!username)                { errEl.textContent = 'El nombre es obligatorio'; return; }
+  if (!nombreValido(username))  { errEl.textContent = 'El nombre solo puede tener letras (2-20), sin espacios ni números'; return; }
+  if (cumplidos < 5)            { errEl.textContent = 'La contraseña no cumple todos los requisitos de seguridad'; return; }
+  if (pw !== conf)              { errEl.textContent = 'Las contraseñas no coinciden'; return; }
+  if (getUsers().find(u => u.username.toLowerCase() === username.toLowerCase())) {
+    errEl.textContent = 'Ese nombre ya existe'; return;
+  }
+
+  const rol = _rolNuevoPerfil === 'admin' ? 'admin' : 'vendedor';
+  if (rol === 'admin' && !soyAdminPrincipal()) {
+    errEl.textContent = 'Solo el admin principal puede crear otros administradores';
+    playActionSound('error'); return;
+  }
+
+  // Crear en el servidor (valida sesión y reglas de rol de forma segura)
+  const s = getSession();
+  try {
+    await api('/api/acciones?op=gestionar-usuario', {
+      method: 'POST',
+      body: { accion: 'crear', token: s.sessionToken, actor: s.username, username, password: pw, rol }
+    });
+  } catch (e) {
+    errEl.textContent = e.message || 'No se pudo crear el perfil';
+    playActionSound('error');
+    return;
+  }
+
+  registrarLog('vendedor_crear', username, `Rol: ${rol}`);
+  playActionSound('ok');
+
+  // Limpiar formulario
   ['v_username','v_password','v_confirm'].forEach(id => document.getElementById(id).value = '');
-  toast(`Vendedor "${username}" creado ✓`);
+  seleccionarRol('vendedor');
+  validarPerfilForm();
+  toast(`Perfil "${username}" creado (${rol})`);
+  pollAhora(600);   // refrescar la lista pronto
   renderVendedores();
+
+  // Cooldown de 15s antes de poder crear otro
+  if (btn) {
+    let restante = 15;
+    btn.disabled = true;
+    btn.classList.add('cooldown');
+    const txtOrig = 'CREAR PERFIL';
+    btn.textContent = `Espera ${restante}s`;
+    const tick = setInterval(() => {
+      restante--;
+      if (restante > 0) {
+        btn.textContent = `Espera ${restante}s`;
+      } else {
+        clearInterval(tick);
+        btn.disabled = false;
+        btn.classList.remove('cooldown');
+        btn.textContent = txtOrig;
+      }
+    }, 1000);
+  }
 }
-function deleteVendedor(id) {
-  if (!confirm('¿Eliminar este vendedor?')) return;
-  saveUsers(getUsers().filter(u => u.id!==id));
-  renderVendedores(); toast('Vendedor eliminado');
+// Identifica la cuenta principal de admin (protegida)
+function esAdminPrincipal(u) {
+  if (!u) return false;
+  return u.id === 1 || (u.username && u.username.toLowerCase() === 'admin');
 }
-function resetPassword(id) {
-  const newPass = prompt('Nueva contraseña:');
-  if (!newPass || newPass.length < 4) { toast('Contraseña inválida'); return; }
+// ¿El usuario logueado es el admin principal?
+function soyAdminPrincipal() {
+  const s = getSession();
+  return esAdminPrincipal(s);
+}
+
+async function deleteVendedor(id) {
+  const u = getUsers().find(x => x.id===id);
+  const s = getSession();
+  if (esAdminPrincipal(u)) { toast('No se puede eliminar la cuenta principal de admin'); playActionSound('error'); return; }
+  if (s && u && (u.id === s.id || u.username === s.username)) {
+    toast('No puedes eliminar tu propio perfil'); playActionSound('error'); return;
+  }
+  if (u && u.role === 'admin' && !soyAdminPrincipal()) {
+    toast('Solo el admin principal puede eliminar a otros administradores'); playActionSound('error'); return;
+  }
+  if (!confirmarEliminar('¿Eliminar este perfil?')) return;
+
+  try {
+    await api('/api/acciones?op=gestionar-usuario', {
+      method: 'POST',
+      body: { accion: 'eliminar', token: s.sessionToken, actor: s.username, id }
+    });
+  } catch (e) {
+    toast(e.message || 'No se pudo eliminar'); playActionSound('error'); return;
+  }
+  registrarLog('vendedor_eliminar', u?.username || ('#'+id));
+  playActionSound('del');
+  pollAhora(600);
+  renderVendedores(); toast('Perfil eliminado');
+}
+async function resetPassword(id) {
   const users = getUsers();
   const u = users.find(x => x.id===id);
-  if (u) { u.password = newPass; saveUsers(users); toast('Contraseña actualizada ✓'); }
+  if (esAdminPrincipal(u)) {
+    toast('La contraseña del admin principal solo se cambia desde Mi Cuenta');
+    playActionSound('error'); return;
+  }
+  const newPass = prompt('Nueva contraseña:');
+  if (!newPass || newPass.length < 4) { toast('Contraseña inválida'); return; }
+  const s = getSession();
+  try {
+    await api('/api/acciones?op=gestionar-usuario', {
+      method: 'POST',
+      body: { accion: 'password', token: s.sessionToken, actor: s.username, id, password: newPass }
+    });
+  } catch (e) {
+    toast(e.message || 'No se pudo cambiar la contraseña'); playActionSound('error'); return;
+  }
+  registrarLog('vendedor_password', u.username);
+  playActionSound('ok');
+  toast('Contraseña actualizada');
 }
 
 // ─── CATÁLOGO ────────────────────────────────────────────────
@@ -701,8 +1113,8 @@ function renderCatList() {
       <div class="cat-item">
         <span>${c.nombre}</span>
         <div style="display:flex;gap:6px">
-          <button class="act-btn edit" onclick="editCat(${c.id},'${c.nombre}')">✏️</button>
-          <button class="act-btn del"  onclick="deleteCat(${c.id})">🗑</button>
+          <button class="act-btn edit" onclick="editCat(${c.id},'${c.nombre}')">${IC_EDIT}</button>
+          <button class="act-btn del"  onclick="deleteCat(${c.id})">${IC_TRASH}</button>
         </div>
       </div>`).join('');
 }
@@ -714,18 +1126,23 @@ function addCat() {
   if (cats.find(c => c.nombre.toLowerCase()===name.toLowerCase())) { toast('Ya existe esa categoría'); return; }
   cats.push({ id: nextCatId(), nombre: name });
   saveCats(cats); input.value = '';
+  registrarLog('catalogo_crear', name, 'Categoría');
+  playActionSound('ok');
   renderCatList(); populateSelects();
-  toast(`Categoría "${name}" creada ✓`);
+  toast(`Categoría "${name}" creada`);
 }
 function editCat(id, current) {
   const newName = prompt('Nuevo nombre:', current);
   if (!newName || !newName.trim()) return;
   const cats = getCats(), c = cats.find(x => x.id===id);
-  if (c) { c.nombre = newName.trim(); saveCats(cats); renderCatList(); populateSelects(); toast('Categoría actualizada ✓'); }
+  if (c) { c.nombre = newName.trim(); saveCats(cats); registrarLog('catalogo_editar', newName.trim(), `Categoría (antes: ${current})`); playActionSound('ok'); renderCatList(); populateSelects(); toast('Categoría actualizada'); }
 }
 function deleteCat(id) {
-  if (!confirm('¿Eliminar esta categoría?')) return;
+  const cat = getCats().find(c => c.id===id);
+  if (!confirmarEliminar('¿Eliminar esta categoría?')) return;
   saveCats(getCats().filter(c => c.id!==id));
+  registrarLog('catalogo_eliminar', cat?.nombre || ('#'+id), 'Categoría');
+  playActionSound('del');
   renderCatList(); populateSelects(); toast('Categoría eliminada');
 }
 function renderBrandList() {
@@ -736,8 +1153,8 @@ function renderBrandList() {
       <div class="cat-item">
         <span>${b.nombre}</span>
         <div style="display:flex;gap:6px">
-          <button class="act-btn edit" onclick="editBrand(${b.id},'${b.nombre}')">✏️</button>
-          <button class="act-btn del"  onclick="deleteBrand(${b.id})">🗑</button>
+          <button class="act-btn edit" onclick="editBrand(${b.id},'${b.nombre}')">${IC_EDIT}</button>
+          <button class="act-btn del"  onclick="deleteBrand(${b.id})">${IC_TRASH}</button>
         </div>
       </div>`).join('');
 }
@@ -749,18 +1166,23 @@ function addBrand() {
   if (brands.find(b => b.nombre.toLowerCase()===name.toLowerCase())) { toast('Ya existe esa marca'); return; }
   brands.push({ id: nextBrandId(), nombre: name });
   saveBrands(brands); input.value = '';
+  registrarLog('catalogo_crear', name, 'Marca');
+  playActionSound('ok');
   renderBrandList(); populateSelects();
-  toast(`Marca "${name}" creada ✓`);
+  toast(`Marca "${name}" creada`);
 }
 function editBrand(id, current) {
   const newName = prompt('Nuevo nombre:', current);
   if (!newName || !newName.trim()) return;
   const brands = getBrands(), b = brands.find(x => x.id===id);
-  if (b) { b.nombre = newName.trim(); saveBrands(brands); renderBrandList(); populateSelects(); toast('Marca actualizada ✓'); }
+  if (b) { b.nombre = newName.trim(); saveBrands(brands); registrarLog('catalogo_editar', newName.trim(), `Marca (antes: ${current})`); playActionSound('ok'); renderBrandList(); populateSelects(); toast('Marca actualizada'); }
 }
 function deleteBrand(id) {
-  if (!confirm('¿Eliminar esta marca?')) return;
+  const br = getBrands().find(b => b.id===id);
+  if (!confirmarEliminar('¿Eliminar esta marca?')) return;
   saveBrands(getBrands().filter(b => b.id!==id));
+  registrarLog('catalogo_eliminar', br?.nombre || ('#'+id), 'Marca');
+  playActionSound('del');
   renderBrandList(); populateSelects(); toast('Marca eliminada');
 }
 
@@ -791,19 +1213,27 @@ function closeSidebar() {
   document.getElementById('sidebarOverlay')?.classList.remove('active');
 }
 
-// ─── AVATAR (Cloudinary + localStorage) ──────────────────────
-const AVATAR_KEY = 'bazar_avatar_' + (getSession()?.username || 'user');
+// ─── AVATAR (Cloudinary + servidor) ──────────────────────────
+// La URL del avatar se guarda en el registro del usuario (colección
+// 'usuarios' en el servidor), así se ve igual desde cualquier dispositivo.
 
 function loadAvatarFromStorage() {
-  const url = localStorage.getItem(AVATAR_KEY);
+  const s = getSession();
+  if (!s) { setAvatarUI(null); return; }
+  // Buscar el usuario en el caché del servidor
+  const u = (typeof getUsers === 'function' ? getUsers() : []).find(x => x.username === s.username);
+  let url = u?.avatar || null;
+  // Migración: si no hay en servidor pero sí en localStorage viejo, usarlo y subirlo
+  if (!url) {
+    const viejo = localStorage.getItem('bazar_avatar_' + s.username);
+    if (viejo) { url = viejo; guardarAvatarEnServidor(viejo); localStorage.removeItem('bazar_avatar_' + s.username); }
+  }
   setAvatarUI(url);
 }
 
 function setAvatarUI(url) {
-  // Sidebar
   const sbImg = document.getElementById('sidebarAvatar');
   const sbPh  = document.getElementById('sidebarAvatarPlaceholder');
-  // Cuenta
   const ctImg = document.getElementById('cuentaAvatarImg');
   const ctPh  = document.getElementById('cuentaAvatarPlaceholder');
 
@@ -820,6 +1250,17 @@ function setAvatarUI(url) {
   }
 }
 
+// Guarda la URL del avatar en el registro del usuario (servidor)
+function guardarAvatarEnServidor(url) {
+  const s = getSession();
+  if (!s) return;
+  const users = getUsers();
+  const u = users.find(x => x.username === s.username);
+  if (!u) return;
+  u.avatar = url;
+  saveUsers(users);   // hace PUT a /api/config (col: usuarios)
+}
+
 async function handleAvatarUpload(file) {
   if (!file) return;
   toast('Subiendo foto de perfil...');
@@ -827,9 +1268,9 @@ async function handleAvatarUpload(file) {
   r.onload = async e => {
     try {
       const url = await uploadToCloud(e.target.result);
-      localStorage.setItem(AVATAR_KEY, url);
+      guardarAvatarEnServidor(url);
       setAvatarUI(url);
-      toast('Foto de perfil actualizada ✓');
+      toast('Foto de perfil actualizada');
     } catch (err) {
       toast('Error subiendo foto: ' + err.message);
     }
@@ -838,40 +1279,536 @@ async function handleAvatarUpload(file) {
 }
 
 // ─── MI CUENTA ───────────────────────────────────────────────
+// Iconos SVG reutilizables (sin emojis)
+const IC_CHECK = '<svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const IC_CROSS = '<svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+const IC_SHIELD = '<svg class="lucide" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+const IC_BAG = '<svg class="lucide" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+// Iconos de acción (botones) — sin emojis
+const IC_TRASH = '<svg class="lucide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+const IC_EDIT = '<svg class="lucide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>';
+const IC_KEY = '<svg class="lucide" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>';
+const IC_X = '<svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+const IC_ROCKET = '<svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>';
+const IC_CALENDAR = '<svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+const IC_CLOCK = '<svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+const IC_FLAME = '<svg class="lucide" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>';
+
 function renderCuenta() {
   const s = getSession();
+  const admin = s.role === 'admin';
 
-  // Nombre y role
+  // Nombre y role (badge con icono SVG, sin emoji)
   const uEl = document.getElementById('cuentaUsername');
   const rEl = document.getElementById('cuentaRoleBadge');
   if (uEl) uEl.textContent = s.username;
-  if (rEl) rEl.textContent = s.role === 'admin' ? '👑 Admin' : '🛍 Vendedor';
+  if (rEl) rEl.innerHTML = `${admin ? IC_SHIELD : IC_BAG}<span>${admin ? 'Admin' : 'Vendedor'}</span>`;
 
-  // Permisos
+  // Permisos por rol
+  // Comunes a ambos roles:
+  const comunes = [
+    ['Ver inventario', true],
+    ['Agregar prendas', true],
+    ['Editar prendas', true],
+    ['Marcar vendido', true],
+    ['Gestionar drops', true],
+  ];
+  // Exclusivos de admin (para el vendedor se muestran como no disponibles):
+  const soloAdmin = [
+    ['Ver ganancias', admin],
+    ['Gestionar catálogo', admin],
+    ['Gestionar vendedores', admin],
+    ['Eliminar prendas', admin],
+  ];
   const perms = document.getElementById('cuentaPermisos');
   if (perms) {
-    const adminPerms = s.role === 'admin' ? `
-      <span class="perm-ok">✓ Ver ganancias</span>
-      <span class="perm-ok">✓ Gestionar catálogo</span>
-      <span class="perm-ok">✓ Gestionar vendedores</span>
-      <span class="perm-ok">✓ Eliminar prendas</span>
-    ` : `
-      <span class="perm-no">✗ Ver ganancias</span>
-      <span class="perm-no">✗ Gestionar catálogo</span>
-      <span class="perm-no">✗ Gestionar vendedores</span>
-      <span class="perm-no">✗ Eliminar prendas</span>
-    `;
-    perms.innerHTML = `
-      <span class="perm-ok">✓ Ver inventario</span>
-      <span class="perm-ok">✓ Agregar prendas</span>
-      <span class="perm-ok">✓ Editar prendas</span>
-      <span class="perm-ok">✓ Marcar vendido</span>
-      ${adminPerms}
+    const chip = ([label, ok]) =>
+      `<span class="${ok ? 'perm-ok' : 'perm-no'}">${ok ? IC_CHECK : IC_CROSS}${label}</span>`;
+    perms.innerHTML = [...comunes, ...soloAdmin].map(chip).join('');
+  }
+
+  // Datos de la cuenta
+  const info = document.getElementById('cuentaInfo');
+  if (info) {
+    info.innerHTML = `
+      <div class="cuenta-info-row"><span class="ci-label">Usuario</span><span class="ci-val">${s.username}</span></div>
+      <div class="cuenta-info-row"><span class="ci-label">Rol</span><span class="ci-val">${admin ? 'Administrador' : 'Vendedor'}</span></div>
+      <div class="cuenta-info-row"><span class="ci-label">Sesión</span><span class="ci-val cuenta-online">Activa</span></div>
     `;
   }
 
+  // Preferencias (persistidas en localStorage por usuario)
+  initPreferencias(s.username);
+
   // Cargar avatar
   loadAvatarFromStorage();
+}
+
+// ─── PREFERENCIAS ─────────────────────────────────────────────
+function prefsKey(u){ return 'bazar_prefs_' + (u || getSession()?.username || 'user'); }
+function getPrefs(u){
+  try { return JSON.parse(localStorage.getItem(prefsKey(u))) || {}; }
+  catch { return {}; }
+}
+function setPref(k, v){
+  const u = getSession()?.username;
+  const p = getPrefs(u); p[k] = v;
+  localStorage.setItem(prefsKey(u), JSON.stringify(p));
+}
+function initPreferencias(u){
+  const p = getPrefs(u);
+  const map = {
+    pref_confirm_del: p.confirm_del !== false,   // por defecto ON
+    pref_sonido:      p.sonido      === true,     // por defecto OFF
+    pref_compacto:    p.compacto    === true,     // por defecto OFF
+  };
+  Object.entries(map).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = val;
+  });
+  document.body.classList.toggle('vista-compacta', map.pref_compacto);
+}
+function onPrefChange(id){
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (id === 'pref_confirm_del') setPref('confirm_del', el.checked);
+  if (id === 'pref_sonido')    { setPref('sonido', el.checked); if (el.checked) playActionSound('sell'); }
+  if (id === 'pref_compacto')  { setPref('compacto', el.checked); document.body.classList.toggle('vista-compacta', el.checked); if(pref('sonido')) playActionSound('toggle'); }
+  toast('Preferencia guardada');
+}
+
+// Lee una preferencia con su valor por defecto
+function pref(nombre){
+  const p = getPrefs();
+  if (nombre === 'confirm_del') return p.confirm_del !== false; // default ON
+  if (nombre === 'sonido')      return p.sonido === true;        // default OFF
+  if (nombre === 'compacto')    return p.compacto === true;      // default OFF
+  return false;
+}
+
+// Confirma una acción respetando la preferencia "Confirmar antes de eliminar"
+function confirmarEliminar(mensaje){
+  if (!pref('confirm_del')) return true;   // si está apagado, no pregunta
+  return confirm(mensaje);
+}
+
+// Reproduce un sonido corto y sutil (estilo iOS) según el tipo de acción.
+// Tipos: 'ok' (guardar/crear), 'sell' (vender), 'del' (eliminar),
+//        'toggle' (cambios menores), 'error' (fallo).
+let _audioCtx = null;
+function playActionSound(tipo){
+  if (!pref('sonido')) return;
+  try {
+    _audioCtx = _audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = _audioCtx;
+    if (ctx.state === 'suspended') ctx.resume();
+    const t = ctx.currentTime;
+
+    // Perfiles de sonido — notas suaves con leve armónico
+    const perfiles = {
+      ok:     { notas: [523.25, 783.99], dur: 0.16, vol: 0.05 },  // Do–Sol, positivo
+      sell:   { notas: [659.25, 987.77], dur: 0.22, vol: 0.06 },  // Mi–Si, celebración
+      del:    { notas: [392.00, 293.66], dur: 0.18, vol: 0.05 },  // Sol–Re, descendente
+      toggle: { notas: [880.00],         dur: 0.09, vol: 0.035 }, // click corto
+      error:  { notas: [220.00, 207.65], dur: 0.28, vol: 0.06 },  // grave y disonante
+    };
+    const p = perfiles[tipo] || perfiles.ok;
+
+    // Filtro pasa-bajos compartido para suavizar (quita aspereza)
+    const filtro = ctx.createBiquadFilter();
+    filtro.type = 'lowpass';
+    filtro.frequency.value = 2200;
+    filtro.connect(ctx.destination);
+
+    p.notas.forEach((freq, i) => {
+      const inicio = t + i * (p.dur * 0.55);   // notas ligeramente encadenadas
+      const osc  = ctx.createOscillator();
+      const sub  = ctx.createOscillator();     // armónico suave para dar cuerpo
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';  osc.frequency.value = freq;
+      sub.type = 'triangle'; sub.frequency.value = freq * 2;
+
+      const subGain = ctx.createGain();
+      subGain.gain.value = 0.12;               // el armónico apenas se nota
+      sub.connect(subGain); subGain.connect(gain);
+      osc.connect(gain);
+      gain.connect(filtro);
+
+      // Envolvente suave: ataque rápido, caída exponencial (sensación "pop")
+      gain.gain.setValueAtTime(0.0001, inicio);
+      gain.gain.exponentialRampToValueAtTime(p.vol, inicio + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, inicio + p.dur);
+
+      osc.start(inicio); sub.start(inicio);
+      osc.stop(inicio + p.dur + 0.02);
+      sub.stop(inicio + p.dur + 0.02);
+    });
+  } catch (_) {}
+}
+
+// Envoltura de toast: reproduce sonido de error en mensajes de fallo/validación
+if (typeof toast === 'function' && !window._toastWrapped) {
+  const _toastOrig = toast;
+  window._toastWrapped = true;
+  window.toast = function(msg, dur){
+    const m = String(msg || '').toLowerCase();
+    const esError = /inválid|invalid|obligatori|no se encontró|no encontrad|sin permiso|error|debe ser|espera a que|elige|escribe el|no coincide|futura|mínimo|incorrect/.test(m);
+    if (esError && typeof playActionSound === 'function') playActionSound('error');
+    return _toastOrig(msg, dur);
+  };
+  // Reasignar la referencia local usada en admin.js
+  toast = window.toast;
+}
+
+// ─── SISTEMA (rendimiento · módulos · errores) ────────────────
+function renderSistema() {
+  if (!isAdmin()) return;
+  renderLogs();
+  renderRespaldos();
+  const db = (typeof getDB === 'function' ? getDB() : []) || [];
+  const t0 = performance.now();
+
+  // ── Rendimiento ──
+  const vendidos    = db.filter(p => p.vendido).length;
+  const disponibles = db.filter(p => !p.vendido).length;
+  const totalImgs   = db.reduce((s,p) => s + (Array.isArray(p.imagenes) ? p.imagenes.length : 0), 0);
+  const base64Imgs  = db.reduce((s,p) => s + (Array.isArray(p.imagenes)
+                        ? p.imagenes.filter(i => typeof i === 'string' && i.startsWith('data:')).length : 0), 0);
+  const readMs      = (performance.now() - t0).toFixed(1);
+  let lsBytes = 0;
+  try { for (const k in localStorage) if (Object.prototype.hasOwnProperty.call(localStorage,k)) lsBytes += (localStorage[k]||'').length; } catch {}
+  const lsKB = (lsBytes/1024).toFixed(0);
+
+  const metric = (label, val, hint) =>
+    `<div class="sis-metric"><div class="sis-metric-val">${val}</div><div class="sis-metric-label">${label}</div>${hint?`<div class="sis-metric-hint">${hint}</div>`:''}</div>`;
+  const mEl = document.getElementById('sistemaMetrics');
+  if (mEl) mEl.innerHTML =
+    metric('Prendas totales', db.length) +
+    metric('Disponibles', disponibles) +
+    metric('Vendidas', vendidos) +
+    metric('Imágenes', totalImgs, base64Imgs ? `${base64Imgs} en base64` : 'todas por URL') +
+    metric('Lectura de datos', readMs + ' ms') +
+    metric('Almacenamiento local', lsKB + ' KB');
+
+  // ── Revisión de módulos ──
+  // Cada módulo se valida por: función de render + contenedor DOM esperado.
+  const modulos = [
+    ['Inventario',   typeof renderAll === 'function',       'view-inventario'],
+    ['Registrar',    typeof submitForm === 'function',      'view-registrar'],
+    ['Catálogo',     typeof renderCatalogo === 'function',  'view-catalogo'],
+    ['Vendedores',   typeof renderVendedores === 'function','view-vendedores'],
+    ['Drops',        typeof renderDrops === 'function',     'view-drops'],
+    ['Mi Cuenta',    typeof renderCuenta === 'function',    'view-cuenta'],
+    ['Sistema',      typeof renderSistema === 'function',   'view-sistema'],
+  ];
+  const modEl = document.getElementById('sistemaModules');
+  if (modEl) modEl.innerHTML = modulos.map(([name, fnOk, viewId]) => {
+    const domOk = !!document.getElementById(viewId);
+    const ok = fnOk && domOk;
+    const estado = ok ? 'Operativo' : (!fnOk ? 'Falta lógica' : 'Falta vista');
+    return `<div class="sis-mod ${ok?'ok':'bad'}">
+      <span class="sis-mod-ico">${ok ? IC_CHECK : IC_CROSS}</span>
+      <span class="sis-mod-name">${name}</span>
+      <span class="sis-mod-estado">${estado}</span>
+    </div>`;
+  }).join('');
+
+  // ── Verificación de errores (sobre los datos reales) ──
+  const errores = [];
+  db.forEach(p => {
+    const ref = `#${p.id ?? '?'} ${p.nombre || 'sin nombre'}`;
+    if (!p.nombre)                       errores.push(['Prenda sin nombre', ref]);
+    if (!p.marca)                        errores.push(['Sin marca', ref]);
+    if (!Array.isArray(p.categorias) || !p.categorias.length) errores.push(['Sin categoría', ref]);
+    if (!Array.isArray(p.imagenes) || !p.imagenes.length)     errores.push(['Sin imágenes', ref]);
+    if (p.costo == null || isNaN(parseFloat(p.costo)))        errores.push(['Costo inválido', ref]);
+    if (p.vendido && (p.precio_venta == null || isNaN(parseFloat(p.precio_venta))))
+                                         errores.push(['Vendida sin precio de venta', ref]);
+    if (p.vendido && parseFloat(p.precio_venta) < parseFloat(p.costo))
+                                         errores.push(['Vendida por debajo del costo', ref]);
+  });
+  // IDs duplicados
+  const ids = db.map(p => p.id);
+  const dup = ids.filter((id,i) => ids.indexOf(id) !== i);
+  [...new Set(dup)].forEach(id => errores.push(['ID duplicado', '#' + id]));
+
+  const errEl = document.getElementById('sistemaErrores');
+  if (errEl) {
+    if (!errores.length) {
+      errEl.innerHTML = `<div class="sis-ok-box">${IC_CHECK}<span>Sin errores detectados. Todo en orden.</span></div>`;
+    } else {
+      errEl.innerHTML =
+        `<div class="sis-err-count">${errores.length} ${errores.length===1?'incidencia':'incidencias'} encontradas</div>` +
+        errores.map(([tipo, ref]) =>
+          `<div class="sis-err-row"><span class="sis-err-tipo">${tipo}</span><span class="sis-err-ref">${ref}</span></div>`
+        ).join('');
+    }
+  }
+}
+
+// ─── REGISTRO DE ACTIVIDAD (LOGS) ─────────────────────────────
+const LOG_ACCIONES = {
+  subir:              { txt: 'Subió prenda',        ico: IC_BAG,      cls: 'log-add'  },
+  editar:             { txt: 'Editó prenda',        ico: IC_EDIT,     cls: 'log-edit' },
+  eliminar:           { txt: 'Eliminó prenda',      ico: IC_TRASH,    cls: 'log-del'  },
+  vender:             { txt: 'Marcó vendido',       ico: IC_CHECK,    cls: 'log-sell' },
+  reactivar:          { txt: 'Reactivó prenda',     ico: IC_CLOCK,    cls: 'log-edit' },
+  catalogo_crear:     { txt: 'Creó en catálogo',    ico: IC_BAG,      cls: 'log-add'  },
+  catalogo_editar:    { txt: 'Editó catálogo',      ico: IC_EDIT,     cls: 'log-edit' },
+  catalogo_eliminar:  { txt: 'Eliminó de catálogo', ico: IC_TRASH,    cls: 'log-del'  },
+  vendedor_crear:     { txt: 'Creó vendedor',       ico: IC_BAG,      cls: 'log-add'  },
+  vendedor_eliminar:  { txt: 'Eliminó vendedor',    ico: IC_TRASH,    cls: 'log-del'  },
+  vendedor_password:  { txt: 'Cambió contraseña',   ico: IC_KEY,      cls: 'log-edit' },
+  drop_crear:         { txt: 'Creó drop',           ico: IC_CALENDAR, cls: 'log-add'  },
+  drop_publicar:      { txt: 'Publicó drop',        ico: IC_ROCKET,   cls: 'log-sell' },
+  drop_editar:        { txt: 'Editó drop',          ico: IC_EDIT,     cls: 'log-edit' },
+  drop_eliminar:      { txt: 'Eliminó drop',        ico: IC_TRASH,    cls: 'log-del'  },
+  drop_quitar_prenda: { txt: 'Quitó prenda de drop',ico: IC_X,        cls: 'log-del'  },
+};
+
+function fmtLogFecha(ts) {
+  const d = new Date(ts);
+  if (isNaN(d)) return '';
+  const ahora = new Date();
+  const difMin = Math.floor((ahora - d) / 60000);
+  if (difMin < 1)  return 'hace un momento';
+  if (difMin < 60) return `hace ${difMin} min`;
+  const mismoDia = d.toDateString() === ahora.toDateString();
+  const hora = d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  if (mismoDia) return `hoy ${hora}`;
+  return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) + ` ${hora}`;
+}
+
+// Hora exacta completa (para el renglón secundario y el tooltip)
+function fmtLogFechaExacta(ts) {
+  const d = new Date(ts);
+  if (isNaN(d)) return '';
+  return d.toLocaleString('es-MX', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+let _logsPagina = 0;              // página actual (0-based)
+const LOGS_POR_PAGINA = 40;
+
+// Cambia de página (delta: -1 anterior, +1 siguiente)
+function logsPagina(delta) {
+  _logsPagina += delta;
+  renderLogs(true);   // true = conservar página (no resetear)
+  scrollLogsArriba();
+}
+
+// Lleva la vista al inicio del registro de actividad
+function scrollLogsArriba() {
+  const ancla = document.getElementById('logsLista');
+  if (ancla) {
+    const y = ancla.getBoundingClientRect().top + window.scrollY - 90;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+}
+
+function renderLogs(mantenerPagina = false) {
+  if (!isAdmin()) return;
+  const logs = (typeof getLogs === 'function' ? getLogs() : []) || [];
+
+  // Poblar filtros conservando la selección actual
+  const selU = document.getElementById('logFiltroUsuario');
+  const selA = document.getElementById('logFiltroAccion');
+  const fUprev = selU ? selU.value : '';
+  const fAprev = selA ? selA.value : '';
+  if (selU) {
+    const usuarios = [...new Set(logs.map(l => l.usuario))].sort();
+    selU.innerHTML = `<option value="">Todos los usuarios</option>` +
+      usuarios.map(u => `<option value="${u}">${u}</option>`).join('');
+    if (fUprev && usuarios.includes(fUprev)) selU.value = fUprev;
+  }
+  if (selA && selA.options.length <= 1) {
+    selA.innerHTML = `<option value="">Todas las acciones</option>` +
+      Object.entries(LOG_ACCIONES).map(([k, v]) => `<option value="${k}">${v.txt}</option>`).join('');
+  }
+
+  const fU = selU ? selU.value : '';
+  const fA = selA ? selA.value : '';
+
+  // Si cambió un filtro, volver a la primera página
+  if (!mantenerPagina || fU !== fUprev || fA !== fAprev) _logsPagina = 0;
+
+  const filtrados = logs.filter(l =>
+    (!fU || l.usuario === fU) && (!fA || l.accion === fA)
+  );
+
+  const cont = document.getElementById('logsLista');
+  if (!cont) return;
+  if (!filtrados.length) {
+    cont.innerHTML = `<div class="logs-empty">Sin actividad registrada todavía.</div>`;
+    const nav = document.getElementById('logsPaginacion');
+    if (nav) nav.innerHTML = '';
+    return;
+  }
+
+  // Calcular límites de página
+  const totalPaginas = Math.ceil(filtrados.length / LOGS_POR_PAGINA);
+  if (_logsPagina > totalPaginas - 1) _logsPagina = totalPaginas - 1;
+  if (_logsPagina < 0) _logsPagina = 0;
+  const inicio = _logsPagina * LOGS_POR_PAGINA;
+  const pagina = filtrados.slice(inicio, inicio + LOGS_POR_PAGINA);
+
+  cont.innerHTML = pagina.map((l, idx) => {
+    const meta = LOG_ACCIONES[l.accion] || { txt: l.accion, ico: IC_CLOCK, cls: '' };
+    const objeto  = l.objeto  ? `<span class="log-objeto">${escapeHtml(l.objeto)}</span>` : '';
+    const detalle = l.detalle ? `<span class="log-detalle">${escapeHtml(l.detalle)}</span>` : '';
+    return `<div class="log-row" style="animation-delay:${Math.min(idx * 18, 400)}ms">
+      <span class="log-ico ${meta.cls}">${meta.ico}</span>
+      <div class="log-body">
+        <div class="log-line"><strong>${escapeHtml(l.usuario)}</strong> · ${meta.txt} ${objeto}</div>
+        ${detalle ? `<div class="log-sub">${detalle}</div>` : ''}
+      </div>
+      <span class="log-fecha" title="${fmtLogFechaExacta(l.ts)}">
+        ${fmtLogFecha(l.ts)}
+        <span class="log-fecha-exacta">${fmtLogFechaExacta(l.ts)}</span>
+      </span>
+    </div>`;
+  }).join('');
+  // Reiniciar animación de entrada
+  cont.classList.remove('logs-anim');
+  void cont.offsetWidth;   // fuerza reflow para relanzar la animación
+  cont.classList.add('logs-anim');
+
+  // Controles de paginación premium
+  const nav = document.getElementById('logsPaginacion');
+  if (nav) {
+    if (totalPaginas <= 1) {
+      nav.innerHTML = '';
+    } else {
+      const desde = inicio + 1;
+      const hasta = Math.min(inicio + LOGS_POR_PAGINA, filtrados.length);
+
+      // Números de página con elipsis inteligente
+      const nums = paginacionNumeros(_logsPagina, totalPaginas);
+      const numsHtml = nums.map(n => {
+        if (n === '...') return `<span class="pg-ellipsis">···</span>`;
+        const activa = n === _logsPagina;
+        return `<button class="pg-num ${activa ? 'active' : ''}" onclick="logsIrPagina(${n})">${n + 1}</button>`;
+      }).join('');
+
+      nav.innerHTML = `
+        <div class="pg-bar">
+          <button class="pg-arrow" onclick="logsPagina(-1)" ${_logsPagina === 0 ? 'disabled' : ''} aria-label="Anterior">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="pg-nums">${numsHtml}</div>
+          <button class="pg-arrow" onclick="logsPagina(1)" ${_logsPagina >= totalPaginas - 1 ? 'disabled' : ''} aria-label="Siguiente">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="pg-info">${desde}–${hasta} de ${filtrados.length} registros</div>`;
+    }
+  }
+}
+
+// Devuelve el arreglo de páginas a mostrar con '...' donde se colapsan
+function paginacionNumeros(actual, total) {
+  const paginas = [];
+  const rango = 1; // cuántas mostrar a cada lado de la actual
+  for (let i = 0; i < total; i++) {
+    if (i === 0 || i === total - 1 || (i >= actual - rango && i <= actual + rango)) {
+      paginas.push(i);
+    } else if (paginas[paginas.length - 1] !== '...') {
+      paginas.push('...');
+    }
+  }
+  return paginas;
+}
+
+// Ir a una página específica
+function logsIrPagina(n) {
+  _logsPagina = n;
+  renderLogs(true);
+  scrollLogsArriba();
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+// Refrescar en vivo cuando lleguen nuevos logs por el poll (sin sacar de la página actual)
+window.addEventListener('db:logs', () => {
+  if (currentTab === 'sistema') renderLogs(true);
+});
+
+// Refrescar drops cuando cambien en el servidor (otro usuario)
+window.addEventListener('db:drops', () => {
+  if (currentTab === 'drops') renderDrops();
+  if (currentTab === 'registrar') populateDropSelect();
+});
+
+// Carga y muestra las tandas de respaldo como cards
+async function renderRespaldos() {
+  if (!isAdmin()) return;
+  const cont = document.getElementById('respaldoLista');
+  if (!cont) return;
+  cont.innerHTML = `<div class="respaldo-empty">Cargando respaldos...</div>`;
+  try {
+    const res = await fetch('/api/acciones?op=logs&modo=lotes');
+    if (!res.ok) throw new Error();
+    const lotes = await res.json();
+    if (!lotes.length) {
+      cont.innerHTML = `<div class="respaldo-empty">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>Aún no hay respaldos</span>
+        <small>Se crearán automáticamente cuando el registro llegue a su límite</small>
+      </div>`;
+      return;
+    }
+    cont.innerHTML = lotes.map((l, i) => {
+      const d = new Date(l.fecha);
+      const fecha = isNaN(d) ? '—' : d.toLocaleString('es-MX', {
+        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+      return `<div class="respaldo-card" style="animation-delay:${Math.min(i*50,300)}ms">
+        <div class="respaldo-ico">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </div>
+        <div class="respaldo-info">
+          <div class="respaldo-fecha">${fecha}</div>
+          <div class="respaldo-meta">${l.cantidad} ${l.cantidad === 1 ? 'registro' : 'registros'}</div>
+        </div>
+        <button class="respaldo-dl" onclick="descargarLote('${l.loteId}','${fecha.replace(/[^0-9A-Za-z]/g,'-')}')" title="Descargar .txt">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    cont.innerHTML = `<div class="respaldo-empty">No se pudieron cargar los respaldos</div>`;
+  }
+}
+
+// Descarga una tanda específica como .txt
+async function descargarLote(loteId, fechaLabel) {
+  if (!isAdmin()) return;
+  toast('Generando respaldo...');
+  try {
+    const res = await fetch(`/api/acciones?op=logs&modo=archivo&lote=${encodeURIComponent(loteId)}`);
+    if (!res.ok) throw new Error();
+    const texto = await res.text();
+    const blob = new Blob([texto], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `logs-bazar-${fechaLabel || 'respaldo'}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    playActionSound('ok');
+    toast('Respaldo descargado');
+  } catch (e) {
+    toast('No se pudo generar el respaldo');
+    playActionSound('error');
+  }
 }
 
 // ─── CAMBIAR CONTRASEÑA ───────────────────────────────────────
@@ -896,7 +1833,7 @@ async function cambiarPassword() {
       body: { username: s.username, actual, nueva }
     });
     ['cp_actual','cp_nueva','cp_confirm'].forEach(id => document.getElementById(id).value = '');
-    toast('Contraseña actualizada ✓');
+    toast('Contraseña actualizada');
   } catch (err) {
     errEl.textContent = err.message || 'No se pudo cambiar la contraseña';
   }
@@ -1016,15 +1953,7 @@ function initPreviewListeners() {
 // ═══════════════════════════════════════════════════════════════
 //  SISTEMA DE DROPS
 // ═══════════════════════════════════════════════════════════════
-const DROPS_KEY = 'bazar_drops';
-
-function getDrops() {
-  try { return JSON.parse(localStorage.getItem(DROPS_KEY)) || []; }
-  catch { return []; }
-}
-function saveDrops(list) {
-  localStorage.setItem(DROPS_KEY, JSON.stringify(list));
-}
+// Los drops ahora viven en el servidor: getDrops()/saveDrops() están en db.js
 
 // ── Toggle campo drop en el form ─────────────────────────────
 function toggleDropField() {
@@ -1040,7 +1969,13 @@ function toggleDropField() {
 function populateDropSelect() {
   const sel = document.getElementById('f_dropId');
   if (!sel) return;
-  const drops = getDrops().filter(d => !d.publicado);
+  const ahora = Date.now();
+  // Solo drops no publicados y cuya fecha aún no llega
+  const drops = getDrops().filter(d => {
+    if (d.publicado) return false;
+    const t = new Date(d.fecha).getTime();
+    return isNaN(t) || t > ahora;   // si no tiene fecha válida, igual se muestra
+  });
   sel.innerHTML = `<option value="">-- Selecciona un drop --</option>
     <option value="__nuevo__">+ Crear nuevo drop...</option>` +
     drops.map(d => {
@@ -1053,11 +1988,17 @@ function populateDropSelect() {
     const nuevoWrap = document.getElementById('dropNuevoWrap');
     if (nuevoWrap) nuevoWrap.classList.toggle('hidden', sel.value !== '__nuevo__');
   };
+
+  // Impedir elegir fecha/hora pasada en el calendario
+  const fechaInput = document.getElementById('f_dropFecha');
+  if (fechaInput) {
+    const ahora = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+    fechaInput.min = ahora.toISOString().slice(0, 16);
+  }
 }
 
 // ── Render vista Drops ────────────────────────────────────────
 function renderDrops() {
-  if (!isAdmin()) return;
   checkDropsAutoPublish();
   const drops = getDrops();
   const grid  = document.getElementById('dropsGrid');
@@ -1077,9 +2018,9 @@ function renderDrops() {
   const publicados  = drops.filter(d =>  d.publicado).sort((a,b) => new Date(b.fecha)-new Date(a.fecha));
 
   grid.innerHTML = [
-    pendientes.length ? `<div class="drops-section-label">⏳ Programados</div>` : '',
+    pendientes.length ? `<div class="drops-section-label">${IC_CLOCK} Programados</div>` : '',
     ...pendientes.map(d => renderDropCard(d)),
-    publicados.length ? `<div class="drops-section-label" style="margin-top:2rem">✅ Publicados</div>` : '',
+    publicados.length ? `<div class="drops-section-label" style="margin-top:2rem">${IC_CHECK} Publicados</div>` : '',
     ...publicados.map(d => renderDropCard(d))
   ].join('');
 }
@@ -1099,7 +2040,7 @@ function renderDropCard(d) {
   if (esHoy) {
     const h = Math.floor(diff/3600000);
     const m = Math.floor((diff%3600000)/60000);
-    countdown = `<div class="drop-countdown">🔥 Faltan ${h}h ${m}m</div>`;
+    countdown = `<div class="drop-countdown">${IC_FLAME} Faltan ${h}h ${m}m</div>`;
   }
 
   const thumbs = prendas.slice(0,4).map(p => {
@@ -1113,12 +2054,13 @@ function renderDropCard(d) {
   const statusClass = d.publicado ? 'drop-status-ok' : vencido ? 'drop-status-warn' : 'drop-status-pending';
   const statusLabel = d.publicado ? 'Publicado' : vencido ? 'Listo para publicar' : 'Programado';
 
+  const admin = isAdmin();
   const acciones = d.publicado ? `
-    <button class="drop-btn drop-btn-danger" onclick="eliminarDrop('${d.id}')">🗑 Eliminar</button>
+    ${admin ? `<button class="drop-btn drop-btn-danger" onclick="eliminarDrop('${d.id}')">${IC_TRASH} Eliminar</button>` : ''}
   ` : `
-    <button class="drop-btn drop-btn-primary" onclick="publicarDrop('${d.id}')">🚀 Publicar ahora</button>
-    <button class="drop-btn drop-btn-edit" onclick="editarDropFecha('${d.id}')">📅 Cambiar fecha</button>
-    <button class="drop-btn drop-btn-danger" onclick="eliminarDrop('${d.id}')">🗑 Cancelar drop</button>
+    <button class="drop-btn drop-btn-primary" onclick="publicarDrop('${d.id}')">${IC_ROCKET} Publicar ahora</button>
+    <button class="drop-btn drop-btn-edit" onclick="editarDropFecha('${d.id}')">${IC_CALENDAR} Cambiar fecha</button>
+    ${admin ? `<button class="drop-btn drop-btn-danger" onclick="eliminarDrop('${d.id}')">${IC_TRASH} Cancelar drop</button>` : ''}
   `;
 
   return `<div class="drop-card ${d.publicado ? 'drop-card-done' : ''}">
@@ -1136,7 +2078,7 @@ function renderDropCard(d) {
       ${prendas.map(p => `<div class="drop-prenda-item">
         <span>${p.nombre}</span>
         <span class="drop-prenda-precio">$${p.precio_venta}</span>
-        <button class="drop-prenda-remove" onclick="quitarPrendaDeDrop('${d.id}',${p.id})" title="Quitar del drop">✕</button>
+        ${admin ? `<button class="drop-prenda-remove" onclick="quitarPrendaDeDrop('${d.id}',${p.id})" title="Quitar del drop">${IC_X}</button>` : ''}
       </div>`).join('')}
     </div>
     <div class="drop-actions">${acciones}</div>
@@ -1159,7 +2101,9 @@ function publicarDrop(dropId) {
   drop.publicadoEn = new Date().toISOString();
   saveDB(db);
   saveDrops(drops);
-  toast(`Drop "${drop.nombre}" publicado ✓`);
+  registrarLog('drop_publicar', drop.nombre, `${drop.prendas.length} prendas`);
+  playActionSound('sell');
+  toast(`Drop "${drop.nombre}" publicado`);
   renderDrops();
 }
 
@@ -1180,7 +2124,8 @@ function checkDropsAutoPublish() {
       drop.publicadoEn = ahora.toISOString();
       saveDB(db);
       huboPublicacion = true;
-      toast(`🔥 Drop "${drop.nombre}" publicado automáticamente`);
+      registrarLog('drop_publicar', drop.nombre, 'Automático');
+      toast(`Drop "${drop.nombre}" publicado automáticamente`);
     }
   });
 
@@ -1189,6 +2134,7 @@ function checkDropsAutoPublish() {
 
 // ── Quitar prenda de un drop ──────────────────────────────────
 function quitarPrendaDeDrop(dropId, prendaId) {
+  if (!isAdmin()) { toast('Sin permisos'); return; }
   const drops = getDrops();
   const drop  = drops.find(d => d.id === dropId);
   if (!drop) return;
@@ -1197,6 +2143,8 @@ function quitarPrendaDeDrop(dropId, prendaId) {
   const p  = db.find(x => x.id === prendaId);
   if (p) { p.oculto = false; saveDB(db); }
   saveDrops(drops);
+  registrarLog('drop_quitar_prenda', p?.nombre || ('#'+prendaId), `Drop: ${drop.nombre}`);
+  playActionSound('del');
   toast('Prenda quitada del drop');
   renderDrops();
 }
@@ -1210,17 +2158,24 @@ function editarDropFecha(dropId) {
   if (!nueva) return;
   const fecha = new Date(nueva);
   if (isNaN(fecha)) { toast('Fecha inválida'); return; }
+  if (fecha.getTime() <= Date.now()) { toast('La fecha debe ser futura'); return; }
   drop.fecha = new Date(nueva).toISOString();
   saveDrops(drops);
-  toast('Fecha actualizada ✓');
+  registrarLog('drop_editar', drop.nombre, `Nueva fecha: ${nueva}`);
+  playActionSound('ok');
+  toast('Fecha actualizada');
   renderDrops();
 }
 
 // ── Eliminar drop ─────────────────────────────────────────────
 function eliminarDrop(dropId) {
-  if (!confirm('¿Eliminar este drop? Las prendas guardadas en él quedarán ocultas.')) return;
+  if (!isAdmin()) { toast('Sin permisos'); return; }
+  const drop = getDrops().find(d => d.id === dropId);
+  if (!confirmarEliminar('¿Eliminar este drop? Las prendas guardadas en él quedarán ocultas.')) return;
   const drops = getDrops().filter(d => d.id !== dropId);
   saveDrops(drops);
+  registrarLog('drop_eliminar', drop?.nombre || dropId);
+  playActionSound('del');
   toast('Drop eliminado');
   renderDrops();
 }
