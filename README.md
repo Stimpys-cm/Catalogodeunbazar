@@ -2,7 +2,7 @@
 
 > Catálogo digital de ropa streetwear & vintage con panel de administración, sincronización en tiempo real y gestión de inventario — desplegado en Vercel con MongoDB Atlas y Cloudinary.
 
-**🌐 Demo en vivo:** [catalogodeunbazar-original.vercel.app](https://catalogodeunbazar-original.vercel.app)
+**🌐 Demo en vivo:** [BAZAR](stiimpys.store)
 
 ---
 
