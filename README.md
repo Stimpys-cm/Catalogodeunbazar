@@ -2,8 +2,7 @@
 
 > Catálogo digital de ropa streetwear & vintage con panel de administración, sincronización en tiempo real y gestión de inventario — desplegado en Vercel con MongoDB Atlas y Cloudinary.
 
-**🌐 Demo en vivo:** [BAZAR]([stiimpys.store](https://stiimpys.store/))
-
+**🌐 Demo en vivo:** https://stiimpys.store/
 ---
 
 ## ✨ Características
