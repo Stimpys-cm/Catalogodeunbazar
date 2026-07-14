@@ -1,0 +1,82 @@
+/* css/utils.css — estilos para toasts y modal de confirmación (utils.js) */
+
+/* ── TOASTS ─────────────────────────────────────────────── */
+.toast-box {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 10000;
+  pointer-events: none;
+}
+.toast-item {
+  min-width: 180px;
+  max-width: 90vw;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: #1a1f2e;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .22);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity .25s ease, transform .25s ease;
+}
+.toast-item.show { opacity: 1; transform: translateY(0); }
+.toast-ok    { background: #2e8b57; }
+.toast-error { background: #d64545; }
+.toast-info  { background: #2d6be4; }
+
+/* ── MODAL DE CONFIRMACIÓN ──────────────────────────────── */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 31, 46, .55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 10001;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+.confirm-overlay.show { opacity: 1; }
+.confirm-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 26px 24px 20px;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .3);
+  transform: scale(.94);
+  transition: transform .2s ease;
+}
+.confirm-overlay.show .confirm-box { transform: scale(1); }
+.confirm-title { font-size: 16px; font-weight: 800; margin-bottom: 8px; color: #1a1f2e; }
+.confirm-msg   { font-size: 14px; color: #4a4a4a; line-height: 1.5; margin-bottom: 22px; }
+.confirm-actions { display: flex; gap: 10px; }
+.confirm-actions button {
+  flex: 1;
+  padding: 11px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: filter .15s ease, background .15s ease;
+}
+.confirm-cancel { background: #eef0f4; color: #333; }
+.confirm-cancel:hover { background: #e2e5ea; }
+.confirm-ok { background: #2d6be4; color: #fff; }
+.confirm-ok:hover { filter: brightness(1.07); }
+.confirm-ok.danger { background: #d64545; }
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-item, .confirm-overlay, .confirm-box { transition: none; }
+}

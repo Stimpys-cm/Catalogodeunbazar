@@ -316,6 +316,9 @@ function renderSkeletons(n = 8) {
 // ─── RENDER GRID ─────────────────────────────────────────────
 function renderGrid(query) {
   if (query !== undefined) searchQuery = query;
+  // Si el render NO viene de las flechas de paginación, volver a la página 1
+  if (!_shopNavegando) _shopPagina = 0;
+  _shopNavegando = false;
   let items = getDB().filter(p => !p.vendido && !p.oculto);
 
   const q = searchQuery.toLowerCase().trim();
@@ -360,10 +363,19 @@ function renderGrid(query) {
       <div class="empty-sub">${hayFiltros ? 'No hay prendas con esos filtros.' : 'Aún no hay prendas disponibles. ¡Vuelve pronto!'}</div>
       ${hayFiltros ? '<button class="empty-cta" onclick="clearShopFilters();clearFilters();closeSearch()">Limpiar filtros</button>' : ''}
     </div>`;
+    const navE = document.getElementById('shopPaginacion');
+    if (navE) navE.innerHTML = '';
     return;
   }
 
-  grid.innerHTML = items.map(p => {
+  // Paginación (42 por página)
+  const totalPaginas = Math.ceil(items.length / SHOP_POR_PAGINA);
+  if (_shopPagina > totalPaginas - 1) _shopPagina = totalPaginas - 1;
+  if (_shopPagina < 0) _shopPagina = 0;
+  const inicioShop = _shopPagina * SHOP_POR_PAGINA;
+  const itemsPagina = items.slice(inicioShop, inicioShop + SHOP_POR_PAGINA);
+
+  grid.innerHTML = itemsPagina.map(p => {
     const imgs    = Array.isArray(p.imagenes) ? p.imagenes : [];
     const imgHtml = imgs[0]
       ? `<img src="${imgs[0]}" alt="${esc(p.nombre)}" loading="lazy">`
@@ -416,9 +428,71 @@ function renderGrid(query) {
       </div>
     </div>`;
   }).join('');
+
+  // Controles de paginación de la tienda
+  const nav = document.getElementById('shopPaginacion');
+  if (nav) {
+    if (totalPaginas <= 1) {
+      nav.innerHTML = '';
+    } else {
+      const desde = inicioShop + 1;
+      const hasta = Math.min(inicioShop + SHOP_POR_PAGINA, items.length);
+      const nums = shopPaginacionNumeros(_shopPagina, totalPaginas);
+      const numsHtml = nums.map(n => {
+        if (n === '...') return `<span class="pg-ellipsis">···</span>`;
+        return `<button class="pg-num ${n === _shopPagina ? 'active' : ''}" onclick="shopIrPagina(${n})">${n + 1}</button>`;
+      }).join('');
+      nav.innerHTML = `
+        <div class="pg-bar">
+          <button class="pg-arrow" onclick="shopPagina(-1)" ${_shopPagina === 0 ? 'disabled' : ''} aria-label="Anterior">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="pg-nums">${numsHtml}</div>
+          <button class="pg-arrow" onclick="shopPagina(1)" ${_shopPagina >= totalPaginas - 1 ? 'disabled' : ''} aria-label="Siguiente">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="pg-info">${desde}–${hasta} de ${items.length} prendas</div>`;
+    }
+  }
 }
 
-// ─── SIDEBAR DE FILTROS: construir + conectar ────────────────
+// ─── PAGINACIÓN DE LA TIENDA ─────────────────────────────────
+let _shopPagina = 0;
+let _shopNavegando = false;
+const SHOP_POR_PAGINA = 42;
+
+function shopPaginacionNumeros(actual, total) {
+  const paginas = [];
+  const rango = 1;
+  for (let i = 0; i < total; i++) {
+    if (i === 0 || i === total - 1 || (i >= actual - rango && i <= actual + rango)) {
+      paginas.push(i);
+    } else if (paginas[paginas.length - 1] !== '...') {
+      paginas.push('...');
+    }
+  }
+  return paginas;
+}
+function shopPagina(delta) {
+  _shopPagina += delta;
+  _shopNavegando = true;
+  renderGrid();
+  scrollShopArriba();
+}
+function shopIrPagina(n) {
+  _shopPagina = n;
+  _shopNavegando = true;
+  renderGrid();
+  scrollShopArriba();
+}
+function scrollShopArriba() {
+  const ancla = document.getElementById('productGrid');
+  if (ancla) {
+    const y = ancla.getBoundingClientRect().top + window.scrollY - 100;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+}
 function buildShopFilters() {
   const all = getDB().filter(p => !p.vendido && !p.oculto);
   const tallas  = [...new Set(all.map(p=>String(p.talla)).filter(Boolean))].sort((a,b)=> (parseFloat(a)-parseFloat(b)) || a.localeCompare(b));

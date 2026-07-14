@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('invSearch').addEventListener('input', function () {
     clearTimeout(searchTmr);
     invQuery = this.value;
+    _invPagina = 0;
     searchTmr = setTimeout(renderInv, 200);
   });
 
@@ -242,6 +243,7 @@ let activeFilter = 'todos', invQuery = '';
 
 function setFilter(f, el) {
   activeFilter = f;
+  _invPagina = 0;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
   renderInv();
@@ -289,10 +291,19 @@ function renderInv() {
   const grid = document.getElementById('invGrid');
   if (!items.length) {
     grid.innerHTML = '<div style="grid-column:1/-1;padding:4rem;text-align:center;font-size:11px;color:var(--muted);letter-spacing:.2em;text-transform:uppercase">Sin resultados</div>';
+    const navE = document.getElementById('invPaginacion');
+    if (navE) navE.innerHTML = '';
     return;
   }
 
-  grid.innerHTML = items.map(p => {
+  // Paginación (50 por página)
+  const totalPaginas = Math.ceil(items.length / INV_POR_PAGINA);
+  if (_invPagina > totalPaginas - 1) _invPagina = totalPaginas - 1;
+  if (_invPagina < 0) _invPagina = 0;
+  const inicioInv = _invPagina * INV_POR_PAGINA;
+  const itemsPagina = items.slice(inicioInv, inicioInv + INV_POR_PAGINA);
+
+  grid.innerHTML = itemsPagina.map(p => {
     const imgs    = Array.isArray(p.imagenes) ? p.imagenes : [];
     const idx     = Math.min(cardImgIdx[p.id]||0, Math.max(imgs.length-1, 0));
     const src     = imgs[idx] || '';
@@ -335,6 +346,54 @@ function renderInv() {
       </div>
     </div>`;
   }).join('');
+
+  // Controles de paginación del inventario (mismo estilo que logs)
+  const nav = document.getElementById('invPaginacion');
+  if (nav) {
+    if (totalPaginas <= 1) {
+      nav.innerHTML = '';
+    } else {
+      const desde = inicioInv + 1;
+      const hasta = Math.min(inicioInv + INV_POR_PAGINA, items.length);
+      const nums = paginacionNumeros(_invPagina, totalPaginas);
+      const numsHtml = nums.map(n => {
+        if (n === '...') return `<span class="pg-ellipsis">···</span>`;
+        return `<button class="pg-num ${n === _invPagina ? 'active' : ''}" onclick="invIrPagina(${n})">${n + 1}</button>`;
+      }).join('');
+      nav.innerHTML = `
+        <div class="pg-bar">
+          <button class="pg-arrow" onclick="invPagina(-1)" ${_invPagina === 0 ? 'disabled' : ''} aria-label="Anterior">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="pg-nums">${numsHtml}</div>
+          <button class="pg-arrow" onclick="invPagina(1)" ${_invPagina >= totalPaginas - 1 ? 'disabled' : ''} aria-label="Siguiente">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="pg-info">${desde}–${hasta} de ${items.length} prendas</div>`;
+    }
+  }
+}
+
+// Paginación del inventario
+let _invPagina = 0;
+const INV_POR_PAGINA = 50;
+function invPagina(delta) {
+  _invPagina += delta;
+  renderInv();
+  scrollInvArriba();
+}
+function invIrPagina(n) {
+  _invPagina = n;
+  renderInv();
+  scrollInvArriba();
+}
+function scrollInvArriba() {
+  const ancla = document.getElementById('invGrid');
+  if (ancla) {
+    const y = ancla.getBoundingClientRect().top + window.scrollY - 90;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
 }
 
 // ─── ACCIONES ────────────────────────────────────────────────

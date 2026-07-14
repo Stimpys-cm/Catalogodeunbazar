@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Bazar En Linea - Reynosa Tamaulipas",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "mongodb": "^6.21.0"
   }
 }
