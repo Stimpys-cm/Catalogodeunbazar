@@ -2,7 +2,7 @@
 
 <div align="center">
   <!-- BANNER PRINCIPAL DE LA MARCA (Recomendado: 1200x400px aprox. con estética Chapter Nineteen) -->
-  <img src="TU_URL_DEL_BANNER_AQUI" alt="Banner Principal - Bazar En Linea" width="100%" style="border-radius: 8px;" />
+  <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784126788/banner_bazar_en_linea_kf5bcl.png" alt="Banner Principal - Bazar En Linea" width="100%" style="border-radius: 8px;" />
   <br><br>
 </div>
 
