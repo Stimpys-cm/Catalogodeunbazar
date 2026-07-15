@@ -1,5 +1,11 @@
 # Bazar En Linea
 
+<div align="center">
+  <!-- BANNER PRINCIPAL DE LA MARCA (Recomendado: 1200x400px aprox. con estética Chapter Nineteen) -->
+  <img src="TU_URL_DEL_BANNER_AQUI" alt="Banner Principal - Chapter Nineteen" width="100%" style="border-radius: 8px;" />
+  <br><br>
+</div>
+
 > Catalogo digital de ropa streetwear & vintage con panel de administracion, sincronizacion en tiempo real, gestion de inventario, drops programados y auditoria -- desplegado en Vercel con MongoDB Atlas y Cloudinary.
 
 **Demo en vivo:** https://stiimpys.store/
@@ -26,9 +32,57 @@
 - **Preferencias de usuario** -- vista compacta, confirmacion de borrado, sonido
 - **Responsive** -- funciona en celular, tablet y escritorio
 
+
+
 ---
 
+## Vista Previa del Sistema
+
+<table width="100%">
+  <tr>
+    <td width="50%" align="center">
+      <strong>🛒 Catálogo Público (Tienda)</strong>
+      <br />
+      <!-- CAPTURA DE LA TIENDA PÚBLICA EN DESKTOP -->
+      <img src="TU_URL_DE_CAPTURA_TIENDA_AQUI" alt="Vista de la Tienda" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
+    </td>
+    <td width="50%" align="center">
+      <strong>⚙️ Panel de Administración (Desktop)</strong>
+      <br />
+      <!-- CAPTURA DEL PANEL DE CONTROL / INVENTARIO ADMIN -->
+      <img src="TU_URL_DE_CAPTURA_ADMIN_AQUI" alt="Panel de Administración" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <strong>📱 Interfaz Adaptativa (Móvil)</strong>
+      <br />
+      <!-- CAPTURA EN FORMATO VERTICAL MÓVIL (puedes usar un mockup de celular o recorte vertical) -->
+      <img src="TU_URL_DE_CAPTURA_MOVIL_AQUI" alt="Diseño Responsive Móvil" width="60%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
+    </td>
+    <td width="50%" align="center">
+      <strong>📦 Planificación de Drops</strong>
+      <br />
+      <!-- CAPTURA DE LA PESTAÑA DE DROPS PROGRAMADOS O LOGS -->
+      <img src="TU_URL_DE_CAPTURA_DROPS_O_SISTEMA_AQUI" alt="Gestión de Drops Programados" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
+    </td>
+  </tr>
+</table>
+
+---
+
+
 ## Stack tecnologico
+
+<!-- BADGES VISUALES DE LAS TECNOLOGÍAS USADAS -->
+  <img src="https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white" alt="HTML5" />
+  <img src="https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white" alt="CSS3" />
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JS" />
+  <img src="https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white" alt="Vercel" />
+  <img src="https://img.shields.io/badge/MongoDB_Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/Cloudinary-3448C5?style=flat-square&logo=cloudinary&logoColor=white" alt="Cloudinary" />
+  <img src="https://img.shields.io/badge/Cloudflare_Turnstile-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare" />
+</p>
 
 | Capa | Tecnologia |
 |---|---|
