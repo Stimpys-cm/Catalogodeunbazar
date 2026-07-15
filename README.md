@@ -44,13 +44,13 @@
       <strong>🛒 Catálogo Público (Tienda)</strong>
       <br />
       <!-- CAPTURA DE LA TIENDA PÚBLICA EN DESKTOP -->
-      <img src="TU_URL_DE_CAPTURA_TIENDA_AQUI" alt="Vista de la Tienda" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
+      <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784127024/image_odgxbe.webp" alt="Vista de la Tienda" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
     </td>
     <td width="50%" align="center">
       <strong>⚙️ Panel de Administración (Desktop)</strong>
       <br />
       <!-- CAPTURA DEL PANEL DE CONTROL / INVENTARIO ADMIN -->
-      <img src="TU_URL_DE_CAPTURA_ADMIN_AQUI" alt="Panel de Administración" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
+      <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784127100/image_wc0pfp.webp" alt="Panel de Administración" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
     </td>
   </tr>
   <tr>
@@ -58,13 +58,13 @@
       <strong>📱 Interfaz Adaptativa (Móvil)</strong>
       <br />
       <!-- CAPTURA EN FORMATO VERTICAL MÓVIL (puedes usar un mockup de celular o recorte vertical) -->
-      <img src="TU_URL_DE_CAPTURA_MOVIL_AQUI" alt="Diseño Responsive Móvil" width="60%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
+      <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784127193/IMG_4478_tejy3e.webp" alt="Diseño Responsive Móvil" width="60%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
     </td>
     <td width="50%" align="center">
       <strong>📦 Planificación de Drops</strong>
       <br />
       <!-- CAPTURA DE LA PESTAÑA DE DROPS PROGRAMADOS O LOGS -->
-      <img src="TU_URL_DE_CAPTURA_DROPS_O_SISTEMA_AQUI" alt="Gestión de Drops Programados" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
+      <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784127354/image_ivyfas.png" alt="Gestión de Drops Programados" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
     </td>
   </tr>
 </table>
