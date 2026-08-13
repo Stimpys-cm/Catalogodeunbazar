@@ -1,67 +1,159 @@
-# 🛍️ Bazar En Linea
+# Bazar En Linea
 
-> Catálogo digital de ropa streetwear & vintage con panel de administración, sincronización en tiempo real y gestión de inventario — desplegado en Vercel con MongoDB Atlas y Cloudinary.
+<div align="center">
+  <!-- BANNER PRINCIPAL DE LA MARCA (Recomendado: 1200x400px aprox. con estética Chapter Nineteen) -->
+  <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784126788/banner_bazar_en_linea_kf5bcl.png" alt="Banner Principal - Bazar En Linea" width="100%" style="border-radius: 8px;" />
+  <br><br>
+</div>
 
-**🌐 Demo en vivo:** [catalogodeunbazar-original.vercel.app](https://catalogodeunbazar-original.vercel.app)
+> Catalogo digital de ropa streetwear & vintage con panel de administracion, sincronizacion en tiempo real, gestion de inventario, drops programados y auditoria -- desplegado en Vercel con MongoDB Atlas y Cloudinary.
 
----
-
-## ✨ Características
-
-- 📦 **Inventario en tiempo real** — los cambios aparecen en todas las pantallas en menos de 3 segundos sin recargar
-- 🖼️ **Fotos en la nube** — imágenes almacenadas en Cloudinary, sin límites de tamaño
-- 🔍 **Búsqueda y filtros** — por nombre, marca, categoría, talla y estado
-- 👥 **Multi-usuario** — admin y vendedores con permisos diferenciados
-- 📱 **Responsive** — funciona en celular, tablet y escritorio
-- 💬 **WhatsApp directo** — botón de contacto por prenda con mensaje pre-armado
-- 🟢 **Usuarios en línea** — badge en tiempo real de quién está en el panel
+**Demo en vivo:** https://stiimpys.store/
 
 ---
 
-## 🏗️ Stack tecnológico
+## Caracteristicas
 
-| Capa | Tecnología |
+- **Inventario en tiempo real** -- los cambios aparecen en todas las pantallas en menos de 3 segundos sin recargar (polling adaptativo: 3s / 6s / 15s segun actividad)
+- **Fotos en la nube** -- imagenes almacenadas en Cloudinary, sin limites de tamano
+- **Busqueda y filtros** -- por nombre, marca, categoria, talla y estado
+- **Multi-usuario** -- admin y vendedores con permisos diferenciados
+- **Drops programados** -- crea colecciones y programalas para publicacion automatica
+- **Sesion unica por cuenta** -- evita accesos compartidos; override con clave maestra para admin
+- **Verificacion Cloudflare Turnstile** -- protege la entrada al bazar
+- **Wishlist** -- los visitantes guardan prendas favoritas en el navegador
+- **Compra directa por WhatsApp** -- boton de contacto por prenda con mensaje pre-armado
+- **Open Graph / Previews** -- cada prenda tiene meta tags para compartir en WhatsApp, Discord, Twitter
+- **Zoom con lupa** -- vista detalle de producto con zoom hover en desktop
+- **Usuarios en linea** -- badge en tiempo real de quien esta en el panel
+- **Auditoria completa** -- registro de actividad con archivado automatico y descarga de respaldos
+- **Avatar de perfil** -- foto de perfil para cada usuario, almacenada en servidor
+- **Sonidos de accion** -- feedback auditivo opcional (estilo iOS)
+- **Preferencias de usuario** -- vista compacta, confirmacion de borrado, sonido
+- **Responsive** -- funciona en celular, tablet y escritorio
+
+
+
+---
+
+## Vista Previa del Sistema
+
+<table width="100%">
+  <tr>
+    <td width="50%" align="center">
+      <strong>🛒 Catálogo Público (Tienda)</strong>
+      <br />
+      <!-- CAPTURA DE LA TIENDA PÚBLICA EN DESKTOP -->
+      <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784127024/image_odgxbe.webp" alt="Vista de la Tienda" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
+    </td>
+    <td width="50%" align="center">
+      <strong>⚙️ Panel de Administración (Desktop)</strong>
+      <br />
+      <!-- CAPTURA DEL PANEL DE CONTROL / INVENTARIO ADMIN -->
+      <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784127100/image_wc0pfp.webp" alt="Panel de Administración" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <strong>📱 Interfaz Adaptativa (Móvil)</strong>
+      <br />
+      <!-- CAPTURA EN FORMATO VERTICAL MÓVIL (puedes usar un mockup de celular o recorte vertical) -->
+      <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784127193/IMG_4478_tejy3e.webp" alt="Diseño Responsive Móvil" width="60%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
+    </td>
+    <td width="50%" align="center">
+      <strong>📦 Planificación de Drops</strong>
+      <br />
+      <!-- CAPTURA DE LA PESTAÑA DE DROPS PROGRAMADOS O LOGS -->
+      <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784127354/image_ivyfas.png" alt="Gestión de Drops Programados" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
+    </td>
+  </tr>
+</table>
+
+---
+
+
+## Stack tecnologico
+
+<!-- BADGES VISUALES DE LAS TECNOLOGÍAS USADAS -->
+  <img src="https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white" alt="HTML5" />
+  <img src="https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white" alt="CSS3" />
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JS" />
+  <img src="https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white" alt="Vercel" />
+  <img src="https://img.shields.io/badge/MongoDB_Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white" alt="MongoDB" />
+  <img src="https://img.shields.io/badge/Cloudinary-3448C5?style=flat-square&logo=cloudinary&logoColor=white" alt="Cloudinary" />
+  <img src="https://img.shields.io/badge/Cloudflare_Turnstile-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare" />
+</p>
+
+| Capa | Tecnologia |
 |---|---|
 | Frontend | HTML5 · CSS3 · JavaScript vanilla |
 | Hosting | [Vercel](https://vercel.com) (gratuito) |
 | Base de datos | [MongoDB Atlas](https://cloud.mongodb.com) (gratuito M0) |
-| Imágenes | [Cloudinary](https://cloudinary.com) (gratuito) |
+| Imagenes | [Cloudinary](https://cloudinary.com) (gratuito) |
 | API | Vercel Serverless Functions (Node.js) |
+| Verificacion | [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/) |
+| Seguridad | bcryptjs · sesion por token · rate limiting en MongoDB |
 
 ---
 
-## 📁 Estructura del proyecto
+## Estructura del proyecto
 
 ```
 bazar-en-linea/
-├── api/                    # Serverless Functions (backend)
-│   ├── _db.js              # Conexión compartida a MongoDB
-│   ├── inventario.js       # GET/PUT prendas
-│   ├── config.js           # GET/PUT categorías, marcas, usuarios
-│   ├── auth.js             # POST login
-│   ├── activos.js          # GET/POST/DELETE usuarios activos
-│   ├── sync.js             # GET todo en una sola petición
-│   └── upload.js           # POST subir imagen a Cloudinary
+├── api/                        # Serverless Functions (backend)
+│   ├── _db.js                  # Conexion compartida a MongoDB (singleton)
+│   ├── _auth.js                # Middleware de autenticacion (token bearer + cookie)
+│   ├── _password.js            # Verificacion y hasheo de contrasenas (bcrypt)
+│   ├── _rateLimit.js           # Rate limiter con MongoDB + TTL
+│   ├── auth.js                 # POST login (sesion unica + override)
+│   ├── inventario.js           # GET/PUT lista completa de prendas
+│   ├── inventario-item.js      # PATCH/DELETE prenda individual
+│   ├── config.js               # GET/PUT categorias, marcas, usuarios, drops
+│   ├── activos.js              # GET/POST/DELETE usuarios activos (keep-alive)
+│   ├── sync.js                 # GET todas las colecciones en una llamada (con cache)
+│   ├── upload.js               # POST subir imagen a Cloudinary
+│   ├── acciones.js             # GET/POST logs, borrar prenda, gestionar usuarios
+│   ├── change-password.js      # POST cambiar contrasena (verifica actual)
+│   ├── prenda.js               # GET HTML con Open Graph tags por prenda
+│   └── session-check.js        # POST verifica vigencia de sesion
 ├── css/
-│   ├── global.css          # Variables, toast, modal
-│   ├── tienda.css          # Estilos catálogo público
-│   ├── admin.css           # Estilos panel de admin
-│   └── login.css           # Estilos login
+│   ├── global.css              # Variables, toast, modal
+│   ├── tienda.css              # Estilos catalogo publico
+│   ├── admin.css               # Estilos panel de admin
+│   ├── login.css               # Estilos login
+│   ├── lightbox.css            # Estilos visor de imagenes
+│   └── utils.css               # Estilos de utilerias
 ├── js/
-│   ├── db.js               # Capa de datos (caché + polling + API)
-│   ├── tienda.js           # Lógica catálogo público
-│   ├── admin.js            # Lógica panel de administración
-│   └── login.js            # Lógica autenticación
-├── tienda.html             # Catálogo público
-├── admin.html              # Panel de administración
-├── login.html              # Inicio de sesión
-├── vercel.json             # Configuración de rutas Vercel
-└── package.json            # Dependencia: mongodb
+│   ├── db.js                   # Capa de datos (cache + polling adaptativo + API)
+│   ├── tienda.js               # Logica catalogo publico + wishlist + detalle
+│   ├── admin.js                # Logica panel de administracion (6 pestanas)
+│   ├── login.js                # Logica autenticacion con override
+│   ├── lightbox.js             # Visor de imagenes con swipe tactil
+│   └── utils.js                # Utilidades compartidas (money, toast, confirm, etc.)
+├── index.html                  # Pagina de verificacion Cloudflare Turnstile
+├── tienda.html                 # Catalogo publico
+├── admin.html                  # Panel de administracion
+├── login.html                  # Inicio de sesion
+├── vercel.json                 # Configuracion de rutas Vercel + CORS
+└── package.json                # Dependencias: mongodb, bcryptjs
 ```
 
 ---
 
-## 🚀 Instalación y despliegue
+## Variables de entorno
+
+| Variable | Descripcion | Donde obtenerla |
+|---|---|---|
+| `MONGODB_URI` | URI de conexion a MongoDB Atlas | Atlas -> Connect -> Drivers |
+| `MONGODB_DB` | Nombre de la base de datos (default: `bazar`) | Opcional |
+| `CLOUDINARY_CLOUD_NAME` | Nombre del cloud | Cloudinary Dashboard |
+| `CLOUDINARY_API_KEY` | Llave publica de API | Cloudinary Dashboard |
+| `CLOUDINARY_API_SECRET` | Secreto de API | Cloudinary Dashboard |
+| `MASTER_KEY` | Clave maestra para forzar sesion admin (opcional) | La que tu definas |
+
+---
+
+## Instalacion y despliegue
 
 ### Requisitos previos
 
@@ -69,17 +161,18 @@ bazar-en-linea/
 - Cuenta en [Vercel](https://vercel.com)
 - Cluster en [MongoDB Atlas](https://cloud.mongodb.com)
 - Cuenta en [Cloudinary](https://cloudinary.com)
+- Site Key de [Cloudflare Turnstile](https://dash.cloudflare.com/sign-up) (opcional)
 
 ### Pasos
 
 **1. Clonar el repositorio**
 ```bash
-git clone https://github.com/tu-usuario/bazar-en-linea.git
-cd bazar-en-linea
+git clone https://github.com/Stimpys-cm/Catalogodeunbazar.git
+cd Catalogodeunbazar
 npm install
 ```
 
-**2. Instalar Vercel CLI e iniciar sesión**
+**2. Instalar Vercel CLI e iniciar sesion**
 ```bash
 npm install -g vercel
 vercel login
@@ -88,156 +181,136 @@ vercel login
 **3. Agregar variables de entorno**
 ```bash
 vercel env add MONGODB_URI
-# mongodb+srv://usuario:password@cluster.mongodb.net/bazar
-
+vercel env add MONGODB_DB
 vercel env add CLOUDINARY_CLOUD_NAME
 vercel env add CLOUDINARY_API_KEY
 vercel env add CLOUDINARY_API_SECRET
+vercel env add MASTER_KEY
 ```
 
-**4. Desplegar**
+**4. Configurar Turnstile (opcional)**
+Edita `index.html` y reemplaza `SITE_KEY` con tu Site Key de Cloudflare Turnstile.
+
+**5. Desplegar**
 ```bash
 vercel --prod
 ```
 
 ---
 
-## 🔐 Variables de entorno
+## Colecciones en MongoDB
 
-| Variable | Descripción | Dónde obtenerla |
-|---|---|---|
-| `MONGODB_URI` | URI de conexión a MongoDB Atlas | Atlas → Connect → Drivers |
-| `CLOUDINARY_CLOUD_NAME` | Nombre del cloud | Cloudinary Dashboard |
-| `CLOUDINARY_API_KEY` | Llave pública de API | Cloudinary Dashboard |
-| `CLOUDINARY_API_SECRET` | Secreto de API | Cloudinary Dashboard |
+| Coleccion | Descripcion |
+|---|---|
+| `inventario` | Prendas con nombre, marca, categorias, talla, precio, costo, imagenes, estado, vendido |
+| `categorias` | Catalogo de categorias |
+| `marcas` | Catalogo de marcas |
+| `usuarios` | Usuarios con username, password (hashed), role, sessionToken, avatar |
+| `activos` | Sesiones activas con timestamp |
+| `drops` | Colecciones programadas con fecha de publicacion |
+| `logs` | Registro de actividad (rotacion automatica cada 5000 registros) |
+| `logs_archivados` | Logs viejos archivados (disponibles para descarga) |
+| `rate_limits` | Control de intentos por IP (TTL automatico) |
+| `borrado_limite` | Limite de borrados por hora por vendedor |
 
 ---
 
-## 📖 Manual de uso
+## Sincronizacion en tiempo real
 
-### Tienda pública (`/tienda.html`)
+El sistema usa polling adaptativo a `/api/sync`:
 
-La tienda muestra todas las prendas disponibles (no vendidas). Los visitantes pueden:
+- **3 segundos** -- cuando hay actividad reciente (< 15s)
+- **6 segundos** -- visible pero tranquilo
+- **15 segundos** -- pestana oculta o sin cambios
 
-- **Buscar** por nombre, marca, talla, estado o categoría usando la barra de búsqueda
-- **Filtrar** por categoría o marca desde el menú de navegación
-- **Ver fotos** en tamaño completo haciendo clic en la imagen
-- **Contactar** al vendedor directamente por WhatsApp con un mensaje pre-armado
+El endpoint `/api/sync` devuelve todas las colecciones en una sola llamada con cache de servidor de 2s. Los cambios disparan eventos:
 
-### Panel de administración (`/admin.html`)
+```
+db:inventario  -> re-renderiza el grid
+db:categorias  -> actualiza filtros y selects
+db:marcas      -> actualiza filtros y selects
+db:usuarios    -> actualiza lista de vendedores
+db:activos     -> actualiza badge de usuarios en linea
+db:logs        -> actualiza registro de actividad
+db:drops       -> actualiza vista de drops
+```
+
+---
+
+## Panel de administracion
 
 Acceso en `/login.html`. Credenciales por defecto: `admin` / `stiimpys2026`
 
-#### Pestaña Inventario
+### Pestanas
 
-Muestra todas las prendas con filtros: Todos, Disponibles y Vendidos.
-
-| Acción | Cómo |
-|---|---|
-| Buscar prenda | Escribe en el buscador superior |
-| Marcar como vendido | Botón **Vendido ✓** en la tarjeta |
-| Reactivar prenda | Botón **Reactivar** en prendas vendidas |
-| Editar prenda | Botón ✏️ |
-| Eliminar prenda | Botón 🗑 (solo admin) |
-| Ver fotos | Clic en la imagen, navegar con ‹ › |
-
-#### Pestaña + Registrar
-
-Formulario para agregar o editar prendas:
-
-| Campo | Descripción |
-|---|---|
-| Nombre | Nombre descriptivo de la prenda |
-| Marca | Selección del catálogo de marcas |
-| Categorías | Selección múltiple de categorías |
-| Talla | Talla (M, L, 32, etc.) |
-| Precio de Venta | Precio que ve el cliente |
-| Costo Interno 🔒 | Solo visible para admin |
-| Estado | Nuevo con etiquetas, Como nuevo, etc. |
-| Fotos | Hasta 6 fotos, se suben a Cloudinary |
-
-#### Pestaña 🏷 Catálogo *(solo admin)*
-
-Gestión de **categorías** y **marcas** que se usan en el formulario de registro.
-
-- Agregar nueva categoría o marca
-- Editar nombre existente
-- Eliminar (solo si no hay prendas usándola)
-
-#### Pestaña 👥 Vendedores *(solo admin)*
-
-Gestión de usuarios con rol vendedor.
-
-| Acción | Descripción |
-|---|---|
-| Crear vendedor | Usuario y contraseña mínimo 4 caracteres |
-| Cambiar contraseña | Botón 🔑 |
-| Eliminar vendedor | Botón 🗑 |
-
-**Permisos por rol:**
-
-| Función | Admin | Vendedor |
+| Pestana | Acceso | Descripcion |
 |---|---|---|
-| Ver inventario | ✅ | ✅ |
-| Agregar prendas | ✅ | ✅ |
-| Editar prendas | ✅ | ✅ |
-| Marcar vendido | ✅ | ✅ |
-| Ver costo interno | ✅ | ❌ |
-| Ver ganancias | ✅ | ❌ |
-| Gestionar catálogo | ✅ | ❌ |
-| Gestionar vendedores | ✅ | ❌ |
-| Eliminar prendas | ✅ | ❌ |
+| Inventario | Todos | Grid con filtros Todos/Disponibles/Vendidos, busqueda, paginacion (50x) |
+| Registrar | Todos | Formulario para agregar/editar prendas con preview en vivo |
+| Catalogo | Solo admin | Gestion de categorias y marcas |
+| Vendedores | Solo admin | CRUD de usuarios, cambios de contrasena |
+| Drops | Todos | Gestion de colecciones programadas con publicacion automatica |
+| Mi Cuenta | Todos | Avatar, preferencias, cambio de contrasena |
+| Sistema | Solo admin | Metricas, verificacion de modulos, deteccion de errores, logs, respaldos |
+
+### Permisos por rol
+
+| Funcion | Admin | Vendedor |
+|---|---|---|
+| Ver inventario | Si | Si |
+| Agregar/Editar prendas | Si | Si |
+| Marcar vendido / Reactivar | Si | Si |
+| Gestionar drops | Si | Si |
+| Ver costo interno | Si | No |
+| Ver ganancias | Si | No |
+| Gestionar catalogo | Si | No |
+| Gestionar vendedores | Si | No |
+| Eliminar prendas | Si | No (limite de 10/hora) |
+| Acceso a pestana Sistema | Si | No |
 
 ---
 
-## 🔄 Sincronización en tiempo real
+## API endpoints
 
-El sistema hace una petición a `/api/sync` cada **3 segundos** que devuelve todas las colecciones en una sola llamada. Si detecta cambios dispara eventos que actualizan la UI automáticamente:
-
-```
-db:inventario  → re-renderiza el grid
-db:categorias  → actualiza filtros y selects
-db:marcas      → actualiza filtros y selects
-db:usuarios    → actualiza lista de vendedores
-db:activos     → actualiza badge de usuarios en línea
-```
-
----
-
-## 📊 Estadísticas (solo admin)
-
-El panel muestra en tiempo real:
-
-- 💰 **Ganancia Neta** — total ventas menos total costos
-- 💳 **Total Ventas** — suma de precios de venta de prendas vendidas
-- ✅ **Prendas Vendidas** — cantidad total
-- 📦 **Disponibles** — prendas activas en el catálogo
+| Endpoint | Metodos | Auth | Descripcion |
+|---|---|---|---|
+| `/api/auth` | POST | No | Login con sesion unica |
+| `/api/sync` | GET | No | Todas las colecciones (con cache) |
+| `/api/inventario` | GET, PUT | Solo PUT | Lista completa de prendas |
+| `/api/inventario-item?id=N` | PATCH, DELETE | Si | Prenda individual |
+| `/api/config?col=X` | GET, PUT | Solo PUT | Categorias, marcas, usuarios, drops |
+| `/api/activos` | GET, POST, DELETE | POST/DELETE | Usuarios activos |
+| `/api/upload` | POST | Si | Subir imagen a Cloudinary |
+| `/api/acciones?op=X` | GET, POST | Segun op | Logs, borrar prenda, gestionar usuarios |
+| `/api/change-password` | POST | Si | Cambiar contrasena propia |
+| `/api/prenda?id=N` | GET | No | Open Graph HTML para compartir |
+| `/api/session-check` | POST | No | Validar vigencia de token |
 
 ---
 
-## 🛠️ Comandos útiles
+## Comandos utiles
 
 ```bash
-# Redesplegar después de cambios
+# Redesplegar despues de cambios
 vercel --prod
 
 # Ver logs en tiempo real
-vercel logs https://tu-url.vercel.app --follow
+vercel logs https://stiimpys.store --follow
 
 # Ver variables de entorno
 vercel env ls
 
 # Subir cambios a GitHub
 git add .
-git commit -m "descripción del cambio"
+git commit -m "descripcion del cambio"
 git push origin main
 ```
 
 ---
 
-## 📄 Licencia
+## Licencia
 
-MIT — libre para uso personal y comercial.
+MIT -- libre para uso personal y comercial.
 
 ---
 
