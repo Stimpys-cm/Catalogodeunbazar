@@ -60,8 +60,10 @@ function toggleSearch() {
   if (wrap.classList.contains('expanded')) {
     closeSearch();
   } else {
+    // En móvil, scroll arriba para que la barra de búsqueda sea visible
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     wrap.classList.add('expanded');
-    setTimeout(() => input.focus(), 50);
+    setTimeout(() => input.focus(), 300);
   }
 }
 function closeSearch() {
@@ -264,13 +266,13 @@ function clearFilters() {
   updateActiveFilters(); renderGrid(); buildDropdowns();
 }
 function updateActiveFilters() {
+  const row   = document.getElementById('activeFiltersRow');
   const wrap  = document.getElementById('activeFilters');
-  const clear = document.getElementById('clearFiltersBtn');
   const chips = [];
   if (filterCat)   chips.push(`<span class="filter-chip">${filterCat} <button onclick="setFilterCat(null)">✕</button></span>`);
   if (filterBrand) chips.push(`<span class="filter-chip">${filterBrand} <button onclick="setFilterBrand(null)">✕</button></span>`);
   wrap.innerHTML = chips.join('');
-  clear.classList.toggle('hidden', chips.length === 0);
+  row.classList.toggle('hidden', chips.length === 0);
 }
 
 // ─── Tiempo transcurrido ("hace X horas") ────────────────────

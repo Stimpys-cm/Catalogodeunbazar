@@ -228,14 +228,24 @@ header {
   }
 }
 
-/* Filtros activos + chips */
+/* Filtros activos + chips — fila separada */
+.active-filters-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 2.5rem;
+  gap: 10px;
+  border-top: 1px solid var(--border);
+  background: rgba(45, 107, 228, 0.03);
+}
+.active-filters-row.hidden { display: none; }
+
 .active-filters {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 16px;
-  flex-wrap: nowrap;
-  overflow: hidden;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .filter-chip {
@@ -265,7 +275,6 @@ header {
 }
 
 .clear-filters {
-  margin-left: auto;
   background: none;
   border: none;
   cursor: pointer;
@@ -277,6 +286,7 @@ header {
   white-space: nowrap;
   transition: color .2s;
   padding: 4px 8px;
+  flex-shrink: 0;
 
   &:hover { color: var(--danger); }
 }
@@ -642,7 +652,7 @@ footer {
     padding: 1.25rem;
   }
 
-  .hero { padding: 3.5rem 1.5rem; }
+  .hero { padding: 2rem 1.5rem; }
   .toolbar { padding: 1rem 1.5rem; }
 }
 
@@ -686,17 +696,18 @@ footer {
   .cat-nav { top: 52px; }
   .cat-nav-inner {
     padding: 0 .5rem;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    height: 42px;
   }
-  .cat-nav-inner::-webkit-scrollbar { display: none; }
 
   .nav-btn {
-    padding: 0 12px;
-    font-size: 11px;
+    padding: 0 10px;
+    font-size: 10px;
     white-space: nowrap;
     height: 42px;
+  }
+
+  .active-filters-row {
+    padding: 6px .75rem;
   }
 
   /* Dropdown en móvil */
@@ -897,6 +908,7 @@ header {
   .ticker-track span { font-size: 8px; letter-spacing: 0.12em; padding: 0 1.2rem; }
   .ticker-track span::before { margin-right: 1.2rem; }
   .header-row { height: 52px !important; padding: 0 .875rem !important; gap: .5rem !important; }
+  .cat-nav { top: calc(24px + 52px); }
 }
 
 /* ── BÚSQUEDA EXPANDIBLE ─────────────────────────────────────── */
@@ -959,6 +971,8 @@ header {
 
 @media (max-width: 480px) {
   .search-wrap.expanded { width: 200px; max-width: 200px; }
+  /* 16px evita el auto-zoom de iOS al enfocar el input */
+  .search-wrap input { font-size: 16px; }
 }
 
 /* ── WISHLIST HEADER BTN ─────────────────────────────────────── */
@@ -1661,8 +1675,8 @@ header {
   .btn-wishlist-header { display: none !important; }
   .header-actions .btn-ig { display: none !important; }
 
-  /* Espacio para que la barra inferior no tape contenido */
-  body { padding-bottom: 64px; }
+  /* Espacio para que la barra inferior no tape contenido (incluye safe-area para notch/gesture bar) */
+  body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
 
   /* ── Tarjetas estilo app ───────────────────────────────── */
   .card {
