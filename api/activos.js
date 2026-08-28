@@ -1,5 +1,5 @@
 // api/activos.js
-// GET    /api/activos   → lista usuarios activos (últimos 45s)  [público]
+// GET    /api/activos   → lista usuarios activos (últimos 45s)  [requiere sesión]
 // POST   /api/activos   → reporta MI actividad          [requiere sesión]
 // DELETE /api/activos   → me saca de activos (logout)    [requiere sesión]
 //
@@ -18,8 +18,11 @@ export default async function handler(req, res) {
     const db  = await getDB();
     const col = db.collection('activos');
 
-    // ── GET — lista activos (público, sin datos sensibles) ──
+    // ── GET — quién está conectado (solo para el equipo) ────
+    // Los nombres de las cuentas del bazar no son asunto del público.
     if (req.method === 'GET') {
+      const user = await requireAuth(req, res);
+      if (!user) return;
       const cutoff = new Date(Date.now() - TIMEOUT_MS);
       const items  = await col.find({ lastActive: { $gte: cutoff } }).toArray();
       return res.status(200).json(items.map(u => ({ username: u.username, lastActive: u.lastActive })));

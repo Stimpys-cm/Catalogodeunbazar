@@ -1,6 +1,17 @@
 // js/db.js
 const AUTH_KEY = 'stiimpys_session';
 
+// ── Modo público vs panel ────────────────────────────────────
+// Un visitante de la tienda no necesita usuarios, logs ni actividad, y el
+// catálogo no cambia cada tres segundos. En modo público se pide una
+// respuesta recortada (que además el CDN cachea) y se consulta mucho menos
+// seguido: así el sitio aguanta bastante más gente sin caerse.
+const MODO_PUBLICO = (() => {
+  try { return !localStorage.getItem(AUTH_KEY); } catch (_) { return true; }
+})();
+
+const RUTA_SYNC = MODO_PUBLICO ? '/api/sync?scope=publico' : '/api/sync';
+
 // ── Caché en memoria ─────────────────────────────────────────
 let _db      = [];
 let _cats    = [];
@@ -9,6 +20,7 @@ let _users   = [];
 let _activos = [];
 let _logs    = [];
 let _drops   = [];
+let _bazares = [];
 let _dbReady = false;
 
 // ── Helper HTTP ──────────────────────────────────────────────
@@ -28,7 +40,7 @@ async function api(path, options = {}) {
 // ── Carga inicial ────────────────────────────────────────────
 async function _loadAll() {
   try {
-    const data = await api('/api/sync');
+    const data = await api(RUTA_SYNC);
     _db      = data.inventario  || [];
     _cats    = data.categorias  || [];
     _brands  = data.marcas      || [];
@@ -36,6 +48,7 @@ async function _loadAll() {
     _activos = data.activos     || [];
     _logs    = data.logs        || [];
     _drops   = data.drops       || [];
+    _bazares = data.bazares     || [];
     _dbReady = true;
     window.dispatchEvent(new CustomEvent('db:ready'));
   } catch (e) {
@@ -51,6 +64,7 @@ let _hUsers  = '';
 let _hActivos = '';
 let _hLogs   = '';
 let _hDrops  = '';
+let _hBazares = '';
 
 function _h(arr) { return JSON.stringify(arr); }
 
@@ -72,7 +86,7 @@ function _confirmarEscritura(col) {
   if (typeof pollAhora === 'function') _ultimoCambio = Date.now();
   setTimeout(async () => {
     try {
-      const data = await api('/api/sync?fresh=1');
+      const data = await api(RUTA_SYNC + (MODO_PUBLICO ? '&' : '?') + 'fresh=1');
       const key = col;
       const nuevo = data[key];
       if (!Array.isArray(nuevo)) return;
@@ -87,7 +101,7 @@ function _confirmarEscritura(col) {
 // ── Polling: UNA sola petición cada 10 segundos ──────────────
 async function _poll() {
   try {
-    const data = await api('/api/sync');
+    const data = await api(RUTA_SYNC);
 
     const inv     = data.inventario || [];
     const cats    = data.categorias || [];
@@ -96,6 +110,7 @@ async function _poll() {
     const activos = data.activos    || [];
     const logs    = data.logs       || [];
     const drops   = data.drops      || [];
+    const bazares = data.bazares    || [];
 
     if (!_escudoActivo('inventario') && _h(inv) !== _hInv) {
       _hInv = _h(inv); _db = inv; _huboCambioEnPoll = true;
@@ -121,6 +136,10 @@ async function _poll() {
       _hLogs = _h(logs); _logs = logs; _huboCambioEnPoll = true;
       window.dispatchEvent(new CustomEvent('db:logs', { detail: logs }));
     }
+    if (!_escudoActivo('bazares') && _h(bazares) !== _hBazares) {
+      _hBazares = _h(bazares); _bazares = bazares; _huboCambioEnPoll = true;
+      window.dispatchEvent(new CustomEvent('db:bazares', { detail: bazares }));
+    }
     if (!_escudoActivo('drops') && _h(drops) !== _hDrops) {
       _hDrops = _h(drops); _drops = drops; _huboCambioEnPoll = true;
       window.dispatchEvent(new CustomEvent('db:drops', { detail: drops }));
@@ -133,9 +152,11 @@ async function _poll() {
 // Rápido cuando hay actividad o la pestaña está visible; lento cuando
 // todo está quieto o la pestaña en segundo plano. Así se siente casi en
 // tiempo real sin quemar el límite de peticiones de los planes gratis.
-const POLL_RAPIDO = 3000;    // hay actividad reciente
-const POLL_NORMAL = 6000;    // visible pero tranquilo
-const POLL_LENTO  = 15000;   // pestaña oculta o sin cambios hace rato
+// El panel necesita sentirse en vivo; la tienda no. Consultar cada 3 s por
+// visitante es lo que tumba un sitio cuando entra mucha gente a la vez.
+const POLL_RAPIDO = MODO_PUBLICO ?  20000 : 3000;
+const POLL_NORMAL = MODO_PUBLICO ?  60000 : 6000;
+const POLL_LENTO  = MODO_PUBLICO ? 300000 : 15000;
 let _pollTimer   = null;
 let _ultimoCambio = Date.now();   // última vez que el poll trajo algo nuevo
 let _huboCambioEnPoll = false;
@@ -169,7 +190,7 @@ function pollAhora(delay = 400) {
 
 // Al cambiar de visibilidad: si vuelve al frente, sincroniza ya
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) pollAhora(150);
+  if (!document.hidden) pollAhora(MODO_PUBLICO ? 1500 : 150);
   else _agendarPoll();
 });
 
@@ -182,6 +203,7 @@ _loadAll().then(() => {
   _hActivos = _h(_activos);
   _hLogs   = _h(_logs);
   _hDrops  = _h(_drops);
+  _hBazares = _h(_bazares);
   _agendarPoll(POLL_RAPIDO); // arranque adaptativo
 });
 
@@ -201,7 +223,13 @@ function _actualizarInventarioLocal(list) {
 }
 function saveDB(list) {
   _db = list; _hInv = _h(list); _marcarEscritura('inventario'); _confirmarEscritura('inventario');
-  api('/api/inventario', { method: 'PUT', body: { list, allowEmpty: true } })
+  // Multi-bazar: un bazar solo manda SUS prendas. El servidor acota el borrado
+  // al mismo bazar, así que las de los demás quedan intactas.
+  const mio = miBazarId();
+  const payload = (esAdminGlobal() || !mio)
+    ? list
+    : list.filter(p => Number(p.bazarId || 1) === Number(mio));
+  api('/api/inventario', { method: 'PUT', body: { list: payload, allowEmpty: true } })
     .catch(e => console.error('[saveDB]', e));
 }
 function nextId() {
@@ -258,6 +286,83 @@ function saveDrops(list) {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  IMÁGENES
+// ═══════════════════════════════════════════════════════════
+// Las fotos viven en Cloudinary, que puede entregarlas ya redimensionadas
+// y en el formato que soporte el navegador. Pedir la miniatura de 400 px en
+// vez de la foto original de 3 MB es la diferencia entre que la tienda
+// cargue al instante o se arrastre en datos móviles.
+function imgOptimizada(url, ancho = 600) {
+  const u = String(url || '');
+  if (!u.includes('/image/upload/')) return u;          // no es de Cloudinary
+  if (/\/image\/upload\/[^/]*[wf]_/.test(u)) return u;  // ya trae transformación
+  return u.replace('/image/upload/', `/image/upload/f_auto,q_auto,w_${ancho},c_limit/`);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BAZARES (multi-tienda)
+// ═══════════════════════════════════════════════════════════
+const BAZAR_PRINCIPAL = 1;
+
+function getBazares() { return _bazares; }
+
+// Solo los que están activos (los que se muestran al público)
+function getBazaresActivos() { return _bazares.filter(b => b.activo !== false); }
+
+// Bazar dueño de una prenda. Las prendas viejas sin bazarId caen en el principal.
+function bazarDe(p) {
+  const id = Number(p?.bazarId || BAZAR_PRINCIPAL);
+  return _bazares.find(b => Number(b.id) === id) || null;
+}
+
+function getBazarById(id) {
+  return _bazares.find(b => Number(b.id) === Number(id)) || null;
+}
+function getBazarBySlug(slug) {
+  const s = String(slug || '').toLowerCase().replace(/^@/, '');
+  return _bazares.find(b => String(b.slug).toLowerCase() === s) || null;
+}
+
+// WhatsApp del bazar dueño (con fallback al número histórico del sitio)
+const WA_FALLBACK = '528995284602';
+function whatsappDe(p) {
+  const b = bazarDe(p);
+  return (b && b.whatsapp) ? String(b.whatsapp).replace(/[^0-9]/g, '') : WA_FALLBACK;
+}
+
+function saveBazares(list) {
+  _bazares = list; _hBazares = _h(list);
+  _marcarEscritura('bazares');
+  return api('/api/config', { method: 'PUT', body: { col: 'bazares', list } });
+}
+function nextBazarId() {
+  return _bazares.length ? Math.max(..._bazares.map(b => Number(b.id) || 0)) + 1 : 1;
+}
+
+// El bazar de la sesión actual (null = admin principal, ve todo)
+function miBazarId() {
+  const s = getSession();
+  return s && s.bazarId != null ? Number(s.bazarId) : null;
+}
+function miBazar() {
+  const id = miBazarId();
+  return id ? getBazarById(id) : null;
+}
+// El admin principal no pertenece a ningún bazar: manda sobre todos.
+function esAdminGlobal() {
+  const s = getSession();
+  return !!s && s.role === 'admin' && (s.bazarId == null);
+}
+// ¿Mi bazar tiene este permiso? El admin principal siempre puede.
+function puedo(permiso) {
+  if (esAdminGlobal()) return true;
+  const b = miBazar();
+  if (!b || b.activo === false) return false;
+  const p = b.permisos || {};
+  return p[permiso] === true;
+}
+
+// ═══════════════════════════════════════════════════════════
 //  LOGS DE AUDITORÍA
 // ═══════════════════════════════════════════════════════════
 function getLogs() { return _logs; }
@@ -297,7 +402,8 @@ function getSession() {
 }
 function setSession(u) {
   localStorage.setItem(AUTH_KEY, JSON.stringify({
-    id: u.id, username: u.username, role: u.role, sessionToken: u.sessionToken
+    id: u.id, username: u.username, role: u.role, sessionToken: u.sessionToken,
+    bazarId: u.bazarId != null ? Number(u.bazarId) : null
   }));
 }
 

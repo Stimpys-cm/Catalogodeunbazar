@@ -31,8 +31,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Bazar">
 
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
+  <link rel="dns-prefetch" href="https://res.cloudinary.com">
   <link rel="stylesheet" href="css/global.css">
   <link rel="stylesheet" href="css/tienda.css">
+  <link rel="stylesheet" href="css/inicio.css">
+  <link rel="stylesheet" href="css/dispositivos.css">
+  <link rel="stylesheet" href="css/estetica.css">
   <style>
     html, body { overflow-x: hidden; max-width: 100%; }
     .logo-short { display: none; }
@@ -42,7 +47,9 @@
     }
   </style>
   <script src="js/db.js" defer></script>
+  <script src="js/opciones.js" defer></script>
   <script src="js/tienda.js" defer></script>
+  <script src="js/legal.js" defer></script>
 </head>
 <body>
 
@@ -66,7 +73,7 @@
   </div>
 
   <div class="header-row">
-  <a href="tienda.html" class="logo">
+  <a href="inicio.html" class="logo">
     <span class="logo-full">Bazar En Linea</span>
     <span class="logo-short">Bazar</span><span>.</span>
   </a>
@@ -91,6 +98,8 @@
       <span class="wishlist-count" id="wishlistCount" style="display:none">0</span>
     </button>
 
+    <a href="inicio.html" class="h-nav-cta h-nav-cta-ghost">Inicio</a>
+
     <a href="https://www.instagram.com/stiimpys" target="_blank" rel="noopener" class="btn-ig">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="2" y="2" width="20" height="20" rx="5"/>
@@ -106,6 +115,10 @@
 <!-- ── NAV ────────────────────────────────────────────────── -->
 <nav class="cat-nav">
   <div class="cat-nav-inner">
+    <div class="nav-item">
+      <a class="nav-btn" href="inicio.html">Inicio</a>
+    </div>
+
     <div class="nav-item" id="navCats">
       <button class="nav-btn" onclick="toggleDrop('dropCats')" aria-expanded="false" aria-controls="dropCats">
         Categorías <span class="nav-arrow" aria-hidden="true">▾</span>
@@ -132,9 +145,15 @@
 
 <!-- ── MAIN ───────────────────────────────────────────────── -->
 <main>
-  <section class="hero">
-    <h2>Prendas<br><em>Disponibles</em></h2>
-    <p>Streetwear · Vintage · Bazar</p>
+  <section class="hero h-shop-hero">
+    <div class="h-wrap">
+      <a href="inicio.html" class="h-crumb">
+        <svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        Volver al inicio
+      </a>
+      <h2>Prendas <em>disponibles</em></h2>
+      <p>Streetwear, vintage y piezas de bazar seleccionadas a mano. Filtra por categoría, marca, talla, estado o precio — cada prenda es única.</p>
+    </div>
   </section>
 
   <div class="shop-toolbar">
@@ -190,10 +209,10 @@
 
 <!-- ── BOTTOM NAV (solo móvil) ────────────────────────────── -->
 <nav class="bottom-nav" aria-label="Navegación inferior">
-  <button class="bn-item active" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Inicio">
+  <a class="bn-item" href="inicio.html" aria-label="Inicio">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
     <span>Inicio</span>
-  </button>
+  </a>
   <button class="bn-item" onclick="toggleSearch()" aria-label="Buscar">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     <span>Buscar</span>
@@ -209,11 +228,55 @@
 </nav>
 
 <!-- ── FOOTER ─────────────────────────────────────────────── -->
-<footer>
-  <p>Bazar En Linea &copy; 2026 &nbsp;·&nbsp; Reynosa, Tamaulipas</p>
-  <p style="margin-top:8px">
-    <a href="login.html" class="footer-admin-link">Admin Access</a>
-  </p>
+<footer class="site-footer">
+  <div class="sf-inner">
+    <div class="sf-col sf-brand">
+      <a href="inicio.html" class="sf-logo">Bazar En Linea<span>.</span></a>
+      <p class="sf-desc">
+        Catálogo digital de bazares independientes. Streetwear, vintage y prendas
+        únicas de segunda mano. Cada prenda pertenece al bazar que la publica.
+      </p>
+      <div class="sf-ubi">Reynosa, Tamaulipas · México</div>
+    </div>
+
+    <div class="sf-col">
+      <h3>Comprar</h3>
+      <a href="tienda.html">Ver catálogo</a>
+      <a href="inicio.html#bazares">Los bazares</a>
+      <a href="inicio.html#comofunciona">Cómo comprar</a>
+      <a href="tienda.html">Novedades</a>
+    </div>
+
+    <div class="sf-col sf-bazares">
+      <h3>Bazares</h3>
+      <div id="footerBazares"><a href="inicio.html#bazares">Ver todos</a></div>
+    </div>
+
+    <div class="sf-col">
+      <h3>Legal</h3>
+      <a href="terminos.html">Términos y condiciones</a>
+      <a href="terminos.html#sin-cambios">Cambios y devoluciones</a>
+      <a href="terminos.html#garantias">Garantías</a>
+      <a href="terminos.html#privacidad">Aviso de privacidad</a>
+    </div>
+  </div>
+
+  <div class="sf-aviso">
+    <strong>Importante:</strong> todas las prendas son de segunda mano y se venden
+    <em>tal como se muestran</em>. <b>No se aceptan cambios ni devoluciones</b> y
+    <b>no se ofrece ninguna garantía</b>. Bazar En Linea es solo un catálogo: la venta,
+    el pago y el envío se acuerdan directamente con cada bazar.
+    <a href="terminos.html">Leer los términos completos</a>
+  </div>
+
+  <div class="sf-base">
+    <span>Bazar En Linea &copy; <span id="anioActual">2026</span> · Todos los derechos reservados</span>
+    <span class="sf-base-links">
+      <a href="terminos.html">Términos</a>
+      <a href="terminos.html#privacidad">Privacidad</a>
+      <a href="login.html" class="footer-admin-link">Admin</a>
+    </span>
+  </div>
 </footer>
 
 <!-- ── MODAL IMAGEN ───────────────────────────────────────── -->

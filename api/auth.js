@@ -14,6 +14,7 @@
 
 import { getDB } from './_db.js';
 import { verifyPassword, hashPassword, looksHashed } from './_password.js';
+import { rateLimit, resetRateLimit } from './_rateLimit.js';
 import crypto from 'crypto';
 
 const MASTER_KEY = process.env.MASTER_KEY;
@@ -33,10 +34,23 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
 
-  const { username, password, override } = req.body || {};
+  // Los datos siempre se tratan como texto: si llegara un objeto
+  // ({"$ne": null}) Mongo lo interpretaría como una consulta y se podría
+  // buscar usuarios sin conocer el nombre.
+  const cuerpo   = req.body || {};
+  const username = typeof cuerpo.username === 'string' ? cuerpo.username.trim() : '';
+  const password = typeof cuerpo.password === 'string' ? cuerpo.password : '';
+  const override = typeof cuerpo.override === 'string' ? cuerpo.override : '';
+
   if (!username || !password) {
     return res.status(400).json({ error: 'username y password requeridos' });
   }
+  if (username.length > 60 || password.length > 200) {
+    return res.status(400).json({ error: 'Datos demasiado largos' });
+  }
+
+  // Freno a la fuerza bruta: 8 intentos fallidos por IP cada 15 minutos.
+  if (!(await rateLimit(req, res, { key: 'login', max: 8, windowSec: 900 }))) return;
 
   try {
     const db   = await getDB();
@@ -46,12 +60,17 @@ export default async function handler(req, res) {
     // Insertar admin por defecto si no existe
     const adminExists = await col.findOne({ username: 'admin' });
     if (!adminExists) {
-      await col.insertOne({ id: 1, username: 'admin', password: 'stiimpys2026', role: 'admin' });
+      await col.insertOne({ id: 1, username: 'admin', password: 'stiimpys2026', role: 'admin', bazarId: null });
     }
 
     // Buscar por username y verificar la contraseña (hash o texto plano)
     const user = await col.findOne({ username });
-    if (!user) return res.status(401).json({ error: 'Credenciales incorrectas' });
+    if (!user) {
+      // Mismo mensaje y mismo tiempo que una contraseña equivocada:
+      // así no se puede averiguar qué usuarios existen.
+      await verifyPassword(password, '$2a$10$invalidoinvalidoinvalidoinvalidoinvalidoinvalidoinvalido');
+      return res.status(401).json({ error: 'Credenciales incorrectas' });
+    }
 
     const passOk = await verifyPassword(password, user.password);
     if (!passOk) return res.status(401).json({ error: 'Credenciales incorrectas' });
@@ -98,8 +117,12 @@ export default async function handler(req, res) {
     // Cookie httpOnly (defensa contra robo de token por XSS)
     setSessionCookie(res, sessionToken);
 
+    // Quien acertó no arrastra el contador de intentos
+    await resetRateLimit(req, 'login');
+
     return res.status(200).json({
-      id: user.id, username: user.username, role: user.role, sessionToken
+      id: user.id, username: user.username, role: user.role, sessionToken,
+      bazarId: user.bazarId != null ? Number(user.bazarId) : null,
     });
 
   } catch (err) {

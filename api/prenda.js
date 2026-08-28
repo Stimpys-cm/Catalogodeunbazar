@@ -28,9 +28,16 @@ export default async function handler(req, res) {
       return res.status(302).end();
     }
 
+    // Bazar dueño de la prenda (para el nombre en el preview)
+    let bazar = null;
+    try {
+      bazar = await db.collection('bazares').findOne({ id: Number(item.bazarId || 1) });
+    } catch (_) {}
+    const sitio = bazar?.nombre ? `${bazar.nombre} · Bazar En Linea` : 'Bazar En Linea';
+
     const imgs  = Array.isArray(item.imagenes) ? item.imagenes : [];
     const img   = imgs[0] || '';
-    const title = `${item.nombre}${item.marca ? ' · ' + item.marca : ''} | Bazar En Linea`;
+    const title = `${item.nombre}${item.marca ? ' · ' + item.marca : ''} | ${sitio}`;
     const desc  = [
       `$${item.precio_venta} MXN`,
       item.talla  ? `Talla ${item.talla}`  : '',
@@ -38,7 +45,7 @@ export default async function handler(req, res) {
       'Contacta por WhatsApp para apartar'
     ].filter(Boolean).join(' · ');
 
-    const tiendaUrl = `https://${req.headers.host}/tienda.html?id=${id}`;
+    const tiendaUrl = `https://${req.headers.host}/prenda.html?id=${id}`;
 
     const html = `<!DOCTYPE html>
 <html lang="es">
@@ -48,7 +55,7 @@ export default async function handler(req, res) {
 
   <!-- Open Graph — WhatsApp, Facebook, Discord, iMessage -->
   <meta property="og:type"        content="product">
-  <meta property="og:site_name"   content="Bazar En Linea">
+  <meta property="og:site_name"   content="${escHtml(sitio)}">
   <meta property="og:title"       content="${escHtml(title)}">
   <meta property="og:description" content="${escHtml(desc)}">
   <meta property="og:url"         content="${escHtml(tiendaUrl)}">

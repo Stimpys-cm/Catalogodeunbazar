@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es" class="home">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Bazar En Linea | Streetwear y vintage con envíos a todo México</title>
+
+  <!-- SEO -->
+  <meta name="description" content="Bazar En Linea · Catálogo de streetwear, vintage y prendas únicas seleccionadas a mano. Compra por WhatsApp con envíos a todo México desde Reynosa, Tamaulipas.">
+  <meta name="keywords" content="bazar, streetwear, vintage, ropa, prendas únicas, Reynosa, México, segunda mano, catálogo">
+  <meta name="author" content="Bazar En Linea">
+  <meta name="theme-color" content="#2d6be4">
+  <link rel="canonical" href="https://catalogodeunbazar.vercel.app/inicio.html">
+
+  <!-- Open Graph / WhatsApp / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Bazar En Linea">
+  <meta property="og:title" content="Bazar En Linea | Streetwear y vintage">
+  <meta property="og:description" content="Prendas únicas seleccionadas a mano. Compra por WhatsApp con envíos a todo México.">
+  <meta property="og:url" content="https://catalogodeunbazar.vercel.app/inicio.html">
+  <meta property="og:locale" content="es_MX">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Bazar En Linea | Streetwear y vintage">
+  <meta name="twitter:description" content="Prendas únicas seleccionadas a mano. Envíos a todo México.">
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Bazar">
+
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
+  <link rel="dns-prefetch" href="https://res.cloudinary.com">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/tienda.css">
+  <link rel="stylesheet" href="css/inicio.css">
+  <link rel="stylesheet" href="css/dispositivos.css">
+  <link rel="stylesheet" href="css/estetica.css">
+  <style>
+    html, body { overflow-x: hidden; max-width: 100%; }
+    .logo-short { display: none; }
+    @media (max-width: 480px) {
+      .logo-full  { display: none; }
+      .logo-short { display: inline; }
+    }
+  </style>
+  <script src="js/db.js" defer></script>
+  <script src="js/opciones.js" defer></script>
+  <script src="js/inicio.js" defer></script>
+  <script src="js/legal.js" defer></script>
+</head>
+<body>
+
+<!-- ── HEADER + TICKER ────────────────────────────────────── -->
+<header>
+  <div class="ticker-bar">
+    <div class="ticker-track">
+      <span>Streetwear · Vintage · Bazar</span>
+      <span>Envíos a todo México</span>
+      <span>Prendas únicas seleccionadas</span>
+      <span>Contacta por WhatsApp</span>
+      <span>Streetwear · Vintage · Bazar</span>
+      <span>Envíos a todo México</span>
+      <span>Prendas únicas seleccionadas</span>
+      <span>Contacta por WhatsApp</span>
+      <span>Streetwear · Vintage · Bazar</span>
+      <span>Envíos a todo México</span>
+      <span>Prendas únicas seleccionadas</span>
+      <span>Contacta por WhatsApp</span>
+    </div>
+  </div>
+
+  <div class="header-row">
+    <a href="inicio.html" class="logo">
+      <span class="logo-full">Bazar En Linea</span>
+      <span class="logo-short">Bazar</span><span>.</span>
+    </a>
+
+    <form class="search-wrap expanded h-header-search" id="homeSearchForm" role="search">
+      <button class="search-icon-btn" type="submit" aria-label="Buscar prendas">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </button>
+      <input type="search" id="homeSearch" placeholder="Buscar prendas, marcas o tallas..." autocomplete="off" aria-label="Buscar prendas">
+    </form>
+
+    <div class="header-actions">
+      <a href="tienda.html" class="h-nav-cta">Ver catálogo</a>
+      <a href="https://www.instagram.com/stiimpys" target="_blank" rel="noopener" class="h-nav-ig" aria-label="Instagram">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="5"/>
+          <circle cx="12" cy="12" r="4"/>
+          <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── HERO — los bazares al frente ─────────────────────── -->
+  <section class="h-hero">
+    <div class="h-hero-inner h-hero-bz">
+      <div class="h-hero-top">
+        <div class="h-tabs">
+          <a href="inicio.html" class="active">Explorar</a>
+          <a href="tienda.html">Catálogo</a>
+        </div>
+
+        <h1 id="heroTitulo">Multi bazares.<br><em>Un solo catálogo.</em></h1>
+        <div class="hero-slugs" id="heroSlugs"></div>
+        <p class="h-hero-sub" id="heroSub">
+          Streetwear, vintage y piezas únicas seleccionadas a mano.
+          Cada prenda es de un bazar y le escribes directo a su dueño por WhatsApp.
+        </p>
+
+        <div class="h-cta-row">
+          <a href="tienda.html" class="h-btn h-btn-primary">Ver todas las prendas</a>
+          <a href="#bazares" class="h-btn h-btn-wa">Conoce los bazares</a>
+        </div>
+
+        <div class="h-stats">
+          <div class="h-stat">
+            <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H8L3 7l3 3 2-2v11h8V8l2 2 3-3-5-4z"/></svg>
+            <div class="h-stat-num" id="statPrendas">—</div>
+            <div class="h-stat-lbl">Prendas disponibles</div>
+          </div>
+          <div class="h-stat">
+            <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18M3 9l1.5-5h15L21 9M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9M9 21v-7h6v7"/></svg>
+            <div class="h-stat-num" id="statBazares">—</div>
+            <div class="h-stat-lbl" id="statBazaresLbl">Bazares publicando</div>
+          </div>
+          <div class="h-stat">
+            <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.09 5.26L20 9.27l-4 3.9.94 5.83L12 16.5l-4.94 2.5L8 13.17l-4-3.9 5.91-1.01z"/></svg>
+            <div class="h-stat-num" id="statNuevas">0</div>
+            <div class="h-stat-lbl" id="statNuevasLbl">Prendas nuevas esta semana</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjetas grandes con el logo de cada bazar -->
+      <div class="h-hero-bazares" id="heroBazares" aria-label="Bazares">
+        <div class="hb-card hb-skeleton"><div class="h-sk" style="height:100%"></div></div>
+        <div class="hb-card hb-skeleton"><div class="h-sk" style="height:100%"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FILAS POR BAZAR (una por cada tienda) ─────────────── -->
+  <div id="filasBazares"></div>
+
+  <!-- ── CATEGORÍAS ───────────────────────────────────────── -->
+  <section class="h-section h-wrap">
+    <div class="h-section-head">
+      <div>
+        <h2>Explora por <em>categoría</em></h2>
+        <p>Encuentra rápido lo que buscas: playeras, pantalones, chamarras y más.</p>
+      </div>
+      <a href="tienda.html" class="h-see-more">Todas</a>
+    </div>
+    <div class="h-cats" id="homeCats"></div>
+  </section>
+
+  <!-- ── PRECIO ───────────────────────────────────────────── -->
+  <section class="h-section h-wrap">
+    <div class="h-section-head">
+      <div>
+        <h2>Bajo <em>presupuesto</em></h2>
+        <p>Las prendas más accesibles disponibles ahora mismo.</p>
+      </div>
+      <a href="tienda.html" class="h-see-more">Ver todo</a>
+    </div>
+    <div class="h-rail" id="railPrecio">
+      <div class="h-sk"></div><div class="h-sk"></div><div class="h-sk"></div>
+      <div class="h-sk"></div><div class="h-sk"></div><div class="h-sk"></div>
+    </div>
+  </section>
+
+  <!-- ── MARCAS ───────────────────────────────────────────── -->
+  <section class="h-section h-wrap">
+    <div class="h-section-head">
+      <div>
+        <h2>Marcas en el <em>bazar</em></h2>
+        <p>Piezas originales de las marcas que más se mueven.</p>
+      </div>
+    </div>
+    <div class="h-brands" id="homeBrands"></div>
+  </section>
+
+  <!-- ── BAZARES ──────────────────────────────────────────── -->
+  <section class="h-section h-wrap" id="bazares">
+    <div class="h-section-head">
+      <div>
+        <h2>Los <em>bazares</em></h2>
+        <p>El catálogo es compartido: estas son las tiendas que publican aquí. Entra a la de cada quien para ver solo sus prendas.</p>
+      </div>
+    </div>
+    <div class="h-bazares" id="homeBazares"></div>
+  </section>
+
+  <!-- ── CÓMO FUNCIONA ────────────────────────────────────── -->
+  <section class="h-section h-wrap" id="comofunciona">
+    <div class="h-section-head">
+      <div>
+        <h2>Cómo <em>comprar</em></h2>
+        <p>Tres pasos y la prenda es tuya. Sin registros ni carritos complicados.</p>
+      </div>
+    </div>
+    <div class="h-steps">
+      <div class="h-step">
+        <div class="h-step-num">01</div>
+        <h3>Explora el catálogo</h3>
+        <p>Filtra por categoría, marca, talla, estado o precio. Guarda tus favoritas en la wishlist para no perderlas de vista.</p>
+      </div>
+      <div class="h-step">
+        <div class="h-step-num">02</div>
+        <h3>Apártala por WhatsApp</h3>
+        <p>Cada prenda tiene su botón de contacto directo. Nos llega el nombre, la talla y el precio; te confirmamos disponibilidad al momento.</p>
+      </div>
+      <div class="h-step">
+        <div class="h-step-num">03</div>
+        <h3>Recíbela en tu casa</h3>
+        <p>Enviamos a todo México con guía rastreable. Si eres de Reynosa, también puedes acordar entrega en persona.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SOBRE EL BAZAR ───────────────────────────────────── -->
+  <section class="h-section h-wrap">
+    <div class="h-about">
+      <div>
+        <h2 id="aboutTitulo">Multi bazares, <em>un solo lugar</em></h2>
+        <p id="aboutTexto">
+          Bazar En Línea es una plataforma que reúne el catálogo digital de diferentes
+          bazares independientes de México. Aquí encontrarás prendas streetwear, vintage y
+          piezas únicas de segunda mano. Nada de stock repetido: casi todas son piezas
+          únicas en talla exclusiva.
+        </p>
+        <p>
+          Cada prenda es revisada detalladamente antes de publicarse, registrando su estado,
+          talla, marca y fotos reales en su ficha. Lo que ves en el catálogo es exactamente
+          lo que recibes.
+        </p>
+      </div>
+      <div class="h-facts">
+        <div class="h-fact">
+          <div class="h-fact-k">Ubicación</div>
+          <div class="h-fact-v" id="aboutUbicacion">México</div>
+        </div>
+        <div class="h-fact">
+          <div class="h-fact-k">Envíos</div>
+          <div class="h-fact-v">A todo México con guía rastreable</div>
+        </div>
+        <div class="h-fact">
+          <div class="h-fact-k">Catálogo</div>
+          <div class="h-fact-v">Compartido entre bazares independientes, actualizado en tiempo real</div>
+        </div>
+        <div class="h-fact">
+          <div class="h-fact-k">Contacto</div>
+          <div class="h-fact-v">Directo con cada bazar a través de sus redes oficiales</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FAQ ──────────────────────────────────────────────── -->
+  <section class="h-section h-wrap">
+    <div class="h-section-head">
+      <div>
+        <h2>Preguntas <em>frecuentes</em></h2>
+      </div>
+    </div>
+    <div class="h-faq">
+      <details>
+        <summary>¿Las prendas son nuevas o usadas?</summary>
+        <p>Hay de las dos. Cada ficha indica el estado de la prenda (nueva, seminueva o usada) para que sepas exactamente qué estás comprando.</p>
+      </details>
+      <details>
+        <summary>¿Cómo aparto una prenda?</summary>
+        <p>Abre la prenda en el catálogo y usa el botón de WhatsApp. El mensaje ya lleva el nombre, la talla y el precio; solo tienes que enviarlo.</p>
+      </details>
+      <details>
+        <summary>¿Hacen envíos fuera de Reynosa?</summary>
+        <p>Sí, enviamos a todo México con guía rastreable. El costo de envío se acuerda por WhatsApp según tu ubicación.</p>
+      </details>
+      <details>
+        <summary>¿Puedo apartar varias prendas?</summary>
+        <p>Claro. Guarda todas las que te gusten en la wishlist del catálogo y usa el botón "Preguntar por todo" para mandarnos la lista completa en un solo mensaje.</p>
+      </details>
+      <details>
+        <summary>¿Hay cambios, devoluciones o garantía?</summary>
+        <p>No. Todas las prendas son de segunda mano y se venden tal como se muestran: las ventas son finales, sin cambios, sin devoluciones y sin garantía de ningún tipo. Por eso pide todas las medidas y fotos que necesites por WhatsApp antes de pagar. Puedes leer el detalle en los <a href="terminos.html">términos y condiciones</a>.</p>
+      </details>
+      <details>
+        <summary>¿Todas las prendas son del mismo vendedor?</summary>
+        <p>No. Varios bazares publican en el mismo catálogo. Cada prenda indica de qué bazar es y su botón de WhatsApp escribe directo a esa persona. Puedes filtrar por bazar o entrar al apartado de cada uno.</p>
+      </details>
+      <details>
+        <summary>¿Cada cuánto se suben prendas nuevas?</summary>
+        <p>Subimos piezas constantemente. El catálogo se actualiza solo, así que no hace falta recargar para ver lo último.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- ── CTA FINAL ────────────────────────────────────────── -->
+  <section class="h-wrap" style="padding-top:3rem">
+    <div class="h-cta">
+      <h2>¿Listo para <em>encontrar la tuya?</em></h2>
+      <p>Entra al catálogo completo y filtra por talla, marca, estado o precio.</p>
+      <a href="tienda.html" class="h-btn h-btn-primary">Ver todas las prendas</a>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── FOOTER ─────────────────────────────────────────────── -->
+<footer class="site-footer">
+  <div class="sf-inner">
+    <div class="sf-col sf-brand">
+      <a href="inicio.html" class="sf-logo">Bazar En Linea<span>.</span></a>
+      <p class="sf-desc">
+        Catálogo digital de bazares independientes. Streetwear, vintage y prendas
+        únicas de segunda mano. Cada prenda pertenece al bazar que la publica.
+      </p>
+      <div class="sf-ubi">Reynosa, Tamaulipas · México</div>
+    </div>
+
+    <div class="sf-col">
+      <h3>Comprar</h3>
+      <a href="tienda.html">Ver catálogo</a>
+      <a href="inicio.html#bazares">Los bazares</a>
+      <a href="inicio.html#comofunciona">Cómo comprar</a>
+      <a href="tienda.html">Novedades</a>
+    </div>
+
+    <div class="sf-col sf-bazares">
+      <h3>Bazares</h3>
+      <div id="footerBazares"><a href="inicio.html#bazares">Ver todos</a></div>
+    </div>
+
+    <div class="sf-col">
+      <h3>Legal</h3>
+      <a href="terminos.html">Términos y condiciones</a>
+      <a href="terminos.html#sin-cambios">Cambios y devoluciones</a>
+      <a href="terminos.html#garantias">Garantías</a>
+      <a href="terminos.html#privacidad">Aviso de privacidad</a>
+    </div>
+  </div>
+
+  <div class="sf-aviso">
+    <strong>Importante:</strong> todas las prendas son de segunda mano y se venden
+    <em>tal como se muestran</em>. <b>No se aceptan cambios ni devoluciones</b> y
+    <b>no se ofrece ninguna garantía</b>. Bazar En Linea es solo un catálogo: la venta,
+    el pago y el envío se acuerdan directamente con cada bazar.
+    <a href="terminos.html">Leer los términos completos</a>
+  </div>
+
+  <div class="sf-base">
+    <span>Bazar En Linea &copy; <span id="anioActual">2026</span> · Todos los derechos reservados</span>
+    <span class="sf-base-links">
+      <a href="terminos.html">Términos</a>
+      <a href="terminos.html#privacidad">Privacidad</a>
+      <a href="login.html" class="footer-admin-link">Admin</a>
+    </span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -6,15 +6,21 @@
 // No expone NINGÚN dato del usuario ni tokens de otras cuentas: solo un booleano.
 
 import { getDB } from './_db.js';
+import { rateLimit } from './_rateLimit.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
 
-  const { username, token } = req.body || {};
+  const cuerpo   = req.body || {};
+  const username = typeof cuerpo.username === 'string' ? cuerpo.username : '';
+  const token    = typeof cuerpo.token    === 'string' ? cuerpo.token    : '';
+
   if (!username || !token) {
     return res.status(400).json({ error: 'username y token requeridos' });
   }
+  // Evita que alguien use este endpoint para probar tokens en masa
+  if (!(await rateLimit(req, res, { key: 'sesion', max: 240, windowSec: 900 }))) return;
 
   try {
     const db   = await getDB();

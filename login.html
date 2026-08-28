@@ -2,13 +2,15 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Stiimpys Bazar | Admin Access</title>
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#1a1f2e">
+<meta name="theme-color" content="#f7f4ef">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/global.css">
 <link rel="stylesheet" href="css/login.css">
+<link rel="stylesheet" href="css/dispositivos.css">
+  <link rel="stylesheet" href="css/estetica.css">
 <style>
   /* Campo de contraseña con icono de ojo — paleta del login */
   .pw-wrap{ position:relative; }
@@ -25,13 +27,13 @@
     justify-content:center;
     border:none;
     background:transparent;
-    color:rgba(247,244,239,0.5);
+    color:var(--muted);
     cursor:pointer;
     padding:0;
     border-radius:8px;
     transition:color .2s, background .2s;
   }
-  .pw-toggle:hover{ color:#f7f4ef; background:rgba(74,144,217,0.15); }
+  .pw-toggle:hover{ color:var(--accent); background:rgba(45,107,228,0.09); }
   .pw-toggle:focus-visible{ outline:2px solid rgba(74,144,217,.6); outline-offset:1px; }
   .pw-toggle svg{ width:20px; height:20px; display:block; }
   .pw-toggle .eye-off{ display:none; }

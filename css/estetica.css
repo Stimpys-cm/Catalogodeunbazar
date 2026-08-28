@@ -1,0 +1,122 @@
+/* ═══════════════════════════════════════════════════════════════
+   ESTÉTICA COMÚN — el mismo lenguaje visual de la portada en todo
+   el sitio: tipografía, esquinas, sombras azules, foco y movimiento.
+   Se carga al final para poder afinar lo que ya existe.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --radio-chico:  10px;
+  --radio:        16px;
+  --radio-grande: 22px;
+  --radio-pill:   40px;
+
+  --sombra-suave:  0 3px 16px rgba(45, 107, 228, .07);
+  --sombra:        0 10px 30px rgba(45, 107, 228, .12);
+  --sombra-fuerte: 0 18px 46px rgba(26, 31, 46, .18);
+
+  --curva: cubic-bezier(.4, 0, .2, 1);
+  --transicion: .25s var(--curva);
+}
+
+/* ── Tipografía ──────────────────────────────────────────────── */
+/* Los títulos van en Bebas en todo el sitio, como en la portada */
+h1, h2, h3,
+.view-title, .brand-name, .sidebar-logo-text, .topbar-title,
+.pp-nombre, .bz-head-info h2, .hb-name, .legal-sec h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: .02em;
+}
+.view-title { font-size: 2.1rem; line-height: 1; }
+
+/* Selección de texto con el azul de la marca */
+::selection { background: rgba(45, 107, 228, .18); color: var(--text-dark); }
+
+/* ── Foco visible y accesible ────────────────────────────────── */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--bz-color, var(--accent));
+  outline-offset: 2px;
+  border-radius: var(--radio-chico);
+}
+
+/* ── Barras de desplazamiento discretas ──────────────────────── */
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 20px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--muted); background-clip: content-box; }
+
+/* ── Encabezado de cristal, igual en todas las páginas ───────── */
+header {
+  backdrop-filter: saturate(1.4) blur(14px);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+}
+
+/* ── Entrada suave del contenido ─────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  main > section,
+  .pp-wrap,
+  .legal-wrap,
+  .shop-layout {
+    animation: aparecer .45s var(--curva) both;
+  }
+  @keyframes aparecer {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+  }
+}
+
+/* ── Botones: el mismo gesto en todos lados ──────────────────── */
+.h-btn, .hb-btn, .bz-link, .pp-btn-wa, .h-nav-cta,
+.submit-btn, .btn-ig, .filter-btn, .estado-pill, .bz-media-btn {
+  transition: transform var(--transicion), box-shadow var(--transicion),
+              background var(--transicion), border-color var(--transicion),
+              color var(--transicion), opacity var(--transicion);
+}
+@media (hover: hover) {
+  .h-btn:hover, .pp-btn-wa:hover, .submit-btn:hover { transform: translateY(-2px); }
+}
+.h-btn:active, .hb-btn:active, .pp-btn-wa:active,
+.submit-btn:active, .h-nav-cta:active { transform: translateY(0) scale(.985); }
+
+/* ── Panel de administración con las mismas formas ───────────── */
+.stat-card, .item-card, .vend-card, .cat-item, .form-card,
+.preview-card, .drop-card, .logs-card, .bz-card {
+  border-radius: var(--radio) !important;
+}
+.stat-card, .form-card, .preview-card, .logs-card {
+  box-shadow: var(--sombra-suave);
+}
+.submit-btn, .filter-btn, .act-btn, .bz-media-btn, .estado-pill {
+  border-radius: var(--radio-chico);
+}
+.filter-btn, .estado-pill { border-radius: var(--radio-pill); }
+.sidebar-item { border-radius: var(--radio-chico); }
+.item-card:hover, .vend-card:hover, .bz-card:hover {
+  box-shadow: var(--sombra);
+}
+
+/* ── Imágenes: nunca un salto al cargar ──────────────────────── */
+.h-card-img img, .card-img img, .pp-thumb img, .h-cat img {
+  background: linear-gradient(145deg, #edf2fb, #e8e2d8);
+}
+
+/* ── Rendimiento de pintado ──────────────────────────────────── */
+/* El navegador no gasta trabajo en las secciones que aún no se ven.
+   Con muchas prendas, esto es la diferencia entre un scroll fluido
+   y uno que se traba en celulares modestos. */
+@supports (content-visibility: auto) {
+  main > .h-section,
+  #filasBazares > .h-section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 420px;
+  }
+  footer.site-footer {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 520px;
+  }
+}

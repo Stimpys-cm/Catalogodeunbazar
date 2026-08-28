@@ -26,14 +26,20 @@ function getToken(req) {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-// Devuelve { id, username, role } si el token es válido; si no, null.
+// Devuelve { id, username, role, bazarId } si el token es válido; si no, null.
+// bazarId null = staff global (admin principal, manda sobre todos los bazares).
 export async function getUser(req) {
   const token = getToken(req);
   if (!token) return null;
   const db   = await getDB();
   const user = await db.collection('usuarios').findOne({ sessionToken: token });
   if (!user) return null;
-  return { id: user.id, username: user.username, role: user.role };
+  return {
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    bazarId: user.bazarId != null ? Number(user.bazarId) : null,
+  };
 }
 
 // Exige sesión válida. Si no la hay, responde 401 y devuelve null.

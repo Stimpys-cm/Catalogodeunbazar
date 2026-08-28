@@ -1,0 +1,411 @@
+/* ═══════════════════════════════════════════════════════════════
+   PÁGINA DE PRENDA (prenda.html) — ficha completa estilo tienda
+   ═══════════════════════════════════════════════════════════════ */
+/* Valor por defecto; js/prenda.js lo reemplaza con el color del bazar dueño.
+   Va en :root para que el estilo en línea que fija el script tenga prioridad. */
+:root { --bz-color: var(--accent); }
+
+/* ── Migas de pan ────────────────────────────────────────────── */
+.pp-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 1.4rem;
+  padding-bottom: .2rem;
+  font-size: 12px;
+  color: var(--muted);
+}
+.pp-crumbs a { color: var(--text2); transition: color .2s; }
+.pp-crumbs a:hover { color: var(--bz-color, var(--accent)); }
+.pp-crumbs span { color: var(--border); }
+.pp-crumb-actual {
+  color: var(--text-dark) !important;
+  font-weight: 700;
+  max-width: 40ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Estructura ──────────────────────────────────────────────── */
+.pp-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+  gap: 2.6rem;
+  padding-top: 1.4rem;
+  padding-bottom: 1rem;
+  align-items: start;
+}
+
+/* ── Galería ─────────────────────────────────────────────────── */
+.pp-galeria { position: sticky; top: 130px; }
+.pp-foto-wrap {
+  position: relative;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  aspect-ratio: 4/5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pp-zoom { width: 100%; height: 100%; overflow: hidden; cursor: zoom-in; }
+.pp-zoom img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  transition: transform .25s ease-out;
+  background: var(--gray);
+}
+.pp-sin-foto {
+  font-size: 12px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pp-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: rgba(255, 255, 255, .92);
+  color: var(--text-dark);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s, border-color .2s;
+}
+.pp-nav:hover { border-color: var(--bz-color, var(--accent)); color: var(--bz-color, var(--accent)); }
+.pp-prev { left: 12px; }
+.pp-next { right: 12px; }
+.pp-contador {
+  position: absolute;
+  top: 14px; right: 14px;
+  background: rgba(26, 31, 46, .78);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: 5px 11px;
+  border-radius: 20px;
+}
+.pp-ampliar {
+  position: absolute;
+  bottom: 14px; left: 14px;
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255, 255, 255, .94);
+  border: 1.5px solid var(--border);
+  border-radius: 30px;
+  padding: 8px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+.pp-ampliar:hover { border-color: var(--bz-color, var(--accent)); color: var(--bz-color, var(--accent)); }
+
+.pp-thumbs {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.pp-thumb {
+  width: 74px; height: 92px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  background: var(--gray);
+  cursor: pointer;
+  padding: 0;
+  transition: border-color .2s;
+}
+.pp-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.pp-thumb.active { border-color: var(--bz-color, var(--accent)); }
+
+/* ── Información ─────────────────────────────────────────────── */
+.pp-info { min-width: 0; }
+.pp-marca {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--bz-color, var(--accent));
+  border-bottom: 1.5px solid transparent;
+}
+.pp-marca:hover { border-color: currentColor; }
+.pp-nombre {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  line-height: 1.02;
+  letter-spacing: .01em;
+  color: var(--black);
+  margin: 8px 0 6px;
+}
+.pp-meta { font-size: 12.5px; color: var(--muted); }
+
+.pp-precio-fila {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 18px 0 16px;
+}
+.pp-precio {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.4rem, 5vw, 3.4rem);
+  line-height: 1;
+  color: var(--bz-color, var(--accent));
+}
+.pp-unica, .pp-vendida {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  border-radius: 30px;
+  background: var(--gray);
+  color: var(--text2);
+}
+.pp-vendida { background: rgba(224, 92, 92, .12); color: var(--danger); }
+
+.pp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.pp-chip {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  border: 1.5px solid var(--border);
+  border-radius: 30px;
+  padding: 8px 14px;
+  color: var(--text2);
+  transition: border-color .2s, color .2s;
+}
+.pp-chip:hover { border-color: var(--bz-color, var(--accent)); color: var(--bz-color, var(--accent)); }
+
+/* ── Acciones ────────────────────────────────────────────────── */
+.pp-acciones { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
+.pp-btn-wa {
+  flex: 1 1 240px;
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  background: var(--bz-color, var(--accent));
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 17px 24px;
+  border-radius: 14px;
+  box-shadow: 0 6px 22px rgba(26, 31, 46, .16);
+  transition: opacity .2s, transform .2s;
+}
+.pp-btn-wa:hover { opacity: .9; transform: translateY(-2px); }
+.pp-btn-fav, .pp-btn-share {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text2);
+  padding: 17px 20px;
+  transition: border-color .2s, color .2s;
+}
+.pp-btn-fav { width: 58px; padding: 17px 0; }
+.pp-btn-fav svg { width: 20px; height: 20px; stroke: var(--muted); fill: none; transition: stroke .2s, fill .2s; }
+.pp-btn-fav.active svg { stroke: var(--bz-color, var(--accent)); fill: var(--bz-color, var(--accent)); }
+.pp-btn-fav:hover, .pp-btn-share:hover { border-color: var(--bz-color, var(--accent)); color: var(--bz-color, var(--accent)); }
+
+/* ── Tarjeta del bazar ───────────────────────────────────────── */
+.pp-bazar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-left: 4px solid var(--bz-color, var(--accent));
+  border-radius: 16px;
+  padding: 14px 18px;
+  margin-bottom: 22px;
+  transition: box-shadow .2s, transform .2s;
+}
+.pp-bazar:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(26, 31, 46, .1); }
+.pp-bazar-logo {
+  width: 52px; height: 52px;
+  border-radius: 16px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--bz-color, var(--accent));
+}
+.pp-bazar-inicial {
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+}
+.pp-bazar-datos { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.pp-bazar-nombre { font-size: 15px; font-weight: 700; color: var(--black); }
+.pp-bazar-slug { font-size: 12px; color: var(--bz-color, var(--accent)); font-weight: 700; letter-spacing: .06em; }
+.pp-bazar-ver { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text2); white-space: nowrap; }
+
+/* ── Bloques de detalle ──────────────────────────────────────── */
+.pp-ficha, .pp-desc, .pp-envio {
+  border-top: 1.5px solid var(--border);
+  padding-top: 20px;
+  margin-bottom: 22px;
+}
+.pp-ficha h2, .pp-desc h2, .pp-envio h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.35rem;
+  letter-spacing: .03em;
+  color: var(--black);
+  margin-bottom: 12px;
+}
+.pp-ficha dl { display: grid; gap: 0; }
+.pp-dato {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.pp-dato:last-child { border-bottom: none; }
+.pp-dato dt { color: var(--text2); }
+.pp-dato dd { color: var(--text-dark); font-weight: 700; text-align: right; }
+
+.pp-desc p { font-size: 14.5px; line-height: 1.7; color: var(--text2); white-space: pre-line; }
+.pp-envio ul { list-style: none; display: grid; gap: 9px; }
+.pp-envio li {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text2);
+  padding-left: 20px;
+  position: relative;
+}
+.pp-envio li::before {
+  content: '';
+  position: absolute;
+  left: 2px; top: 9px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--bz-color, var(--accent));
+}
+
+.pp-aviso {
+  background: var(--gray);
+  border-left: 4px solid var(--bz-color, var(--accent));
+  border-radius: 0 12px 12px 0;
+  padding: 14px 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text2);
+}
+.pp-aviso b, .pp-aviso strong { color: var(--text-dark); }
+.pp-aviso a { color: var(--bz-color, var(--accent)); border-bottom: 1px solid currentColor; margin-left: 4px; white-space: nowrap; }
+
+/* ── Prenda no encontrada ────────────────────────────────────── */
+.pp-vacio {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem 1rem;
+}
+.pp-vacio svg { width: 46px; height: 46px; stroke: var(--muted); margin-bottom: 16px; }
+.pp-vacio h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  color: var(--black);
+  margin-bottom: 8px;
+}
+.pp-vacio p { font-size: 14px; color: var(--text2); margin-bottom: 22px; }
+
+/* ── Barra fija de compra (celular) ──────────────────────────── */
+.pp-barra {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 300;
+  display: none;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, .97);
+  backdrop-filter: blur(10px);
+  border-top: 1.5px solid var(--border);
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -4px 20px rgba(26, 31, 46, .1);
+}
+.pp-barra-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.pp-barra-precio {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--bz-color, var(--accent));
+}
+.pp-barra-nombre {
+  font-size: 12px;
+  color: var(--text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pp-barra-wa {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bz-color, var(--accent));
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: 14px 20px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+/* ── Skeletons ───────────────────────────────────────────────── */
+.pp-cargando { display: contents; }
+.pp-sk {
+  background: linear-gradient(90deg, #efece6 25%, #f7f4ef 50%, #efece6 75%);
+  background-size: 200% 100%;
+  animation: ppSk 1.3s linear infinite;
+  border-radius: 16px;
+}
+@keyframes ppSk { to { background-position: -200% 0; } }
+.pp-sk-galeria { aspect-ratio: 4/5; }
+.pp-sk-info { display: grid; gap: 14px; align-content: start; }
+.pp-sk-linea { height: 22px; }
+.pp-sk-linea.corta { width: 35%; height: 14px; }
+.pp-sk-linea.precio { width: 45%; height: 44px; }
+.pp-sk-bloque { height: 200px; }
+@media (prefers-reduced-motion: reduce) { .pp-sk { animation: none; } }
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 980px) {
+  .pp-wrap { grid-template-columns: 1fr; gap: 1.8rem; }
+  .pp-galeria { position: static; }
+}
+@media (max-width: 700px) {
+  .pp-barra { display: flex; }
+  body { padding-bottom: 84px; }
+  .pp-acciones .pp-btn-wa { display: none; }
+  .pp-acciones { gap: 8px; }
+  .pp-btn-fav, .pp-btn-share { flex: 1; }
+  .pp-btn-fav { width: auto; }
+  .pp-foto-wrap { border-radius: 16px; }
+  .pp-thumb { width: 62px; height: 78px; }
+  .pp-dato { font-size: 13.5px; }
+  .pp-crumbs { font-size: 11px; gap: 6px; }
+  .pp-crumb-actual { max-width: 22ch; }
+}

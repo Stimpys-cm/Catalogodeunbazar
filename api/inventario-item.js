@@ -3,7 +3,8 @@
 // DELETE /api/inventario-item?id=X   → elimina un ítem (requiere admin)
 
 import { getDB } from './_db.js';
-import { requireAuth, requireAdmin } from './_auth.js';
+import { requireAuth } from './_auth.js';
+import { esGlobal, mismoBazar, puede } from './_bazar.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -19,6 +20,16 @@ export default async function handler(req, res) {
     if (req.method === 'PATCH') {
       const user = await requireAuth(req, res);
       if (!user) return;
+
+      // Multi-bazar: solo el dueño de la prenda (o el admin principal) la edita
+      const actual = await col.findOne({ id });
+      if (!actual) return res.status(404).json({ error: `Ítem ${id} no encontrado` });
+      if (!mismoBazar(user, actual.bazarId)) {
+        return res.status(403).json({ error: 'Esa prenda pertenece a otro bazar.' });
+      }
+      if (!esGlobal(user) && !(await puede(user, 'editarPrendas'))) {
+        return res.status(403).json({ error: 'Tu bazar no tiene permitido editar prendas.' });
+      }
 
       const updates = req.body || {};
       const ALLOWED = [
@@ -37,10 +48,23 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, updated: $set });
     }
 
-    // ── DELETE — elimina el ítem (solo admin) ─────────────────
+    // ── DELETE — el admin principal, o el bazar dueño con permiso ──
     if (req.method === 'DELETE') {
-      const admin = await requireAdmin(req, res);
-      if (!admin) return;
+      const user = await requireAuth(req, res);
+      if (!user) return;
+
+      const actual = await col.findOne({ id });
+      if (!actual) return res.status(404).json({ error: `Ítem ${id} no encontrado` });
+
+      if (!esGlobal(user)) {
+        if (!mismoBazar(user, actual.bazarId)) {
+          return res.status(403).json({ error: 'Esa prenda pertenece a otro bazar.' });
+        }
+        if (!(await puede(user, 'borrarPrendas'))) {
+          return res.status(403).json({ error: 'Tu bazar no tiene permitido borrar prendas.' });
+        }
+      }
+
       const result = await col.deleteOne({ id });
       if (result.deletedCount === 0) return res.status(404).json({ error: `Ítem ${id} no encontrado` });
       invalidarSyncCache();
@@ -56,5 +80,5 @@ export default async function handler(req, res) {
 }
 
 function invalidarSyncCache() {
-  try { global._syncCache = null; global._syncCacheTime = 0; } catch (_) {}
+  try { global._syncCache = null; global._syncCacheTime = 0; global._syncCachePub = null; } catch (_) {}
 }

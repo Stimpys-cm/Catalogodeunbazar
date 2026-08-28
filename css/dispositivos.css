@@ -1,0 +1,175 @@
+/* ═══════════════════════════════════════════════════════════════
+   DISPOSITIVOS — iPhone, Android, tablet/iPad y navegadores viejos
+   Se carga después de las demás hojas para poder corregirlas.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Base para todos ─────────────────────────────────────────── */
+html {
+  /* Safari en horizontal agranda el texto por su cuenta */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Scroll suave al saltar a #ancla, respetando el header pegajoso */
+  scroll-behavior: smooth;
+  scroll-padding-top: 120px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+body {
+  /* Sin el destello gris de iOS al tocar */
+  -webkit-tap-highlight-color: transparent;
+  /* Evita desbordes horizontales en pantallas angostas */
+  overflow-x: hidden;
+}
+
+/* Nada se sale del ancho de la pantalla */
+img, video, canvas, svg, iframe { max-width: 100%; }
+img { height: auto; }
+
+/* Los títulos largos no rompen el layout en pantallas chicas */
+h1, h2, h3, .card-name, .h-card-name, .hb-name, .bz-head-info h2 {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* ── Toques: el hover solo donde hay mouse ───────────────────── */
+/* En táctil el :hover se queda "pegado" tras tocar. */
+@media (hover: none) {
+  .card:hover,
+  .h-card:hover,
+  .hb-card:hover,
+  .h-bazar:hover,
+  .h-cat:hover,
+  .h-brand:hover,
+  .h-btn:hover,
+  .bz-link:hover {
+    transform: none;
+  }
+  .card:hover .card-img img,
+  .h-card:hover .h-card-img img,
+  .h-cat:hover img,
+  .hb-logo-link:hover .hb-logo,
+  .hb-head-logo:hover { transform: none; }
+  /* El botón de WhatsApp que aparece al pasar el mouse: en táctil, siempre visible */
+  .card .card-quick { opacity: 1; transform: none; }
+}
+
+/* Área de toque mínima cómoda (44px es lo que recomienda Apple) */
+@media (pointer: coarse) {
+  .h-btn, .hb-btn, .bz-link, .h-brand, .h-see-more,
+  .filter-btn, .sort-btn, .bn-item, .act-btn,
+  .bz-media-btn, .h-nav-cta { min-height: 44px; }
+  .card-fav-btn { width: 38px; height: 38px; }
+}
+
+/* ── Formularios en iOS ──────────────────────────────────────── */
+/* Safari hace zoom si el texto del campo mide menos de 16px */
+@media (max-width: 820px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+input, select, textarea, button { -webkit-tap-highlight-color: transparent; }
+/* iOS le pone su propio estilo a los campos y botones */
+input[type="text"], input[type="search"], input[type="password"],
+input[type="number"], input[type="tel"], input[type="email"], textarea {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: inherit;
+}
+select { -webkit-appearance: none; appearance: none; background-image: none; }
+input[type="color"] { -webkit-appearance: none; appearance: none; border: 1.5px solid var(--border); }
+
+/* ── Carruseles: deslizamiento con inercia ───────────────────── */
+.h-rail, .filter-btns, .h-tabs, .cat-nav-inner, .pd-thumbs, .h-brands {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+/* En táctil el rail se desliza libre, sin "engancharse" */
+@media (pointer: coarse) {
+  .h-rail { scroll-snap-type: x proximity; }
+}
+
+/* ── Notch y barra de gestos (iPhone) ────────────────────────── */
+/* Solo en pantallas chicas, para no tocar el margen del escritorio */
+@media (max-width: 1024px) {
+  .h-wrap, .h-hero-inner {
+    padding-left:  max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+}
+@media (max-width: 600px) {
+  .h-wrap, .h-hero-inner {
+    padding-left:  max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+footer { padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px)); }
+
+/* ── Tablet / iPad ───────────────────────────────────────────── */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .h-wrap { padding: 0 2rem; }
+  .h-hero-inner { padding: 2.5rem 2rem 3rem; }
+  .h-rail { grid-auto-columns: 195px; }
+  .h-cats { grid-template-columns: repeat(3, 1fr); }
+  .h-bazares { grid-template-columns: 1fr 1fr; }
+  .h-steps { grid-template-columns: 1fr 1fr; }
+}
+
+/* iPad en horizontal: el hero cabe en dos columnas */
+@media (min-width: 900px) and (max-width: 1200px) {
+  .h-hero-bz { grid-template-columns: 1fr 1fr; }
+  .hb-name { font-size: 1.8rem; }
+  .hb-desc { font-size: 12.5px; }
+}
+
+/* ── Teléfono en horizontal (poca altura) ────────────────────── */
+@media (max-height: 480px) and (orientation: landscape) {
+  .h-hero-inner { padding-top: 1.5rem; padding-bottom: 2rem; }
+  .h-hero-bz h1 { font-size: clamp(2rem, 6vw, 3rem); }
+  .bz-logo { width: 96px; height: 96px; }
+}
+
+/* ── Teléfonos: tipografía del hero a escala ─────────────────── */
+@media (max-width: 600px) {
+  .h-hero-bz h1 { font-size: clamp(2.1rem, 9.5vw, 3rem); }
+  .hero-slugs {
+    font-size: clamp(1.15rem, 5.6vw, 1.7rem);
+    gap: 8px;
+  }
+  .hero-sep { font-size: .6em; }
+  .hero-mas { font-size: 11px; padding: 6px 11px; }
+  .h-hero-sub { font-size: 14.5px; }
+  .h-section-head h2 { font-size: clamp(1.6rem, 7.5vw, 2.2rem); }
+  .h-cta { padding: 2rem 1rem; }
+}
+
+/* ── Pantallas muy angostas (iPhone SE, Android chicos) ──────── */
+@media (max-width: 380px) {
+  .h-wrap, .h-hero-inner {
+    padding-left:  max(.85rem, env(safe-area-inset-left));
+    padding-right: max(.85rem, env(safe-area-inset-right));
+  }
+  .h-rail { grid-auto-columns: 148px; gap: 10px; }
+  .h-cats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .h-btn { padding: 12px 18px; font-size: 11px; }
+  .hb-btns { gap: 6px; }
+  .hb-btn { padding: 10px 14px; font-size: 10px; }
+  .bz-logo { width: 88px; height: 88px; border-radius: 20px; }
+  .h-stats { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Navegadores sin soporte moderno ─────────────────────────── */
+/* aspect-ratio (Safari < 15): se simula con relleno */
+@supports not (aspect-ratio: 3 / 4) {
+  .h-card-img, .card-img { height: 0; padding-bottom: 133%; position: relative; }
+  .h-card-img img, .card-img img { position: absolute; inset: 0; }
+  .h-cat { height: 0; padding-bottom: 75%; }
+}
+/* gap en flex (Safari < 14.1): margen de respaldo */
+@supports not (gap: 1px) {
+  .h-cta-row > *, .hb-btns > *, .bz-links > *, .h-brands > * { margin: 0 8px 8px 0; }
+}
+/* backdrop-filter: si no existe, el header va sólido para que se lea */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  header, .cat-nav { background: var(--white); }
+}

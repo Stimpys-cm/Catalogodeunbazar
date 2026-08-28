@@ -9,8 +9,9 @@
 
 import { getDB } from './_db.js';
 import { requireAuth } from './_auth.js';
+import { esGlobal, puede, normalizarPermisos, PERMISOS_DEFAULT } from './_bazar.js';
 
-const COLS = ['categorias', 'marcas', 'usuarios', 'drops'];
+const COLS = ['categorias', 'marcas', 'usuarios', 'drops', 'bazares'];
 
 const DEFAULTS = {
   categorias: [
@@ -20,7 +21,13 @@ const DEFAULTS = {
   marcas: [
     { id:1, nombre:'Nike' }, { id:2, nombre:'Adidas' }, { id:3, nombre:'Supreme' }, { id:4, nombre:'Dickies' },
   ],
-  usuarios: [ { id:1, username:'admin', password:'stiimpys2026', role:'admin' } ]
+  usuarios: [ { id:1, username:'admin', password:'stiimpys2026', role:'admin', bazarId:null } ],
+  bazares: [
+    { id:1, slug:'stiimpys', nombre:'Stiimpys', whatsapp:'528995284602',
+      instagram:'stiimpys', descripcion:'Streetwear, vintage y prendas únicas seleccionadas a mano.',
+      ubicacion:'Reynosa, Tamaulipas', color:'', portada:'', activo:true,
+      permisos: { ...PERMISOS_DEFAULT, gestionarUsuarios:true } },
+  ],
 };
 
 export default async function handler(req, res) {
@@ -31,15 +38,26 @@ export default async function handler(req, res) {
 
     // ── GET ──────────────────────────────────────────────────
     if (req.method === 'GET') {
-      const colName = req.query.col;
+      const colName = String(req.query.col || '');
       if (!COLS.includes(colName)) {
         return res.status(400).json({ error: `col debe ser: ${COLS.join(', ')}` });
       }
+
+      // 🔒 La lista de cuentas NUNCA es pública: expondría el token de sesión
+      // de cada usuario y con eso cualquiera entraría como administrador.
+      if (colName === 'usuarios') {
+        const user = await requireAuth(req, res);
+        if (!user) return;                                  // 401
+        if (user.role !== 'admin') {
+          return res.status(403).json({ error: 'Requiere permisos de administrador.' });
+        }
+      }
+
       const col   = db.collection(colName);
       const count = await col.countDocuments();
       if (count === 0 && DEFAULTS[colName]) await col.insertMany(DEFAULTS[colName]);
       const items = await col.find({}).sort({ id: 1 }).toArray();
-      return res.status(200).json(items.map(normalize));
+      return res.status(200).json(items.map(sinSecretos));
     }
 
     // ── PUT — reemplaza toda la colección (requiere sesión) ──
@@ -59,10 +77,131 @@ export default async function handler(req, res) {
       const prev = await col.find({}).toArray();
 
       // 🔒 Autorización por colección
-      if (colName !== 'usuarios') {
-        // categorias / marcas / drops → solo admin
+      if (colName === 'bazares') {
+        // El admin principal crea bazares y reparte permisos.
+        // Un bazar con permiso "personalizar" solo edita la presentación
+        // del suyo: nunca su slug, sus permisos ni los demás bazares.
+        if (!esGlobal(user)) {
+          if (!user.bazarId || !(await puede(user, 'personalizar'))) {
+            return res.status(403).json({ error: 'Tu bazar no tiene permitido personalizar su apartado.' });
+          }
+          const mio = Number(user.bazarId);
+          const antes = new Map(prev.map(b => [Number(b.id), b]));
+
+          if (list.length !== prev.length) {
+            return res.status(403).json({ error: 'No puedes crear ni eliminar bazares.' });
+          }
+
+          const EDITABLES = ['nombre', 'whatsapp', 'instagram', 'descripcion',
+                             'ubicacion', 'color', 'logo', 'banner', 'portada'];
+
+          for (const b of list) {
+            const old = antes.get(Number(b.id));
+            if (!old) return res.status(403).json({ error: 'No puedes crear bazares.' });
+
+            if (Number(b.id) !== mio) {
+              // Bazar ajeno: debe llegar tal cual
+              if (JSON.stringify({ ...old, ...b }) !== JSON.stringify(old)) {
+                return res.status(403).json({ error: `No puedes modificar "${old.nombre}".` });
+              }
+              continue;
+            }
+
+            // El propio: se toman solo los campos de presentación
+            const limpio = { ...old };
+            for (const k of EDITABLES) if (k in b) limpio[k] = b[k];
+            limpio.slug     = old.slug;                       // el @ no se cambia solo
+            limpio.permisos = old.permisos;                   // ni sus permisos
+            limpio.activo   = old.activo !== false;           // ni su visibilidad
+            Object.keys(b).forEach(k => delete b[k]);
+            Object.assign(b, limpio);
+          }
+          // Validar el color que llegue (formato #rrggbb)
+          for (const b of list) {
+            if (b.color && !/^#[0-9a-fA-F]{6}$/.test(String(b.color))) {
+              return res.status(400).json({ error: 'Color inválido. Usa formato #2d6be4.' });
+            }
+          }
+          await col.deleteMany({});
+          if (list.length > 0) await col.insertMany(list);
+          try { global._syncCache = null; global._syncCacheTime = 0; global._syncCachePub = null; } catch (_) {}
+          return res.status(200).json({ ok: true, count: list.length });
+        }
+        // Normalizar permisos y no permitir slugs repetidos
+        const vistos = new Set();
+        for (const b of list) {
+          if (!b.slug) return res.status(400).json({ error: 'Cada bazar necesita un slug (@usuario).' });
+          const slug = String(b.slug).toLowerCase().replace(/^@/, '').trim();
+          if (vistos.has(slug)) return res.status(400).json({ error: `Slug repetido: @${slug}` });
+          vistos.add(slug);
+          b.slug = slug;
+          b.permisos = normalizarPermisos(b.permisos);
+          b.activo = b.activo !== false;
+          if (b.color && !/^#[0-9a-fA-F]{6}$/.test(String(b.color))) {
+            return res.status(400).json({ error: `Color inválido en "${b.nombre}". Usa formato #2d6be4.` });
+          }
+        }
+      } else if (colName === 'categorias' || colName === 'marcas') {
+        // Generales (bazarId null) → solo admin.
+        // Propias del bazar → el dueño, si tiene el permiso.
+        if (!esGlobal(user)) {
+          if (!user.bazarId || !(await puede(user, 'gestionarCatalogo'))) {
+            return res.status(403).json({ error: 'Tu bazar no tiene permitido gestionar el catálogo.' });
+          }
+          const mio = Number(user.bazarId);
+          const antes = new Map(prev.map(x => [x.id, x]));
+          // No puede tocar nada que no sea suyo
+          for (const item of list) {
+            const old = antes.get(item.id);
+            if (old && Number(old.bazarId || 0) !== mio) {
+              if (JSON.stringify(old) !== JSON.stringify({ ...old, ...item })) {
+                return res.status(403).json({ error: `"${old.nombre}" es general o de otro bazar.` });
+              }
+            }
+            if (!old) item.bazarId = mio;          // lo nuevo nace suyo
+          }
+          // Ni borrar lo ajeno: reinyectar lo que quitó y no era suyo
+          const idsEnviados = new Set(list.map(x => x.id));
+          for (const old of prev) {
+            if (!idsEnviados.has(old.id) && Number(old.bazarId || 0) !== mio) list.push(old);
+          }
+        }
+      } else if (colName !== 'usuarios') {
+        // drops → solo admin
         if (user.role !== 'admin') {
           return res.status(403).json({ error: 'Requiere permisos de administrador.' });
+        }
+      } else if (!esGlobal(user) && user.bazarId && (await puede(user, 'gestionarUsuarios'))) {
+        // Dueño de bazar con permiso: administra SOLO las cuentas de su bazar
+        const mio   = Number(user.bazarId);
+        const antes = new Map(prev.map(u => [u.id, u]));
+
+        for (const u of list) {
+          const old = antes.get(u.id);
+          if (!old) {
+            // Cuenta nueva: nace en su bazar y nunca como admin
+            u.bazarId = mio;
+            if (u.role === 'admin') {
+              return res.status(403).json({ error: 'No puedes crear administradores.' });
+            }
+            continue;
+          }
+          if (Number(old.bazarId || 0) !== mio) {
+            // Cuenta ajena: debe llegar idéntica
+            if (JSON.stringify({ ...old, ...u }) !== JSON.stringify(old)) {
+              return res.status(403).json({ error: `No puedes modificar la cuenta "${old.username}".` });
+            }
+            continue;
+          }
+          if (u.role !== old.role && u.role === 'admin') {
+            return res.status(403).json({ error: 'No puedes ascender cuentas a administrador.' });
+          }
+          u.bazarId = mio;
+        }
+        // No puede borrar cuentas de otros bazares
+        const enviados = new Set(list.map(u => u.id));
+        for (const old of prev) {
+          if (!enviados.has(old.id) && Number(old.bazarId || 0) !== mio) list.push(old);
         }
       } else if (user.role !== 'admin') {
         // usuarios + no-admin → solo puede tocar SU propio avatar
@@ -80,17 +219,20 @@ export default async function handler(req, res) {
         }
       }
 
-      // Para 'usuarios': preservar password/sessionToken/avatar que el cliente
-      // ya no maneja (no los recibe por seguridad). Una password nueva sí se respeta.
+      // Para 'usuarios': la contraseña y el token JAMÁS se toman del cliente.
+      // Cambiar contraseñas va por /api/change-password y /api/acciones, que
+      // las hashean. Así nadie puede escribir una contraseña en texto plano
+      // ni fijar el token de sesión de otra cuenta desde el navegador.
       let toInsert = list;
       if (colName === 'usuarios') {
         const byId = new Map(prev.map(u => [u.id, u]));
         toInsert = list.map(u => {
           const old = byId.get(u.id);
+          const { password: _ignorada, sessionToken: _ignorado, ...limpio } = u;
           return {
-            ...u,
-            password:     (u.password != null && u.password !== '') ? u.password : (old ? old.password : u.password),
-            sessionToken: old ? old.sessionToken : u.sessionToken,
+            ...limpio,
+            password:     old ? old.password : undefined,
+            sessionToken: old ? old.sessionToken : null,
             avatar:       (u.avatar !== undefined) ? u.avatar : (old ? old.avatar : null),
           };
         });
@@ -104,7 +246,7 @@ export default async function handler(req, res) {
 
       await col.deleteMany({});
       if (toInsert.length > 0) await col.insertMany(toInsert);
-      try { global._syncCache = null; global._syncCacheTime = 0; } catch (_) {}
+      try { global._syncCache = null; global._syncCacheTime = 0; global._syncCachePub = null; } catch (_) {}
       return res.status(200).json({ ok: true, count: toInsert.length });
     }
 
@@ -117,3 +259,7 @@ export default async function handler(req, res) {
 }
 
 function normalize({ _id, ...rest }) { return rest; }
+
+// Nada de contraseñas ni tokens sale de aquí, ni siquiera para un admin:
+// el panel no los necesita y así no pueden filtrarse por accidente.
+function sinSecretos({ _id, password, sessionToken, ...rest }) { return rest; }

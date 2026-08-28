@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Prenda | Bazar En Linea</title>
+
+  <meta name="description" content="Detalle de la prenda: fotos, talla, condición y contacto directo con el bazar por WhatsApp.">
+  <meta name="theme-color" content="#2d6be4">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
+  <link rel="dns-prefetch" href="https://res.cloudinary.com">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/tienda.css">
+  <link rel="stylesheet" href="css/inicio.css">
+  <link rel="stylesheet" href="css/prenda.css">
+  <link rel="stylesheet" href="css/dispositivos.css">
+  <link rel="stylesheet" href="css/estetica.css">
+  <style>
+    html, body { overflow-x: hidden; max-width: 100%; }
+    .logo-short { display: none; }
+    @media (max-width: 480px) {
+      .logo-full  { display: none; }
+      .logo-short { display: inline; }
+    }
+  </style>
+  <script src="js/db.js" defer></script>
+  <script src="js/opciones.js" defer></script>
+  <script src="js/ficha.js" defer></script>
+  <script src="js/legal.js" defer></script>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────────── -->
+<header>
+  <div class="ticker-bar">
+    <div class="ticker-track">
+      <span>Streetwear · Vintage · Bazar</span>
+      <span>Envíos a todo México</span>
+      <span>Prendas únicas seleccionadas</span>
+      <span>Contacta por WhatsApp</span>
+      <span>Streetwear · Vintage · Bazar</span>
+      <span>Envíos a todo México</span>
+      <span>Prendas únicas seleccionadas</span>
+      <span>Contacta por WhatsApp</span>
+      <span>Streetwear · Vintage · Bazar</span>
+      <span>Envíos a todo México</span>
+      <span>Prendas únicas seleccionadas</span>
+      <span>Contacta por WhatsApp</span>
+    </div>
+  </div>
+
+  <div class="header-row">
+    <a href="inicio.html" class="logo">
+      <span class="logo-full">Bazar En Linea</span>
+      <span class="logo-short">Bazar</span><span>.</span>
+    </a>
+
+    <form class="search-wrap expanded h-header-search" id="prendaSearchForm" role="search">
+      <button class="search-icon-btn" type="submit" aria-label="Buscar prendas">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </button>
+      <input type="search" id="prendaSearch" placeholder="Buscar prendas, marcas o tallas..." autocomplete="off" aria-label="Buscar prendas">
+    </form>
+
+    <div class="header-actions">
+      <a href="tienda.html" class="h-nav-cta h-nav-cta-ghost">Catálogo</a>
+      <a href="https://www.instagram.com/stiimpys" target="_blank" rel="noopener" class="h-nav-ig" aria-label="Instagram">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/>
+          <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Migas de pan -->
+  <nav class="pp-crumbs h-wrap" id="ppCrumbs" aria-label="Ruta">
+    <a href="inicio.html">Inicio</a>
+    <span>/</span>
+    <a href="tienda.html">Catálogo</a>
+  </nav>
+
+  <!-- Ficha de la prenda -->
+  <div class="pp-wrap h-wrap" id="ppContenido">
+    <div class="pp-cargando">
+      <div class="pp-sk pp-sk-galeria"></div>
+      <div class="pp-sk-info">
+        <div class="pp-sk pp-sk-linea corta"></div>
+        <div class="pp-sk pp-sk-linea"></div>
+        <div class="pp-sk pp-sk-linea precio"></div>
+        <div class="pp-sk pp-sk-bloque"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Más del mismo bazar -->
+  <section class="h-section h-wrap hidden" id="ppSeccionBazar">
+    <div class="h-section-head">
+      <div>
+        <h2>Más de <em id="ppBazarNombre">este bazar</em></h2>
+        <p id="ppBazarSub"></p>
+      </div>
+      <a href="tienda.html" class="h-see-more" id="ppBazarLink">Ver su bazar</a>
+    </div>
+    <div class="h-rail" id="ppRailBazar"></div>
+  </section>
+
+  <!-- Piezas similares -->
+  <section class="h-section h-wrap hidden" id="ppSeccionSimilares">
+    <div class="h-section-head">
+      <div>
+        <h2>Piezas <em>similares</em></h2>
+        <p>Prendas parecidas de todos los bazares del catálogo.</p>
+      </div>
+      <a href="tienda.html" class="h-see-more">Ver catálogo</a>
+    </div>
+    <div class="h-rail" id="ppRailSimilares"></div>
+  </section>
+
+  <!-- Vistas recientemente -->
+  <section class="h-section h-wrap hidden" id="ppSeccionRecientes">
+    <div class="h-section-head">
+      <div>
+        <h2>Lo <em>último</em> del catálogo</h2>
+        <p>Las prendas que acaban de entrar.</p>
+      </div>
+      <a href="tienda.html" class="h-see-more">Ver todo</a>
+    </div>
+    <div class="h-rail" id="ppRailRecientes"></div>
+  </section>
+</main>
+
+<script>
+  // Red de seguridad: si a los 15 s la ficha sigue vacía (por ejemplo porque
+  // js/ficha.js o js/db.js no cargaron), se avisa en vez de dejar la página
+  // girando para siempre. Va en línea a propósito: no depende de ningún archivo.
+  setTimeout(function () {
+    var cont = document.getElementById('ppContenido');
+    if (!cont || !cont.querySelector('.pp-cargando')) return;
+    cont.innerHTML =
+      '<div class="pp-vacio">' +
+        '<h1>No se pudo cargar la prenda</h1>' +
+        '<p>Revisa tu conexión y vuelve a intentar.</p>' +
+        '<div class="pp-vacio-btns">' +
+          '<button class="h-btn h-btn-primary" onclick="location.reload()">Reintentar</button>' +
+          '<a class="h-btn h-btn-wa" href="tienda.html">Ir al catálogo</a>' +
+        '</div>' +
+      '</div>';
+  }, 15000);
+</script>
+
+<!-- ── FOOTER ─────────────────────────────────────────────── -->
+<footer class="site-footer">
+  <div class="sf-inner">
+    <div class="sf-col sf-brand">
+      <a href="inicio.html" class="sf-logo">Bazar En Linea<span>.</span></a>
+      <p class="sf-desc">
+        Catálogo digital de bazares independientes. Streetwear, vintage y prendas
+        únicas de segunda mano. Cada prenda pertenece al bazar que la publica.
+      </p>
+      <div class="sf-ubi">Reynosa, Tamaulipas · México</div>
+    </div>
+
+    <div class="sf-col">
+      <h3>Comprar</h3>
+      <a href="tienda.html">Ver catálogo</a>
+      <a href="inicio.html#bazares">Los bazares</a>
+      <a href="inicio.html#comofunciona">Cómo comprar</a>
+      <a href="tienda.html">Novedades</a>
+    </div>
+
+    <div class="sf-col sf-bazares">
+      <h3>Bazares</h3>
+      <div id="footerBazares"><a href="inicio.html#bazares">Ver todos</a></div>
+    </div>
+
+    <div class="sf-col">
+      <h3>Legal</h3>
+      <a href="terminos.html">Términos y condiciones</a>
+      <a href="terminos.html#sin-cambios">Cambios y devoluciones</a>
+      <a href="terminos.html#garantias">Garantías</a>
+      <a href="terminos.html#privacidad">Aviso de privacidad</a>
+    </div>
+  </div>
+
+  <div class="sf-aviso">
+    <strong>Importante:</strong> todas las prendas son de segunda mano y se venden
+    <em>tal como se muestran</em>. <b>No se aceptan cambios ni devoluciones</b> y
+    <b>no se ofrece ninguna garantía</b>. Bazar En Linea es solo un catálogo: la venta,
+    el pago y el envío se acuerdan directamente con cada bazar.
+    <a href="terminos.html">Leer los términos completos</a>
+  </div>
+
+  <div class="sf-base">
+    <span>Bazar En Linea &copy; <span id="anioActual">2026</span> · Todos los derechos reservados</span>
+    <span class="sf-base-links">
+      <a href="terminos.html">Términos</a>
+      <a href="terminos.html#privacidad">Privacidad</a>
+      <a href="login.html" class="footer-admin-link">Admin</a>
+    </span>
+  </div>
+</footer>
+
+<!-- Barra fija de compra (móvil) -->
+<div class="pp-barra" id="ppBarra" hidden>
+  <div class="pp-barra-info">
+    <span class="pp-barra-precio" id="ppBarraPrecio"></span>
+    <span class="pp-barra-nombre" id="ppBarraNombre"></span>
+  </div>
+  <a class="pp-barra-wa" id="ppBarraWa" href="#" target="_blank" rel="noopener">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.558 4.147 1.535 5.886L0 24l6.274-1.507A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.853 0-3.587-.5-5.084-1.367l-.361-.214-3.733.897.931-3.618-.235-.374A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+    WhatsApp
+  </a>
+</div>
+
+<!-- Modal de imagen -->
+<div class="modal-overlay" id="modalOv" role="dialog" aria-hidden="true">
+  <button class="m-close" onclick="cerrarModal()" aria-label="Cerrar">✕</button>
+  <button class="m-nav" id="mPrev" onclick="modalChg(-1)" aria-label="Imagen anterior">‹</button>
+  <div class="modal-inner"><img id="modImg" src="" alt="Vista ampliada de la prenda"></div>
+  <button class="m-nav" id="mNext" onclick="modalChg(1)" aria-label="Siguiente imagen">›</button>
+</div>
+
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+</body>
+</html>

@@ -1,0 +1,8 @@
+# Bazar En Linea
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /login.html
+Disallow: /api/
+
+Sitemap: https://stiimpys.store/sitemap.xml

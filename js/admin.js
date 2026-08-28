@@ -1,5 +1,12 @@
 // js/admin.js
 
+// Escapa cualquier texto que venga de la base de datos antes de meterlo en
+// el HTML del panel. Sin esto, alguien podría guardar un <script> en el
+// nombre de una prenda y que se ejecute en TU navegador de administrador,
+// con tu sesión abierta.
+const escAdmin = str => String(str ?? '').replace(/[&<>"']/g, c =>
+  ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
 if (!isLoggedIn()) window.location.href = 'login.html';
 const session = getSession();
 
@@ -21,13 +28,92 @@ function forceLogout() {
 let currentTab = 'inventario';
 
 // Pestañas válidas y las que requieren admin
-const TABS_VALIDAS   = ['inventario','registrar','catalogo','vendedores','drops','cuenta','sistema'];
-const TABS_SOLO_ADMIN = ['vendedores','catalogo','sistema'];
+const TABS_VALIDAS   = ['inventario','registrar','catalogo','vendedores','bazares','drops','cuenta','sistema'];
+const TABS_SOLO_ADMIN = ['catalogo'];
+// Sistema (logs de toda la plataforma) es solo del admin principal
+const TABS_SOLO_GLOBAL = ['sistema'];
+
+// ─── MULTI-BAZAR ─────────────────────────────────────────────
+// El admin principal ve y administra todos los bazares. Cada bazar
+// solo ve, edita y borra lo suyo.
+let invBazarFiltro = 'todos';   // solo lo usa el admin principal
+
+// Prendas que esta cuenta puede ver en el panel
+function prendasVisibles() {
+  const db = getDB();
+  if (!esAdminGlobal()) {
+    const mio = miBazarId();
+    if (!mio) return [];
+    return db.filter(p => Number(p.bazarId || 1) === Number(mio));
+  }
+  if (invBazarFiltro === 'todos') return db;
+  return db.filter(p => Number(p.bazarId || 1) === Number(invBazarFiltro));
+}
+
+// ¿Puedo tocar esta prenda? (el admin principal siempre)
+function esMia(p) {
+  if (esAdminGlobal()) return true;
+  const mio = miBazarId();
+  return !!mio && Number(p.bazarId || 1) === Number(mio);
+}
+
+// El bazar al que se le asignan las prendas nuevas
+function bazarParaNuevas() {
+  if (!esAdminGlobal()) return miBazarId();
+  return invBazarFiltro !== 'todos' ? Number(invBazarFiltro) : 1;
+}
+
+// Muestra u oculta las pestañas según lo que el bazar tenga permitido
+function aplicarVisibilidadTabs() {
+  const vend = document.getElementById('tab-vendedores');
+  if (vend) vend.classList.toggle('hidden', !(esAdminGlobal() || (isAdmin() && puedo('gestionarUsuarios'))));
+
+  const baz = document.getElementById('tab-bazares');
+  if (baz) baz.classList.toggle('hidden', !(esAdminGlobal() || puedo('personalizar')));
+
+  // El registro de actividad de toda la plataforma es solo del admin principal
+  const sis = document.getElementById('tab-sistema');
+  if (sis) sis.classList.toggle('hidden', !esAdminGlobal());
+
+  // Catálogo: el admin principal o un bazar con permiso para el suyo
+  const cat = document.getElementById('tab-catalogo');
+  if (cat) cat.classList.toggle('hidden', !(esAdminGlobal() || (isAdmin() && puedo('gestionarCatalogo'))));
+
+  // El nombre del bazar acompaña al rol en el sidebar
+  const rol = document.getElementById('sidebarRole');
+  if (rol) {
+    const b = miBazar();
+    const base = session.role === 'admin' ? 'Admin' : 'Vendedor';
+    rol.textContent = b ? `${base} · ${b.nombre}` : (esAdminGlobal() ? 'Admin principal' : base);
+  }
+}
+
+// Categorías y marcas: las generales (sin bazarId) son de todos; un bazar
+// además puede tener las suyas y solo edita esas.
+function esGeneral(item) { return !item.bazarId; }
+// Lo que esta cuenta ve en el catálogo: lo general + lo suyo
+function catalogoVisible(items) {
+  if (esAdminGlobal()) return items;
+  const mio = miBazarId();
+  return items.filter(x => esGeneral(x) || Number(x.bazarId) === Number(mio));
+}
+function catalogoEditable(item) {
+  if (esAdminGlobal()) return true;
+  return Number(item.bazarId || 0) === Number(miBazarId());
+}
+
+function nombreDeBazar(id) {
+  const b = getBazarById(id || 1);
+  return b ? b.nombre : 'Sin bazar';
+}
 
 function showTab(tab, fromHash) {
   if (TABS_SOLO_ADMIN.includes(tab) && !isAdmin()) return;
+  if (TABS_SOLO_GLOBAL.includes(tab) && !esAdminGlobal()) return;
+  if (tab === 'vendedores' && !esAdminGlobal() && !puedo('gestionarUsuarios')) return;
+  if (tab === 'bazares'    && !esAdminGlobal() && !puedo('personalizar'))     return;
   currentTab = tab;
-  ['inventario','registrar','vendedores','catalogo','cuenta','drops','sistema'].forEach(t => {
+  ['inventario','registrar','vendedores','catalogo','bazares','cuenta','drops','sistema'].forEach(t => {
     const v = document.getElementById('view-'+t);
     const b = document.getElementById('tab-'+t);
     if (v) v.classList.toggle('hidden', t!==tab);
@@ -35,6 +121,7 @@ function showTab(tab, fromHash) {
   });
   if (tab==='inventario')  { clearForm(); renderAll(); }
   if (tab==='vendedores')  renderVendedores();
+  if (tab==='bazares')     renderBazares();
   if (tab==='catalogo')    renderCatalogo();
   if (tab==='cuenta')      renderCuenta();
   if (tab==='drops')       renderDrops();
@@ -50,7 +137,7 @@ function showTab(tab, fromHash) {
   // Título de la pestaña en el navegador
   const titulos = {
     inventario:'Inventario', registrar:'Registrar', catalogo:'Catálogo',
-    vendedores:'Vendedores', drops:'Drops', cuenta:'Mi cuenta', sistema:'Sistema'
+    vendedores:'Vendedores', bazares:'Bazares', drops:'Drops', cuenta:'Mi cuenta', sistema:'Sistema'
   };
   document.title = `${titulos[tab] || 'Panel'} · Bazar En Linea`;
 }
@@ -61,6 +148,9 @@ function aplicarHash() {
   if (!TABS_VALIDAS.includes(tab)) tab = 'inventario';
   // Si un no-admin intenta entrar a una pestaña de admin por URL, lo mandamos a inventario
   if (TABS_SOLO_ADMIN.includes(tab) && !isAdmin()) tab = 'inventario';
+  if (TABS_SOLO_GLOBAL.includes(tab) && !esAdminGlobal()) tab = 'inventario';
+  if (tab === 'vendedores' && !esAdminGlobal() && !puedo('gestionarUsuarios')) tab = 'inventario';
+  if (tab === 'bazares'    && !esAdminGlobal() && !puedo('personalizar'))     tab = 'inventario';
   showTab(tab, true);
 }
 
@@ -88,10 +178,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.body.classList.add('vista-compacta');
   }
 
-  ['tab-vendedores','tab-catalogo','tab-sistema'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.classList.toggle('hidden', !isAdmin());
-  });
+  const tc = document.getElementById('tab-catalogo');
+  if (tc) tc.classList.toggle('hidden', !isAdmin());
 
   await waitForDB();   // espera el primer fetch a MongoDB
 
@@ -107,6 +195,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
   } catch (_) {}
+
+  // Pestañas que dependen del bazar (los permisos llegan con la BD)
+  aplicarVisibilidadTabs();
 
   renderAll();
   populateSelects();
@@ -169,6 +260,12 @@ window.addEventListener('db:marcas', () => {
   if (currentTab === 'inventario')  renderInv();
 });
 
+window.addEventListener('db:bazares', () => {
+  aplicarVisibilidadTabs();
+  if (currentTab === 'bazares')    renderBazares();
+  if (currentTab === 'inventario') renderAll();
+});
+
 window.addEventListener('db:usuarios', () => {
   if (currentTab === 'vendedores') renderVendedores();
   loadAvatarFromStorage();   // por si cambió mi avatar desde otro dispositivo
@@ -180,27 +277,129 @@ window.addEventListener('db:activos', () => {
 });
 
 // ─── SELECTS DEL FORM ────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  TALLAS Y CONDICIÓN — listas predefinidas (js/opciones.js)
+// ═══════════════════════════════════════════════════════════════
+
+// Llena los tres selectores de talla de un formulario ('f' o 're')
+function poblarTallas(pre) {
+  const base = document.getElementById(`${pre}_talla_base`);
+  if (base) {
+    base.innerHTML = '<option value="">Sin talla</option>' +
+      TALLAS.map(g =>
+        `<optgroup label="${escAdmin(g.grupo)}">` +
+        g.opciones.map(t => `<option value="${escAdmin(t)}">${escAdmin(t)}</option>`).join('') +
+        `</optgroup>`).join('');
+  }
+
+  const queda = document.getElementById(`${pre}_talla_queda`);
+  if (queda) {
+    queda.innerHTML = '<option value="">Le queda a su talla</option>' +
+      QUEDA_COMO.map(t => `<option value="${escAdmin(t)}">Queda como ${escAdmin(t)}</option>`).join('');
+  }
+
+  const ajuste = document.getElementById(`${pre}_talla_ajuste`);
+  if (ajuste) {
+    ajuste.innerHTML = '<option value="">Corte normal</option>' +
+      AJUSTES.map(a => `<option value="${escAdmin(a)}">${escAdmin(a)}</option>`).join('');
+  }
+}
+
+// Botones de condición. El valor real va en el input oculto.
+function poblarEstados(pre) {
+  const wrap = document.getElementById(`${pre}_estado_pills`);
+  if (!wrap) return;
+  const oculto = document.getElementById(`${pre}_estado`);
+  const actual = oculto ? oculto.value : '';
+
+  wrap.innerHTML = ESTADOS.map(e =>
+    `<button type="button" class="estado-pill ${e === actual ? 'active' : ''}"
+       data-estado="${escAdmin(e)}" onclick="elegirEstado('${pre}', this)">${escAdmin(e)}</button>`
+  ).join('');
+}
+
+function elegirEstado(pre, btn) {
+  const wrap = document.getElementById(`${pre}_estado_pills`);
+  const oculto = document.getElementById(`${pre}_estado`);
+  if (!wrap || !oculto) return;
+
+  const valor = btn.dataset.estado;
+  // Volver a tocar el mismo botón lo deselecciona
+  const yaEstaba = oculto.value === valor;
+  oculto.value = yaEstaba ? '' : valor;
+  wrap.querySelectorAll('.estado-pill').forEach(b =>
+    b.classList.toggle('active', !yaEstaba && b === btn));
+}
+
+// Lee la talla compuesta de un formulario
+function leerTalla(pre) {
+  const base   = document.getElementById(`${pre}_talla_base`)?.value || '';
+  const queda  = document.getElementById(`${pre}_talla_queda`)?.value || '';
+  const ajuste = document.getElementById(`${pre}_talla_ajuste`)?.value || '';
+  return componerTalla(base, ajuste, queda);
+}
+
+// Escribe una talla guardada en los selectores
+function escribirTalla(pre, texto) {
+  const { base, quedaComo, ajuste } = descomponerTalla(texto);
+  const selBase = document.getElementById(`${pre}_talla_base`);
+  if (selBase) {
+    // Si la talla es vieja y no está en la lista, se agrega para no perderla
+    if (base && !TALLAS_PLANAS.includes(base)) {
+      selBase.insertAdjacentHTML('beforeend',
+        `<optgroup label="Guardada"><option value="${escAdmin(base)}">${escAdmin(base)}</option></optgroup>`);
+    }
+    selBase.value = base;
+  }
+  const selQueda = document.getElementById(`${pre}_talla_queda`);
+  if (selQueda) selQueda.value = QUEDA_COMO.includes(quedaComo) ? quedaComo : '';
+  const selAjuste = document.getElementById(`${pre}_talla_ajuste`);
+  if (selAjuste) {
+    if (ajuste && !AJUSTES.includes(ajuste)) {
+      selAjuste.insertAdjacentHTML('beforeend', `<option value="${escAdmin(ajuste)}">${escAdmin(ajuste)}</option>`);
+    }
+    selAjuste.value = ajuste;
+  }
+}
+
+// Escribe una condición guardada en los botones
+function escribirEstado(pre, valor) {
+  const oculto = document.getElementById(`${pre}_estado`);
+  if (oculto) oculto.value = valor || '';
+  const wrap = document.getElementById(`${pre}_estado_pills`);
+  if (!wrap) return;
+  poblarEstados(pre);
+  // Condición vieja que no está en la lista: se agrega al final
+  if (valor && !ESTADOS.includes(valor)) {
+    wrap.insertAdjacentHTML('beforeend',
+      `<button type="button" class="estado-pill active" data-estado="${escAdmin(valor)}"
+         onclick="elegirEstado('${pre}', this)">${escAdmin(valor)}</button>`);
+  }
+}
+
 function populateSelects() {
   const brandSel = document.getElementById('f_marca');
   if (brandSel) {
     brandSel.innerHTML = `<option value="">Sin marca</option>` +
-      getBrands().map(b => `<option value="${b.nombre}">${b.nombre}</option>`).join('');
+      catalogoVisible(getBrands()).map(b => `<option value="${escAdmin(b.nombre)}">${escAdmin(b.nombre)}</option>`).join('');
   }
   renderCatCheckboxes([]);
+  poblarTallas('f');
+  poblarEstados('f');
 }
 
 function renderCatCheckboxes(selected = []) {
   const wrap = document.getElementById('f_cats_wrap');
   if (!wrap) return;
-  const cats = getCats();
+  const cats = catalogoVisible(getCats());
   if (!cats.length) {
     wrap.innerHTML = '<span style="font-size:11px;color:var(--muted)">No hay categorías. Créalas en la pestaña Catálogo.</span>';
     return;
   }
   wrap.innerHTML = cats.map(c => `
     <label class="cat-check">
-      <input type="checkbox" value="${c.nombre}" ${selected.includes(c.nombre)?'checked':''}>
-      <span>${c.nombre}</span>
+      <input type="checkbox" value="${escAdmin(c.nombre)}" ${selected.includes(c.nombre)?'checked':''}>
+      <span>${escAdmin(c.nombre)}</span>
     </label>`).join('');
 }
 
@@ -210,7 +409,7 @@ function getSelectedCats() {
 
 // ─── STATS ───────────────────────────────────────────────────
 function renderStats() {
-  const db         = getDB();
+  const db         = prendasVisibles();
   const vendidos   = db.filter(p => p.vendido);
   const totalVentas  = vendidos.reduce((s,p) => s + (parseFloat(p.precio_venta)||0), 0);
   const totalCostos  = vendidos.reduce((s,p) => s + (parseFloat(p.costo)||0), 0);
@@ -249,7 +448,29 @@ function setFilter(f, el) {
   renderInv();
 }
 
-function renderAll() { renderStats(); renderInv(); }
+function renderAll() { pintarSelectorBazar(); renderStats(); renderInv(); }
+
+// Selector de bazar del inventario — solo para el admin principal
+function pintarSelectorBazar() {
+  const sel = document.getElementById('invBazarSelect');
+  if (!sel) return;
+  if (!esAdminGlobal()) { sel.classList.add('hidden'); return; }
+
+  sel.classList.remove('hidden');
+  const bazares = getBazares();
+  const html = ['<option value="todos">Todos los bazares</option>']
+    .concat(bazares.map(b => `<option value="${b.id}">${escAdmin(b.nombre)}</option>`))
+    .join('');
+  if (sel.innerHTML !== html) sel.innerHTML = html;
+  sel.value = String(invBazarFiltro);
+}
+
+function setInvBazar(val) {
+  invBazarFiltro = val;
+  _invPagina = 0;
+  renderStats();
+  renderInv();
+}
 
 // ─── IMG NAV EN CARDS ────────────────────────────────────────
 const cardImgIdx = {};
@@ -270,7 +491,7 @@ function nextImg(e, id) {
 
 // ─── RENDER INVENTARIO ───────────────────────────────────────
 function renderInv() {
-  const db = getDB();
+  const db = prendasVisibles();
   const q  = invQuery.toLowerCase().trim();
   // Ordenar: más reciente primero. Sin fecha → usar id como proxy
   let items = [...db].sort((a, b) => {
@@ -307,7 +528,7 @@ function renderInv() {
     const imgs    = Array.isArray(p.imagenes) ? p.imagenes : [];
     const idx     = Math.min(cardImgIdx[p.id]||0, Math.max(imgs.length-1, 0));
     const src     = imgs[idx] || '';
-    const imgHtml = src ? `<img src="${src}" alt="${p.nombre}" loading="lazy">` : `<div class="no-img">Sin foto</div>`;
+    const imgHtml = src ? `<img src="${escAdmin(src)}" alt="${escAdmin(p.nombre)}" loading="lazy">` : `<div class="no-img">Sin foto</div>`;
     const navHtml = imgs.length > 1
       ? `<button class="img-nav left"  onclick="prevImg(event,${p.id})">‹</button>
          <button class="img-nav right" onclick="nextImg(event,${p.id})">›</button>` : '';
@@ -320,10 +541,14 @@ function renderInv() {
     const delBtn    = `<button class="act-btn del" onclick="delItem(${p.id})">${IC_TRASH}</button>`;
     const costoHtml = isAdmin() ? `<span class="item-costo">Costo: $${p.costo}</span>` : '';
 
+    // Cuando el admin principal ve varios bazares, cada card dice de quién es
+    const bazarHtml = (esAdminGlobal() && invBazarFiltro === 'todos')
+      ? `<div class="inv-card-bazar">${escAdmin(nombreDeBazar(p.bazarId))}</div>` : '';
+
     const cats    = Array.isArray(p.categorias) ? p.categorias : [];
     const tagsHtml = [
-      p.marca ? `<span class="tag tag-brand">${p.marca}</span>` : '',
-      ...cats.map(c => `<span class="tag tag-cat">${c}</span>`)
+      p.marca ? `<span class="tag tag-brand">${escAdmin(p.marca)}</span>` : '',
+      ...cats.map(c => `<span class="tag tag-cat">${escAdmin(c)}</span>`)
     ].join('');
 
     return `<div class="item-card${p.vendido?' vendido':''}" id="card-${p.id}">
@@ -331,7 +556,8 @@ function renderInv() {
         ${imgHtml}${navHtml}${vendidoBadge}${photoCounterHtml}
       </div>
       <div class="item-body">
-        <div class="item-name">${p.nombre}</div>
+        <div class="item-name">${escAdmin(p.nombre)}</div>
+        ${bazarHtml}
         <div class="item-tags">${tagsHtml}</div>
         <div class="item-meta">Talla ${p.talla||'–'} · ${p.estado||''}</div>
         <div class="item-prices">
@@ -502,10 +728,11 @@ function editItem(id) {
   clearForm();
   document.getElementById('editId').value   = id;
   document.getElementById('f_nombre').value = p.nombre||'';
-  document.getElementById('f_talla').value  = p.talla||'';
   document.getElementById('f_precio').value = p.precio_venta||'';
   document.getElementById('f_costo').value  = p.costo||'';
-  document.getElementById('f_estado').value = p.estado||'';
+  poblarTallas('f');
+  escribirTalla('f', p.talla || '');
+  escribirEstado('f', p.estado || '');
   const descEl = document.getElementById('f_descripcion');
   if (descEl) descEl.value = p.descripcion||'';
   const brandSel = document.getElementById('f_marca');
@@ -530,7 +757,7 @@ function re_editar_prenda(id) {
   const brandSel = document.getElementById('re_marca');
   if (brandSel) {
     brandSel.innerHTML = `<option value="">Sin marca</option>` +
-      getBrands().map(b => `<option value="${b.nombre}">${b.nombre}</option>`).join('');
+      getBrands().map(b => `<option value="${escAdmin(b.nombre)}">${escAdmin(b.nombre)}</option>`).join('');
     brandSel.value = p.marca || '';
   }
 
@@ -540,10 +767,11 @@ function re_editar_prenda(id) {
   // Campos de texto
   document.getElementById('re_editId').value      = id;
   document.getElementById('re_nombre').value      = p.nombre || '';
-  document.getElementById('re_talla').value       = p.talla || '';
+  poblarTallas('re');
+  escribirTalla('re', p.talla || '');
   document.getElementById('re_precio').value      = p.precio_venta ?? '';
   document.getElementById('re_costo').value       = p.costo ?? '';
-  document.getElementById('re_estado').value      = p.estado || '';
+  escribirEstado('re', p.estado || '');
   document.getElementById('re_descripcion').value = p.descripcion || '';
 
   // Fotos
@@ -568,15 +796,15 @@ function cerrarReEdicion() {
 function reRenderCatChecks(selected = []) {
   const wrap = document.getElementById('re_cats_wrap');
   if (!wrap) return;
-  const cats = getCats();
+  const cats = catalogoVisible(getCats());
   if (!cats.length) {
     wrap.innerHTML = '<span style="font-size:11px;color:var(--muted)">No hay categorías. Créalas en la pestaña Catálogo.</span>';
     return;
   }
   wrap.innerHTML = cats.map(c => `
     <label class="cat-check">
-      <input type="checkbox" value="${c.nombre}" ${selected.includes(c.nombre)?'checked':''}>
-      <span>${c.nombre}</span>
+      <input type="checkbox" value="${escAdmin(c.nombre)}" ${selected.includes(c.nombre)?'checked':''}>
+      <span>${escAdmin(c.nombre)}</span>
     </label>`).join('');
 }
 
@@ -617,7 +845,7 @@ function reRenderPreviews() {
   if (!strip) return;
   strip.innerHTML = reEditImgs.map((src, i) => `
     <div class="preview-thumb">
-      <img src="${src}" alt="">
+      <img src="${escAdmin(src)}" alt="">
       <button onclick="reRemovePreview(${i})">${IC_X}</button>
     </div>`).join('');
 }
@@ -653,10 +881,10 @@ function guardarReEdicion() {
   p.nombre       = nombre;
   p.marca        = document.getElementById('re_marca').value;
   p.categorias   = reGetSelectedCats();
-  p.talla        = document.getElementById('re_talla').value.trim();
+  p.talla        = leerTalla('re');
   p.precio_venta = precio;
   p.costo        = costo;
-  p.estado       = document.getElementById('re_estado').value.trim();
+  p.estado       = (document.getElementById('re_estado').value || '').trim();
   p.descripcion  = document.getElementById('re_descripcion').value.trim();
   p.imagenes     = [...reEditImgs];
 
@@ -731,11 +959,13 @@ function removePreview(i) {
 }
 function clearForm() {
   document.getElementById('editId').value = '';
-  ['f_nombre','f_talla','f_precio','f_costo','f_estado','f_descripcion','f_dropNombre'].forEach(id => {
+  ['f_nombre','f_precio','f_costo','f_estado','f_descripcion','f_dropNombre'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const brandSel = document.getElementById('f_marca');
   if (brandSel) brandSel.value = '';
+  poblarTallas('f');
+  escribirEstado('f', '');
   renderCatCheckboxes([]);
   newImages = []; editImages = [];
   renderPreviews();
@@ -789,6 +1019,9 @@ function diffPrenda(anterior, nuevo) {
 }
 
 function submitForm() {
+  if (!esAdminGlobal() && !puedo('crearPrendas') && !puedo('editarPrendas')) {
+    return toast('Tu bazar no tiene permitido publicar prendas');
+  }
   const nombre = document.getElementById('f_nombre').value.trim();
   const precio = parseFloat(document.getElementById('f_precio').value);
   const costo  = parseFloat(document.getElementById('f_costo').value);
@@ -808,7 +1041,7 @@ function submitForm() {
     if (p) {
       const antes = { nombre:p.nombre, precio_venta:p.precio_venta, costo:p.costo, talla:p.talla, marca:p.marca, estado:p.estado, categorias:p.categorias, imagenes:p.imagenes };
       p.nombre = nombre; p.marca = marca; p.categorias = categorias;
-      p.talla  = document.getElementById('f_talla').value.trim();
+      p.talla  = leerTalla('f');
       p.precio_venta = precio; p.costo = costo;
       p.estado = document.getElementById('f_estado').value.trim();
       p.descripcion = (document.getElementById('f_descripcion')?.value||'').trim();
@@ -847,17 +1080,18 @@ function submitForm() {
 
     const nuevaPrenda = {
       id: nextId(), nombre, marca, categorias,
-      talla: document.getElementById('f_talla').value.trim(),
+      talla: leerTalla('f'),
       precio_venta: precio, costo,
       estado: document.getElementById('f_estado').value.trim(),
       descripcion: (document.getElementById('f_descripcion')?.value||'').trim(),
       imagenes: combined, vendido: false,
       creadoEn: new Date().toISOString(),
-      oculto: !!dropIdFinal
+      oculto: !!dropIdFinal,
+      bazarId: bazarParaNuevas()
     };
     db.unshift(nuevaPrenda);
 
-    const talla = document.getElementById('f_talla').value.trim();
+    const talla = leerTalla('f');
     if (dropIdFinal) {
       const drops = getDrops();
       const drop  = drops.find(d => d.id === dropIdFinal);
@@ -874,9 +1108,390 @@ function submitForm() {
   saveDB(db); clearForm(); showTab('inventario');
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  BAZARES — el admin principal crea las tiendas y reparte permisos.
+//  Cada bazar solo ve su propia ficha y la personaliza.
+// ═══════════════════════════════════════════════════════════════
+const PERMISOS_LBL = {
+  crearPrendas:      'Publicar prendas',
+  editarPrendas:     'Editar sus prendas',
+  borrarPrendas:     'Borrar sus prendas',
+  gestionarUsuarios: 'Crear cuentas de su bazar',
+  gestionarCatalogo: 'Crear sus categorías y marcas',
+  personalizar:      'Personalizar su apartado',
+};
+
+let _bazarAbierto = null;   // id del bazar que se está editando
+
+// Colores sugeridos (el bazar puede escribir cualquier otro en hexadecimal)
+const PALETA = ['#2d6be4', '#2e8b57', '#e05c5c', '#f2a01d', '#8b5cf6',
+                '#0ea5a4', '#ec4899', '#1a1f2e'];
+
+// Devuelve el hex normalizado (#rrggbb) o null si no es válido
+function colorValido(v) {
+  if (!v) return null;
+  let c = String(v).trim();
+  if (!c.startsWith('#')) c = '#' + c;
+  if (/^#[0-9a-fA-F]{3}$/.test(c)) {
+    // #abc → #aabbcc
+    c = '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+  }
+  return /^#[0-9a-fA-F]{6}$/.test(c) ? c.toLowerCase() : null;
+}
+
+// Mantiene sincronizados el selector visual y el campo hexadecimal
+function sincronizarColor(id, origen) {
+  const picker = document.getElementById(`bz_color_${id}`);
+  const texto  = document.getElementById(`bz_colorhex_${id}`);
+  const prev   = document.getElementById(`bz_colorprev_${id}`);
+  if (!picker || !texto) return;
+
+  if (origen === 'picker') {
+    texto.value = picker.value;
+    texto.classList.remove('malo');
+  } else {
+    const c = colorValido(texto.value);
+    texto.classList.toggle('malo', !c && texto.value.trim() !== '');
+    if (c) picker.value = c;
+  }
+  const actual = colorValido(texto.value) || picker.value;
+  if (prev) prev.style.background = actual;
+}
+
+// Clic en uno de los colores sugeridos
+function elegirColor(id, hex) {
+  const picker = document.getElementById(`bz_color_${id}`);
+  const texto  = document.getElementById(`bz_colorhex_${id}`);
+  if (picker) picker.value = hex;
+  if (texto)  texto.value  = hex;
+  sincronizarColor(id, 'picker');
+}
+
+function renderBazares() {
+  const wrap = document.getElementById('bazaresList');
+  if (!wrap) return;
+
+  const global = esAdminGlobal();
+  const lista  = global ? getBazares() : getBazares().filter(b => Number(b.id) === Number(miBazarId()));
+
+  const btnNuevo = document.getElementById('btnNuevoBazar');
+  if (btnNuevo) btnNuevo.classList.toggle('hidden', !global);
+
+  const sub = document.getElementById('bazaresSubtitle');
+  if (sub) sub.textContent = global
+    ? 'Crea bazares, define qué puede hacer cada uno y administra sus cuentas'
+    : 'Personaliza cómo se ve tu bazar en el catálogo';
+
+  if (!lista.length) {
+    wrap.innerHTML = `<div class="bz-empty">
+      ${global ? 'Aún no hay bazares. Crea el primero.' : 'Tu cuenta todavía no está asignada a un bazar.'}
+    </div>`;
+    return;
+  }
+
+  const conteo = {};
+  getDB().forEach(p => {
+    const id = String(p.bazarId || 1);
+    conteo[id] = (conteo[id] || 0) + 1;
+  });
+
+  wrap.innerHTML = lista.map(b => {
+    const abierto = Number(_bazarAbierto) === Number(b.id);
+    const perms   = b.permisos || {};
+    const n       = conteo[String(b.id)] || 0;
+
+    return `<div class="bz-card ${abierto ? 'open' : ''}">
+      <div class="bz-card-head" onclick="toggleBazar(${b.id})">
+        <div class="bz-card-logo" style="background:${escAdmin(b.color || '#2d6be4')}">
+          ${(b.logo || b.portada)
+            ? `<img src="${escAdmin(b.logo || b.portada)}" alt="Logo de ${escAdmin(b.nombre)}">`
+            : escAdmin((b.nombre || '?').charAt(0))}
+        </div>
+        <div class="bz-card-info">
+          <div class="bz-card-name">${escAdmin(b.nombre)} ${b.activo === false ? '<span class="bz-off">Pausado</span>' : ''}</div>
+          <div class="bz-card-slug">@${escAdmin(b.slug)} · ${n} prenda${n !== 1 ? 's' : ''}</div>
+        </div>
+        <span class="bz-card-caret">${abierto ? '▴' : '▾'}</span>
+      </div>
+
+      ${abierto ? `<div class="bz-card-body">
+        <div class="bz-form">
+          <label>Nombre del bazar
+            <input type="text" id="bz_nombre_${b.id}" value="${escAdmin(b.nombre)}" maxlength="40">
+          </label>
+          <label>Usuario público (@)
+            <input type="text" id="bz_slug_${b.id}" value="${escAdmin(b.slug)}" maxlength="30" ${global ? '' : 'disabled'}>
+          </label>
+          <label>WhatsApp (con lada)
+            <input type="text" id="bz_wa_${b.id}" value="${escAdmin(b.whatsapp || '')}" inputmode="numeric" maxlength="15">
+          </label>
+          <label>Instagram
+            <input type="text" id="bz_ig_${b.id}" value="${escAdmin(b.instagram || '')}" maxlength="40">
+          </label>
+          <label>Ubicación
+            <input type="text" id="bz_ubi_${b.id}" value="${escAdmin(b.ubicacion || '')}" maxlength="60">
+          </label>
+          <label class="bz-full">Descripción
+            <textarea id="bz_desc_${b.id}" rows="3" maxlength="240">${escAdmin(b.descripcion || '')}</textarea>
+          </label>
+          <label class="bz-full">Color del bazar
+            <span class="bz-color-row">
+              <input type="color" id="bz_color_${b.id}" value="${escAdmin(colorValido(b.color) || '#2d6be4')}"
+                class="bz-color" oninput="sincronizarColor(${b.id}, 'picker')">
+              <input type="text" id="bz_colorhex_${b.id}" value="${escAdmin(colorValido(b.color) || '#2d6be4')}"
+                class="bz-colorhex" maxlength="7" spellcheck="false" placeholder="#2d6be4"
+                oninput="sincronizarColor(${b.id}, 'texto')" aria-label="Color en hexadecimal">
+              <span class="bz-color-preview" id="bz_colorprev_${b.id}"
+                style="background:${escAdmin(colorValido(b.color) || '#2d6be4')}"></span>
+            </span>
+            <span class="bz-color-sugerencias">
+              ${PALETA.map(c => `<button type="button" class="bz-color-chip" style="background:${c}"
+                  title="${c}" onclick="elegirColor(${b.id}, '${c}')"></button>`).join('')}
+            </span>
+            <span class="bz-color-nota">Se usa en su @, sus botones, sus tarjetas y su apartado.</span>
+          </label>
+        </div>
+
+        <div class="bz-media">
+          <div class="bz-media-item">
+            <span class="bz-media-lbl">Logo</span>
+            <div class="bz-logo-pick" id="bz_logo_prev_${b.id}">
+              ${(b.logo || b.portada)
+                ? `<img src="${escAdmin(b.logo || b.portada)}" alt="Logo">`
+                : `<span class="bz-media-ph">${escAdmin((b.nombre || '?').charAt(0))}</span>`}
+            </div>
+            <input type="file" accept="image/*" id="bz_logo_file_${b.id}" hidden
+              onchange="subirImagenBazar(${b.id}, 'logo', this.files[0])">
+            <div class="bz-media-btns">
+              <button type="button" class="bz-media-btn" onclick="document.getElementById('bz_logo_file_${b.id}').click()">Subir logo</button>
+              ${(b.logo || b.portada) ? `<button type="button" class="bz-media-btn del" onclick="quitarImagenBazar(${b.id},'logo')">Quitar</button>` : ''}
+            </div>
+          </div>
+
+          <div class="bz-media-item bz-media-wide">
+            <span class="bz-media-lbl">Banner (imagen ancha de fondo)</span>
+            <div class="bz-banner-pick" id="bz_banner_prev_${b.id}">
+              ${b.banner ? `<img src="${escAdmin(b.banner)}" alt="Banner">` : `<span class="bz-media-ph">Sin banner</span>`}
+            </div>
+            <input type="file" accept="image/*" id="bz_banner_file_${b.id}" hidden
+              onchange="subirImagenBazar(${b.id}, 'banner', this.files[0])">
+            <div class="bz-media-btns">
+              <button type="button" class="bz-media-btn" onclick="document.getElementById('bz_banner_file_${b.id}').click()">Subir banner</button>
+              ${b.banner ? `<button type="button" class="bz-media-btn del" onclick="quitarImagenBazar(${b.id},'banner')">Quitar</button>` : ''}
+            </div>
+          </div>
+        </div>
+
+        ${global ? `
+          <div class="bz-perms">
+            <div class="bz-perms-title">Permisos de este bazar</div>
+            ${Object.keys(PERMISOS_LBL).map(k => `
+              <label class="bz-perm">
+                <input type="checkbox" id="bz_perm_${b.id}_${k}" ${perms[k] ? 'checked' : ''}>
+                <span>${PERMISOS_LBL[k]}</span>
+              </label>`).join('')}
+            <label class="bz-perm bz-perm-sep">
+              <input type="checkbox" id="bz_activo_${b.id}" ${b.activo !== false ? 'checked' : ''}>
+              <span>Visible en el catálogo público</span>
+            </label>
+          </div>` : `
+          <div class="bz-perms bz-perms-ro">
+            <div class="bz-perms-title">Lo que tu bazar puede hacer</div>
+            ${Object.keys(PERMISOS_LBL).map(k => `
+              <div class="bz-perm-ro ${perms[k] ? 'on' : 'off'}">
+                ${perms[k] ? '✓' : '✕'} ${PERMISOS_LBL[k]}
+              </div>`).join('')}
+            <p class="bz-perms-nota">Solo el administrador principal cambia estos permisos.</p>
+          </div>`}
+
+        <div class="bz-actions">
+          <button class="submit-btn" style="width:auto;padding:12px 24px" onclick="guardarBazar(${b.id})">Guardar cambios</button>
+          <a class="btn-ghost" href="tienda.html?bazar=${encodeURIComponent(b.slug)}" target="_blank">Ver apartado público</a>
+          ${global && Number(b.id) !== 1 ? `<button class="btn-danger" onclick="eliminarBazar(${b.id})">Eliminar bazar</button>` : ''}
+        </div>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// Sube el logo o el banner del bazar y lo guarda al instante
+async function subirImagenBazar(id, campo, file) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) return toast('Ese archivo no es una imagen');
+  if (file.size > 5 * 1024 * 1024)     return toast('La imagen pesa más de 5 MB');
+
+  toast('Subiendo imagen...');
+  const base64 = await new Promise((ok, err) => {
+    const r = new FileReader();
+    r.onload  = () => ok(r.result);
+    r.onerror = err;
+    r.readAsDataURL(file);
+  });
+
+  let url;
+  try {
+    url = await uploadToCloud(base64);
+  } catch (e) {
+    return toast('No se pudo subir: ' + e.message);
+  }
+
+  const lista = getBazares().map(b => ({ ...b }));
+  const b = lista.find(x => Number(x.id) === Number(id));
+  if (!b) return;
+  b[campo] = url;
+  if (campo === 'logo') b.portada = url;   // compatibilidad con el campo viejo
+
+  saveBazares(lista)
+    .then(() => {
+      registrarLog('bazar_editar', b.nombre, campo === 'logo' ? 'Nuevo logo' : 'Nuevo banner');
+      playActionSound('ok');
+      toast(campo === 'logo' ? 'Logo actualizado' : 'Banner actualizado');
+      renderBazares();
+    })
+    .catch(e => toast(e.message || 'No se pudo guardar'));
+}
+
+function quitarImagenBazar(id, campo) {
+  const lista = getBazares().map(b => ({ ...b }));
+  const b = lista.find(x => Number(x.id) === Number(id));
+  if (!b) return;
+  b[campo] = '';
+  if (campo === 'logo') b.portada = '';
+
+  saveBazares(lista)
+    .then(() => { toast('Imagen quitada'); renderBazares(); })
+    .catch(e => toast(e.message || 'No se pudo guardar'));
+}
+
+function toggleBazar(id) {
+  _bazarAbierto = Number(_bazarAbierto) === Number(id) ? null : id;
+  renderBazares();
+}
+
+function nuevoBazar() {
+  if (!esAdminGlobal()) return toast('Solo el administrador principal crea bazares');
+
+  const nombre = prompt('Nombre del bazar (ej. Papu Bzr)');
+  if (!nombre || !nombre.trim()) return;
+
+  let slug = prompt('Usuario público, sin @ (ej. papu_bzr)');
+  if (!slug) return;
+  slug = slug.toLowerCase().replace(/^@/, '').replace(/[^a-z0-9._-]/g, '').trim();
+  if (!slug) return toast('Ese usuario no es válido');
+  if (getBazarBySlug(slug)) return toast('Ya existe un bazar con ese @');
+
+  const whatsapp = (prompt('WhatsApp con lada (ej. 528995284602)') || '').replace(/[^0-9]/g, '');
+
+  const lista = [...getBazares(), {
+    id: nextBazarId(),
+    slug, nombre: nombre.trim(), whatsapp,
+    instagram: '', descripcion: '', ubicacion: '', color: '', portada: '',
+    activo: true,
+    permisos: {
+      crearPrendas: true, editarPrendas: true, borrarPrendas: true,
+      gestionarUsuarios: false, gestionarCatalogo: true, personalizar: true,
+    },
+  }];
+
+  saveBazares(lista)
+    .then(() => {
+      registrarLog('bazar_crear', nombre.trim(), `@${slug}`);
+      toast('Bazar creado — ahora crea su cuenta en Vendedores');
+      _bazarAbierto = lista[lista.length - 1].id;
+      renderBazares();
+    })
+    .catch(e => toast(e.message || 'No se pudo crear'));
+}
+
+function guardarBazar(id) {
+  const lista = getBazares().map(b => ({ ...b }));
+  const b     = lista.find(x => Number(x.id) === Number(id));
+  if (!b) return;
+
+  const val = pre => (document.getElementById(`bz_${pre}_${id}`)?.value || '').trim();
+
+  const nombre = val('nombre');
+  if (!nombre) return toast('El bazar necesita nombre');
+
+  b.nombre      = nombre;
+  b.whatsapp    = val('wa').replace(/[^0-9]/g, '');
+  b.instagram   = val('ig').replace(/^@/, '');
+  b.ubicacion   = val('ubi');
+  b.descripcion = val('desc');
+  const colorEscrito = colorValido(val('colorhex')) || colorValido(val('color'));
+  if (val('colorhex') && !colorValido(val('colorhex'))) {
+    return toast('Ese color no es válido. Usa formato #2d6be4');
+  }
+  b.color = colorEscrito || '';
+
+  if (esAdminGlobal()) {
+    const slug = val('slug').toLowerCase().replace(/^@/, '').replace(/[^a-z0-9._-]/g, '');
+    if (!slug) return toast('El bazar necesita un @usuario');
+    const repetido = lista.find(x => Number(x.id) !== Number(id) && x.slug === slug);
+    if (repetido) return toast('Ya existe otro bazar con ese @');
+    b.slug = slug;
+
+    b.permisos = { ...b.permisos };
+    Object.keys(PERMISOS_LBL).forEach(k => {
+      b.permisos[k] = !!document.getElementById(`bz_perm_${id}_${k}`)?.checked;
+    });
+    b.activo = !!document.getElementById(`bz_activo_${id}`)?.checked;
+  }
+
+  saveBazares(lista)
+    .then(() => {
+      registrarLog('bazar_editar', b.nombre, `@${b.slug}`);
+      playActionSound('ok');
+      toast('Bazar actualizado');
+      renderBazares();
+    })
+    .catch(e => toast(e.message || 'No se pudo guardar'));
+}
+
+function eliminarBazar(id) {
+  if (!esAdminGlobal()) return;
+  const b = getBazarById(id);
+  if (!b) return;
+
+  const prendas = getDB().filter(p => Number(p.bazarId || 1) === Number(id)).length;
+  const usuarios = getUsers().filter(u => Number(u.bazarId || 0) === Number(id)).length;
+
+  const ok = confirmarEliminar(
+    `Eliminar "${b.nombre}"?\n\nTiene ${prendas} prenda(s) y ${usuarios} cuenta(s). ` +
+    `Las prendas dejan de mostrarse en el catálogo.`
+  );
+  if (!ok) return;
+
+  saveBazares(getBazares().filter(x => Number(x.id) !== Number(id)))
+    .then(() => {
+      registrarLog('bazar_eliminar', b.nombre, `@${b.slug}`);
+      _bazarAbierto = null;
+      toast('Bazar eliminado');
+      renderBazares();
+    })
+    .catch(e => toast(e.message || 'No se pudo eliminar'));
+}
+
+// Selector de bazar del formulario de cuentas: solo lo ve el admin principal
+// (un dueño de bazar solo puede crear cuentas dentro del suyo).
+function pintarSelectorBazarUsuario() {
+  const wrap = document.getElementById('v_bazarWrap');
+  const sel  = document.getElementById('v_bazarId');
+  if (!wrap || !sel) return;
+
+  if (!esAdminGlobal()) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+
+  const previo = sel.value;
+  sel.innerHTML = '<option value="">Sin bazar (staff principal)</option>' +
+    getBazares().map(b => `<option value="${b.id}">${escAdmin(b.nombre)}</option>`).join('');
+  if (previo) sel.value = previo;
+}
+
 // ─── VENDEDORES ──────────────────────────────────────────────
 function renderVendedores() {
   if (!isAdmin()) return;
+  pintarSelectorBazarUsuario();
   // Ajustar el selector de rol: solo el admin principal puede crear admins
   const btnAdminRol = document.querySelector('#v_roleSelect .role-opt[data-role="admin"]');
   if (btnAdminRol) {
@@ -888,8 +1503,13 @@ function renderVendedores() {
       if (_rolNuevoPerfil === 'admin') seleccionarRol('vendedor');
     }
   }
+  // Un dueño de bazar solo ve las cuentas de su bazar
+  const visibles = esAdminGlobal()
+    ? getUsers()
+    : getUsers().filter(u => Number(u.bazarId || 0) === Number(miBazarId()));
+
   // Mostrar todos los perfiles (admins y vendedores). Admins primero.
-  const users = getUsers().slice().sort((a, b) => {
+  const users = visibles.slice().sort((a, b) => {
     const rank = u => (esAdminPrincipal(u) ? 0 : u.role === 'admin' ? 1 : 2);
     return rank(a) - rank(b);
   });
@@ -924,7 +1544,10 @@ function renderVendedores() {
     const esAdmin = u.role === 'admin';
     const principal = esAdminPrincipal(u);
     const rolIco = esAdmin ? IC_SHIELD_SM : IC_BAG_SM;
-    const rolTxt = principal ? 'Admin principal' : (esAdmin ? 'Admin' : 'Vendedor');
+    const bzUser = u.bazarId ? getBazarById(u.bazarId) : null;
+    const rolTxt = principal
+      ? 'Admin principal'
+      : `${esAdmin ? 'Admin' : 'Vendedor'}${bzUser ? ' · ' + bzUser.nombre : ''}`;
 
     // Acciones según permisos
     const s = getSession();
@@ -1060,7 +1683,11 @@ async function createVendedor() {
   try {
     await api('/api/acciones?op=gestionar-usuario', {
       method: 'POST',
-      body: { accion: 'crear', token: s.sessionToken, actor: s.username, username, password: pw, rol }
+      body: {
+        accion: 'crear', token: s.sessionToken, actor: s.username,
+        username, password: pw, rol,
+        bazarId: esAdminGlobal() ? (document.getElementById('v_bazarId')?.value || '') : undefined
+      }
     });
   } catch (e) {
     errEl.textContent = e.message || 'No se pudo crear el perfil';
@@ -1165,17 +1792,24 @@ function renderCatalogo() {
   renderBrandList();
 }
 function renderCatList() {
-  const cats = getCats();
-  document.getElementById('catList').innerHTML = !cats.length
+  const items = catalogoVisible(getCats());
+  const el = document.getElementById('catList');
+  if (!el) return;
+  el.innerHTML = !items.length
     ? `<div class="cat-empty">No hay categorías todavía</div>`
-    : cats.map(c => `
-      <div class="cat-item">
-        <span>${c.nombre}</span>
-        <div style="display:flex;gap:6px">
-          <button class="act-btn edit" onclick="editCat(${c.id},'${c.nombre}')">${IC_EDIT}</button>
-          <button class="act-btn del"  onclick="deleteCat(${c.id})">${IC_TRASH}</button>
-        </div>
-      </div>`).join('');
+    : items.map(c => {
+        const mio  = catalogoEditable(c);
+        const tag  = esGeneral(c)
+          ? '<span class="cat-tag">General</span>'
+          : `<span class="cat-tag cat-tag-mio">${escAdmin(nombreDeBazar(c.bazarId))}</span>`;
+        const acciones = mio ? `
+          <button class="act-btn edit" onclick="editCat(${c.id},'${String(c.nombre).replace(/'/g, "\\'")}')">${IC_EDIT}</button>
+          <button class="act-btn del"  onclick="deleteCat(${c.id})">${IC_TRASH}</button>` : '';
+        return `<div class="cat-item">
+          <span>${escAdmin(c.nombre)} ${tag}</span>
+          <div style="display:flex;gap:6px">${acciones}</div>
+        </div>`;
+      }).join('');
 }
 function addCat() {
   const input = document.getElementById('newCatName');
@@ -1183,7 +1817,7 @@ function addCat() {
   if (!name) { toast('Escribe un nombre'); return; }
   const cats = getCats();
   if (cats.find(c => c.nombre.toLowerCase()===name.toLowerCase())) { toast('Ya existe esa categoría'); return; }
-  cats.push({ id: nextCatId(), nombre: name });
+  cats.push({ id: nextCatId(), nombre: name, bazarId: esAdminGlobal() ? null : miBazarId() });
   saveCats(cats); input.value = '';
   registrarLog('catalogo_crear', name, 'Categoría');
   playActionSound('ok');
@@ -1205,17 +1839,24 @@ function deleteCat(id) {
   renderCatList(); populateSelects(); toast('Categoría eliminada');
 }
 function renderBrandList() {
-  const brands = getBrands();
-  document.getElementById('brandList').innerHTML = !brands.length
+  const items = catalogoVisible(getBrands());
+  const el = document.getElementById('brandList');
+  if (!el) return;
+  el.innerHTML = !items.length
     ? `<div class="cat-empty">No hay marcas todavía</div>`
-    : brands.map(b => `
-      <div class="cat-item">
-        <span>${b.nombre}</span>
-        <div style="display:flex;gap:6px">
-          <button class="act-btn edit" onclick="editBrand(${b.id},'${b.nombre}')">${IC_EDIT}</button>
-          <button class="act-btn del"  onclick="deleteBrand(${b.id})">${IC_TRASH}</button>
-        </div>
-      </div>`).join('');
+    : items.map(c => {
+        const mio  = catalogoEditable(c);
+        const tag  = esGeneral(c)
+          ? '<span class="cat-tag">General</span>'
+          : `<span class="cat-tag cat-tag-mio">${escAdmin(nombreDeBazar(c.bazarId))}</span>`;
+        const acciones = mio ? `
+          <button class="act-btn edit" onclick="editBrand(${c.id},'${String(c.nombre).replace(/'/g, "\\'")}')">${IC_EDIT}</button>
+          <button class="act-btn del"  onclick="deleteBrand(${c.id})">${IC_TRASH}</button>` : '';
+        return `<div class="cat-item">
+          <span>${escAdmin(c.nombre)} ${tag}</span>
+          <div style="display:flex;gap:6px">${acciones}</div>
+        </div>`;
+      }).join('');
 }
 function addBrand() {
   const input = document.getElementById('newBrandName');
@@ -1223,7 +1864,7 @@ function addBrand() {
   if (!name) { toast('Escribe un nombre'); return; }
   const brands = getBrands();
   if (brands.find(b => b.nombre.toLowerCase()===name.toLowerCase())) { toast('Ya existe esa marca'); return; }
-  brands.push({ id: nextBrandId(), nombre: name });
+  brands.push({ id: nextBrandId(), nombre: name, bazarId: esAdminGlobal() ? null : miBazarId() });
   saveBrands(brands); input.value = '';
   registrarLog('catalogo_crear', name, 'Marca');
   playActionSound('ok');
@@ -1257,7 +1898,7 @@ async function updateOnlineBadge() {
       : activeUsers.map(u => `
           <li>
             <span class="user-dot-online"></span>
-            ${u.username}${u.username===session.username?' <small>(tú)</small>':''}
+            ${escAdmin(u.username)}${u.username===session.username?' <small>(tú)</small>':''}
           </li>`).join('');
   }
 }
@@ -1390,7 +2031,7 @@ function renderCuenta() {
   const info = document.getElementById('cuentaInfo');
   if (info) {
     info.innerHTML = `
-      <div class="cuenta-info-row"><span class="ci-label">Usuario</span><span class="ci-val">${s.username}</span></div>
+      <div class="cuenta-info-row"><span class="ci-label">Usuario</span><span class="ci-val">${escAdmin(s.username)}</span></div>
       <div class="cuenta-info-row"><span class="ci-label">Rol</span><span class="ci-val">${admin ? 'Administrador' : 'Vendedor'}</span></div>
       <div class="cuenta-info-row"><span class="ci-label">Sesión</span><span class="ci-val cuenta-online">Activa</span></div>
     `;
@@ -1904,7 +2545,7 @@ let pvIdx = 0, pvImgs = [];
 function updatePreview() {
   const nombre  = document.getElementById('f_nombre')?.value.trim()  || '';
   const marca   = document.getElementById('f_marca')?.value           || '';
-  const talla   = document.getElementById('f_talla')?.value.trim()   || '';
+  const talla   = (typeof leerTalla === 'function' ? leerTalla('f') : '');
   const estado  = document.getElementById('f_estado')?.value.trim()  || '';
   const precio  = document.getElementById('f_precio')?.value         || '0';
   const desc    = document.getElementById('f_descripcion')?.value.trim() || '';
@@ -1923,7 +2564,7 @@ function updatePreview() {
 
   // Chips de categorías
   const pvChips = document.getElementById('pvChips');
-  pvChips.innerHTML = cats.map(c => `<span class="cat-chip">${c}</span>`).join('');
+  pvChips.innerHTML = cats.map(c => `<span class="cat-chip">${escAdmin(c)}</span>`).join('');
 
   // Talla
   const pvTalla = document.getElementById('pvTalla');
@@ -1996,12 +2637,16 @@ function pvChg(d) {
 
 // Enganchar listeners cuando se carga la vista registrar
 function initPreviewListeners() {
-  const ids = ['f_nombre','f_marca','f_talla','f_precio','f_estado','f_descripcion'];
+  const ids = ['f_nombre','f_marca','f_precio','f_descripcion',
+               'f_talla_base','f_talla_queda','f_talla_ajuste'];
   ids.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', updatePreview);
     if (el) el.addEventListener('change', updatePreview);
   });
+  // Los botones de condición no disparan 'input': se refresca al tocarlos
+  const estWrap = document.getElementById('f_estado_pills');
+  if (estWrap) estWrap.addEventListener('click', () => setTimeout(updatePreview, 0));
   // Escuchar checkboxes de categorías (delegación)
   const catsWrap = document.getElementById('f_cats_wrap');
   if (catsWrap) catsWrap.addEventListener('change', updatePreview);
@@ -2040,7 +2685,7 @@ function populateDropSelect() {
     drops.map(d => {
       const fecha = new Date(d.fecha);
       const label = fecha.toLocaleDateString('es-MX', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-      return `<option value="${d.id}">${d.nombre} · ${label} (${d.prendas.length} prendas)</option>`;
+      return `<option value="${d.id}">${escAdmin(d.nombre)} · ${label} (${d.prendas.length} prendas)</option>`;
     }).join('');
 
   sel.onchange = () => {
@@ -2104,7 +2749,7 @@ function renderDropCard(d) {
 
   const thumbs = prendas.slice(0,4).map(p => {
     const img = Array.isArray(p.imagenes) && p.imagenes[0]
-      ? `<img src="${p.imagenes[0]}" alt="${p.nombre}">`
+      ? `<img src="${escAdmin(p.imagenes[0])}" alt="${escAdmin(p.nombre)}">`
       : `<div class="drop-thumb-placeholder"></div>`;
     return `<div class="drop-thumb">${img}</div>`;
   }).join('');
@@ -2125,7 +2770,7 @@ function renderDropCard(d) {
   return `<div class="drop-card ${d.publicado ? 'drop-card-done' : ''}">
     <div class="drop-card-header">
       <div>
-        <div class="drop-card-name">${d.nombre}</div>
+        <div class="drop-card-name">${escAdmin(d.nombre)}</div>
         <div class="drop-card-fecha">${fechaStr}</div>
       </div>
       <span class="drop-status ${statusClass}">${statusLabel}</span>
@@ -2135,7 +2780,7 @@ function renderDropCard(d) {
     <div class="drop-prendas-label">${prendas.length} prenda${prendas.length!==1?'s':''}</div>
     <div class="drop-prendas-list">
       ${prendas.map(p => `<div class="drop-prenda-item">
-        <span>${p.nombre}</span>
+        <span>${escAdmin(p.nombre)}</span>
         <span class="drop-prenda-precio">$${p.precio_venta}</span>
         ${admin ? `<button class="drop-prenda-remove" onclick="quitarPrendaDeDrop('${d.id}',${p.id})" title="Quitar del drop">${IC_X}</button>` : ''}
       </div>`).join('')}

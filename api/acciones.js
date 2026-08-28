@@ -9,9 +9,10 @@
 import { getDB } from './_db.js';
 import { requireAuth } from './_auth.js';
 import { hashPassword } from './_password.js';
+import { puede, esGlobal, mismoBazar } from './_bazar.js';
 
 function invalidarCache() {
-  try { global._syncCache = null; global._syncCacheTime = 0; } catch (_) {}
+  try { global._syncCache = null; global._syncCacheTime = 0; global._syncCachePub = null; } catch (_) {}
 }
 
 export default async function handler(req, res) {
@@ -42,6 +43,7 @@ const LOG_ACCIONES = [
   'catalogo_crear', 'catalogo_editar', 'catalogo_eliminar',
   'vendedor_crear', 'vendedor_eliminar', 'vendedor_password',
   'drop_crear', 'drop_publicar', 'drop_editar', 'drop_eliminar', 'drop_quitar_prenda',
+  'bazar_crear', 'bazar_editar', 'bazar_eliminar',
 ];
 
 async function handleLogs(req, res) {
@@ -187,6 +189,16 @@ async function handleBorrarPrenda(req, res) {
     }
   }
 
+  // Multi-bazar: solo el dueño de la prenda (o el admin principal) la borra
+  const prenda = await inv.findOne({ id });
+  if (!prenda) return res.status(404).json({ error: 'Prenda no encontrada' });
+  if (!mismoBazar(user, prenda.bazarId)) {
+    return res.status(403).json({ error: 'Esa prenda pertenece a otro bazar.' });
+  }
+  if (!esGlobal(user) && !(await puede(user, 'borrarPrendas'))) {
+    return res.status(403).json({ error: 'Tu bazar no tiene permitido borrar prendas.' });
+  }
+
   const r = await inv.deleteOne({ id });
   invalidarCache();
   return res.status(200).json({ ok: true, borrado: r.deletedCount });
@@ -219,8 +231,14 @@ async function handleGestionarUsuario(req, res) {
   if (!quien || quien.sessionToken !== token) {
     return res.status(401).json({ error: 'Sesión inválida' });
   }
-  if (quien.role !== 'admin') {
-    return res.status(403).json({ error: 'Sin permisos de administrador' });
+  const actorBazar = quien.bazarId != null ? Number(quien.bazarId) : null;
+  const actorGlobal = quien.role === 'admin' && !actorBazar;
+
+  // Admin principal, o dueño de un bazar con el permiso activado
+  const puedeGestionar = actorGlobal
+    || (quien.role === 'admin' && await puede({ role: quien.role, bazarId: actorBazar }, 'gestionarUsuarios'));
+  if (!puedeGestionar) {
+    return res.status(403).json({ error: 'Sin permisos para gestionar cuentas' });
   }
   const actorEsPrincipal = esPrincipal(quien);
 
@@ -232,14 +250,24 @@ async function handleGestionarUsuario(req, res) {
     if (rolFinal === 'admin' && !actorEsPrincipal) {
       return res.status(403).json({ error: 'Solo el admin principal puede crear administradores' });
     }
+    // El admin principal elige el bazar; un dueño solo crea dentro del suyo
+    let bazarNuevo = actorBazar;
+    if (actorGlobal) {
+      bazarNuevo = req.body.bazarId != null && req.body.bazarId !== ''
+        ? Number(req.body.bazarId) : null;
+      if (bazarNuevo != null) {
+        const existeBazar = await db.collection('bazares').findOne({ id: bazarNuevo });
+        if (!existeBazar) return res.status(400).json({ error: 'Ese bazar no existe' });
+      }
+    }
     const existe = await col.findOne({ username: { $regex: `^${username}$`, $options: 'i' } });
     if (existe) return res.status(409).json({ error: 'Ese nombre ya existe' });
     const todos = await col.find({}).toArray();
     const nuevoId = todos.length ? Math.max(...todos.map(u => u.id || 0)) + 1 : 1;
     const passHash = await hashPassword(password);
-    await col.insertOne({ id: nuevoId, username, password: passHash, role: rolFinal, sessionToken: null, avatar: null });
+    await col.insertOne({ id: nuevoId, username, password: passHash, role: rolFinal, sessionToken: null, avatar: null, bazarId: bazarNuevo });
     invalidarCache();
-    return res.status(200).json({ ok: true, id: nuevoId, rol: rolFinal });
+    return res.status(200).json({ ok: true, id: nuevoId, rol: rolFinal, bazarId: bazarNuevo });
   }
 
   if (accion === 'eliminar') {
@@ -247,6 +275,9 @@ async function handleGestionarUsuario(req, res) {
     const objetivo = await col.findOne({ id });
     if (!objetivo) return res.status(404).json({ error: 'Perfil no encontrado' });
     if (esPrincipal(objetivo)) return res.status(403).json({ error: 'No se puede eliminar la cuenta principal' });
+    if (!actorGlobal && Number(objetivo.bazarId || 0) !== Number(actorBazar)) {
+      return res.status(403).json({ error: 'Esa cuenta pertenece a otro bazar' });
+    }
     if (objetivo.id === quien.id || objetivo.username === quien.username) {
       return res.status(403).json({ error: 'No puedes eliminar tu propio perfil' });
     }
@@ -264,6 +295,9 @@ async function handleGestionarUsuario(req, res) {
     if (!objetivo) return res.status(404).json({ error: 'Perfil no encontrado' });
     if (esPrincipal(objetivo)) {
       return res.status(403).json({ error: 'La contraseña del admin principal se cambia desde Mi Cuenta' });
+    }
+    if (!actorGlobal && Number(objetivo.bazarId || 0) !== Number(actorBazar)) {
+      return res.status(403).json({ error: 'Esa cuenta pertenece a otro bazar' });
     }
     if (objetivo.role === 'admin' && !actorEsPrincipal && objetivo.id !== quien.id) {
       return res.status(403).json({ error: 'Sin permiso para cambiar la contraseña de otro administrador' });

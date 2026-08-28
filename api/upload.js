@@ -4,6 +4,7 @@
 // Protegido: solo usuarios con sesión pueden subir (evita abuso anónimo).
 
 import { requireAuth } from './_auth.js';
+import { rateLimit } from './_rateLimit.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -14,8 +15,27 @@ export default async function handler(req, res) {
   const user = await requireAuth(req, res);
   if (!user) return;
 
-  const { file } = req.body;
-  if (!file) return res.status(400).json({ error: 'file requerido' });
+  // Tope de subidas por IP: evita que alguien con una sesión llene tu
+  // cuenta de Cloudinary (y tu factura) a base de peticiones.
+  if (!(await rateLimit(req, res, { key: 'upload', max: 120, windowSec: 3600 }))) return;
+
+  const file = req.body?.file;
+  if (typeof file !== 'string' || !file) {
+    return res.status(400).json({ error: 'file requerido' });
+  }
+
+  // Solo imágenes, y solo como data URI: nada de PDFs, scripts ni URLs
+  // remotas que Cloudinary iría a descargar por nosotros.
+  const cabecera = /^data:image\/(jpeg|jpg|png|webp|gif|avif|heic);base64,/i;
+  if (!cabecera.test(file)) {
+    return res.status(400).json({ error: 'Solo se aceptan imágenes' });
+  }
+
+  // ~10 MB ya en base64 (el base64 pesa ~33% más que el archivo)
+  const LIMITE = 10 * 1024 * 1024 * 1.37;
+  if (file.length > LIMITE) {
+    return res.status(413).json({ error: 'La imagen pesa más de 10 MB' });
+  }
 
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
   const apiKey    = process.env.CLOUDINARY_API_KEY;

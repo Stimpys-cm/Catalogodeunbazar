@@ -8,6 +8,7 @@
 
 import { getDB } from './_db.js';
 import { requireAuth } from './_auth.js';
+import { esGlobal, puede } from './_bazar.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -37,11 +38,37 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Todas las prendas deben tener id' });
       }
 
+      // ── Multi-bazar ───────────────────────────────────────
+      // Un bazar solo puede escribir y borrar SUS prendas. El admin
+      // principal (sin bazarId) escribe sobre todas.
+      const global_ = esGlobal(user);
+
+      if (!global_) {
+        if (!user.bazarId) {
+          return res.status(403).json({ error: 'Tu cuenta no está asignada a ningún bazar.' });
+        }
+        if (!(await puede(user, 'crearPrendas')) && !(await puede(user, 'editarPrendas'))) {
+          return res.status(403).json({ error: 'Tu bazar no tiene permitido modificar prendas.' });
+        }
+        const ajena = list.find(p => p.bazarId != null && Number(p.bazarId) !== Number(user.bazarId));
+        if (ajena) {
+          return res.status(403).json({ error: `La prenda ${ajena.id} pertenece a otro bazar.` });
+        }
+        list.forEach(p => { p.bazarId = Number(user.bazarId); });
+      } else {
+        // El admin principal: lo que llegue sin bazar queda en el principal
+        list.forEach(p => { if (p.bazarId == null) p.bazarId = 1; });
+      }
+
       const ids = list.map(p => p.id);
       const ops = list.map(p => ({
         replaceOne: { filter: { id: p.id }, replacement: stripId(p), upsert: true }
       }));
-      ops.push({ deleteMany: { filter: { id: { $nin: ids } } } });
+      // El borrado se acota al propio bazar: guardar tu inventario nunca
+      // puede eliminar prendas de los demás.
+      ops.push({ deleteMany: { filter: global_
+        ? { id: { $nin: ids } }
+        : { id: { $nin: ids }, bazarId: Number(user.bazarId) } } });
 
       const result = await col.bulkWrite(ops, { ordered: false });
       invalidarSyncCache();
@@ -66,5 +93,5 @@ export default async function handler(req, res) {
 function normalize({ _id, ...rest }) { return rest; }
 function stripId({ _id, ...rest }) { return rest; }
 function invalidarSyncCache() {
-  try { global._syncCache = null; global._syncCacheTime = 0; } catch (_) {}
+  try { global._syncCache = null; global._syncCacheTime = 0; global._syncCachePub = null; } catch (_) {}
 }
