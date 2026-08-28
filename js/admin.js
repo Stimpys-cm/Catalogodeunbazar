@@ -10,7 +10,14 @@ const escAdmin = str => String(str ?? '').replace(/[&<>"']/g, c =>
 if (!isLoggedIn()) window.location.href = 'login.html';
 const session = getSession();
 
-function logout() { removeMyActivity(); clearSession(); window.location.href = 'login.html'; }
+function logout() {
+  removeMyActivity();
+  clearSession();
+  // Borra las cookies de sesión en el servidor antes de salir
+  fetch('/api/auth', { method: 'DELETE' })
+    .catch(() => {})
+    .finally(() => { window.location.href = 'login.html'; });
+}
 
 // Cierre forzado: cuando la cuenta inició sesión en otro dispositivo.
 // NO llamamos removeMyActivity() para no borrar la actividad de la sesión

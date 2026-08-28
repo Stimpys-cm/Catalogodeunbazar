@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Mi cuenta | Bazar En Linea</title>
+  <meta name="description" content="Entra o crea tu cuenta para guardar tus prendas favoritas en Bazar En Linea.">
+  <meta name="theme-color" content="#f7f4ef">
+  <meta name="robots" content="noindex">
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/tienda.css">
+  <link rel="stylesheet" href="css/inicio.css">
+  <link rel="stylesheet" href="css/dispositivos.css">
+  <link rel="stylesheet" href="css/estetica.css">
+  <style>
+    html, body { overflow-x: hidden; max-width: 100%; }
+    .logo-short { display: none; }
+    @media (max-width: 480px) {
+      .logo-full  { display: none; }
+      .logo-short { display: inline; }
+    }
+  </style>
+  <script src="js/db.js" defer></script>
+  <script src="js/cuenta.js" defer></script>
+  <script src="js/mi-cuenta.js" defer></script>
+  <script src="js/legal.js" defer></script>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <a href="inicio.html" class="logo">
+      <span class="logo-full">Bazar En Linea</span>
+      <span class="logo-short">Bazar</span><span>.</span>
+    </a>
+    <div class="header-actions">
+      <a href="tienda.html" class="h-nav-cta h-nav-cta-ghost">Catálogo</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero h-shop-hero">
+    <div class="h-wrap">
+      <a href="inicio.html" class="h-crumb">
+        <svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        Volver al inicio
+      </a>
+      <h2 id="ctaTitulo">Mi <em>cuenta</em></h2>
+      <p id="ctaSub">Guarda tus prendas favoritas y encuéntralas desde cualquier dispositivo.</p>
+    </div>
+  </section>
+
+  <div class="ct-wrap h-wrap" id="ctContenido">
+    <div class="ct-cargando">Cargando…</div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="sf-inner">
+    <div class="sf-col sf-brand">
+      <a href="inicio.html" class="sf-logo">Bazar En Linea<span>.</span></a>
+      <p class="sf-desc">
+        Catálogo digital de bazares independientes. Streetwear, vintage y prendas
+        únicas de segunda mano. Cada prenda pertenece al bazar que la publica.
+      </p>
+      <div class="sf-ubi">México</div>
+    </div>
+    <div class="sf-col">
+      <h3>Comprar</h3>
+      <a href="tienda.html">Ver catálogo</a>
+      <a href="inicio.html#bazares">Los bazares</a>
+      <a href="inicio.html#comofunciona">Cómo comprar</a>
+    </div>
+    <div class="sf-col sf-bazares">
+      <h3>Bazares</h3>
+      <div id="footerBazares"><a href="inicio.html#bazares">Ver todos</a></div>
+    </div>
+    <div class="sf-col">
+      <h3>Legal</h3>
+      <a href="terminos.html">Términos y condiciones</a>
+      <a href="terminos.html#privacidad">Aviso de privacidad</a>
+    </div>
+  </div>
+  <div class="sf-base">
+    <span>Bazar En Linea &copy; <span id="anioActual">2026</span> · Todos los derechos reservados</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+</body>
+</html>

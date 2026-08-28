@@ -25,7 +25,10 @@ function wlLista() {
   try { return JSON.parse(localStorage.getItem(WL_KEY_PP)) || []; }
   catch { return []; }
 }
-function wlGuardar(list) { localStorage.setItem(WL_KEY_PP, JSON.stringify(list)); }
+function wlGuardar(list) {
+  localStorage.setItem(WL_KEY_PP, JSON.stringify(list));
+  window.dispatchEvent(new CustomEvent('wishlist:cambio'));
+}
 function wlTiene(id) { return wlLista().some(i => String(i.id) === String(id)); }
 
 function wlAlternar() {

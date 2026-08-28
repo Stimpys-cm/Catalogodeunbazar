@@ -120,6 +120,8 @@ function getWishlist() {
 }
 function saveWishlist(list) {
   localStorage.setItem(WL_KEY, JSON.stringify(list));
+  // Si hay sesión de comprador, js/cuenta.js la sincroniza con el servidor
+  window.dispatchEvent(new CustomEvent('wishlist:cambio'));
 }
 function isWishlisted(id) {
   return getWishlist().some(item => item.id === id);

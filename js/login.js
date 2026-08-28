@@ -26,7 +26,12 @@ async function doLogin() {
     if (res.ok) {
       const user = await res.json();
       setSession(user);
-      window.location.href = 'admin.html';
+
+      // El servidor dice a dónde entrar (el panel puede vivir en una
+      // dirección secreta). Si venías de un enlace concreto, te devuelve ahí.
+      const pedido = new URLSearchParams(location.search).get('destino');
+      const seguro = pedido && /^\/[A-Za-z0-9._~/-]*$/.test(pedido) ? pedido : null;
+      window.location.href = seguro || user.panel || 'admin.html';
       return;
     }
 

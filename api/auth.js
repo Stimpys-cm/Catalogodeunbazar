@@ -15,6 +15,7 @@
 import { getDB } from './_db.js';
 import { verifyPassword, hashPassword, looksHashed } from './_password.js';
 import { rateLimit, resetRateLimit } from './_rateLimit.js';
+import { firmarAcceso, cabeceraCookieAcceso, cabeceraCookieBorrada } from './_firma.js';
 import crypto from 'crypto';
 
 const MASTER_KEY = process.env.MASTER_KEY;
@@ -22,16 +23,35 @@ const SESSION_TIMEOUT_MS = 45000;
 
 function newToken() { return crypto.randomUUID(); }
 
-function setSessionCookie(res, token) {
-  res.setHeader('Set-Cookie', [
-    `sesion=${encodeURIComponent(token)}`,
-    'HttpOnly', 'Secure', 'SameSite=Lax', 'Path=/',
-    `Max-Age=${60 * 60 * 8}`,   // 8 horas
-  ].join('; '));
+function setSessionCookie(res, token, username, rol) {
+  const galletas = [
+    [
+      `sesion=${encodeURIComponent(token)}`,
+      'HttpOnly', 'Secure', 'SameSite=Lax', 'Path=/',
+      `Max-Age=${60 * 60 * 8}`,   // 8 horas
+    ].join('; '),
+  ];
+
+  // Cookie firmada para que la puerta del panel pueda validar el acceso
+  // sin consultar la base de datos.
+  const acceso = firmarAcceso(username, rol);
+  if (acceso) galletas.push(cabeceraCookieAcceso(acceso));
+
+  res.setHeader('Set-Cookie', galletas);
 }
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // Cerrar sesión: borra las cookies del navegador
+  if (req.method === 'DELETE') {
+    res.setHeader('Set-Cookie', [
+      'sesion=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0',
+      cabeceraCookieBorrada(),
+    ]);
+    return res.status(200).json({ ok: true });
+  }
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
 
   // Los datos siempre se tratan como texto: si llegara un objeto
@@ -115,7 +135,7 @@ export default async function handler(req, res) {
     );
 
     // Cookie httpOnly (defensa contra robo de token por XSS)
-    setSessionCookie(res, sessionToken);
+    setSessionCookie(res, sessionToken, user.username, user.role);
 
     // Quien acertó no arrastra el contador de intentos
     await resetRateLimit(req, 'login');
@@ -123,6 +143,11 @@ export default async function handler(req, res) {
     return res.status(200).json({
       id: user.id, username: user.username, role: user.role, sessionToken,
       bazarId: user.bazarId != null ? Number(user.bazarId) : null,
+      // A dónde ir tras entrar: la dirección secreta del panel si está
+      // configurada. El navegador no la conoce de otra forma.
+      panel: process.env.RUTA_PANEL
+        ? '/' + String(process.env.RUTA_PANEL).replace(/^\/+|\/+$/g, '')
+        : '/admin.html',
     });
 
   } catch (err) {
