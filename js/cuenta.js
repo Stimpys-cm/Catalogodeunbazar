@@ -64,9 +64,38 @@
   }
 
   async function cambiarNombre(nombre) {
-    const r = await pedir('perfil', { method: 'PUT', body: { nombre } });
+    return guardarPerfil({ nombre });
+  }
+
+  // Ajustes de perfil: nombre, @username, teléfono, dirección y foto.
+  async function guardarPerfil(campos) {
+    const r = await pedir('perfil', { method: 'PUT', body: campos });
     _perfil = r.perfil;
+    window.dispatchEvent(new CustomEvent('cuenta:lista', { detail: _perfil }));
     return r.perfil;
+  }
+
+  // ── Compras y reputación ───────────────────────────────────
+  // Lo que los bazares marcaron como vendido a mi @username.
+  const compras     = () => pedir('compras',     { method: 'GET' });
+  const misResenas  = () => pedir('mis-resenas', { method: 'GET' });
+
+  // Calificar al bazar de una compra: estrellas + etiquetas + comentario.
+  const calificar = (ventaId, estrellas, etiquetas, comentario) =>
+    pedir('resena', { method: 'POST', body: { ventaId, estrellas, etiquetas, comentario } });
+
+  // Sube una foto de perfil (misma ruta que el panel; la cookie de
+  // comprador basta y Cloudinary devuelve la URL definitiva).
+  async function subirFoto(dataUrl) {
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ file: dataUrl }),
+    });
+    const datos = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(datos.error || 'No se pudo subir la foto');
+    return datos.url;
   }
 
   // ── Wishlist ───────────────────────────────────────────────
@@ -126,9 +155,12 @@
 
     if (_perfil) {
       const inicial = (_perfil.nombre || '?').charAt(0).toUpperCase();
+      const foto = _perfil.avatar
+        ? `<img class="cuenta-foto" src="${esc(_perfil.avatar)}" alt="">`
+        : `<span class="cuenta-inicial">${esc(inicial)}</span>`;
       slot.innerHTML = `
         <a class="cuenta-chip" href="cuenta.html" title="${esc(_perfil.nombre)}">
-          <span class="cuenta-inicial">${esc(inicial)}</span>
+          ${foto}
           <span class="cuenta-nombre">${esc(_perfil.nombre.split(' ')[0])}</span>
         </a>`;
     } else {
@@ -146,7 +178,8 @@
   // API pública
   window.Cuenta = {
     perfil, haySesion, cargarSesion,
-    registro, entrar, salir, cambiarNombre,
+    registro, entrar, salir, cambiarNombre, guardarPerfil,
     subirWishlist, unirWishlists,
+    compras, misResenas, calificar, subirFoto,
   };
 })();

@@ -2010,6 +2010,32 @@ header {
 .card .card-loc svg { width: 12px; height: 12px; }
 .card .card-time { white-space: nowrap; }
 
+/* ── Aire dentro de la tarjeta ────────────────────────────────
+   El ritmo vertical venía de márgenes sueltos y quedaba apretado.
+   Se van todos los bloques a una escala común y el pie se ancla
+   abajo, así las tarjetas de una misma fila alinean su base.
+   Van con doble clase porque inicio.css se carga después. */
+.card .card-body { padding: 1.15rem 1.3rem 1.2rem; }
+
+.card .card-row { gap: 14px; }
+.card .card-brand { font-size: 13.5px; line-height: 1.3; }
+.card .card-row .card-name { font-size: 12px; line-height: 1.45; margin: 4px 0 0; }
+.card .card-row .card-price { font-size: 1.6rem; }
+
+/* La línea de talla llevaba chip y texto pegados en 11px */
+.card .card-sub {
+  margin: 12px 0 0;
+  font-size: 11.5px;
+  line-height: 1.8;
+}
+.card .size-tag { padding: 3px 8px; border-radius: 6px; margin-right: 3px; }
+
+.card .card-bazar-row { margin-top: 12px; }
+
+/* margin-top:auto empuja el pie al fondo: las bases se alinean
+   aunque una prenda tenga el nombre más largo que otra */
+.card .card-foot { margin-top: auto; padding-top: 13px; }
+
 /* ── Botón de filtros (móvil) + drawer ───────────────────────── */
 .filters-fab {
   display: none; align-items: center; gap: 6px;
@@ -2108,4 +2134,249 @@ header {
 }
 .shop-paginacion .pg-info {
   font-size: 12.5px; font-weight: 600; color: #888; letter-spacing: .02em;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STMP MARKET · PESTAÑAS DEL BAZAR
+   Disponibles · Vendidos · Reseñas. El catálogo activo, el archivo
+   de ventas y la reputación, cada uno en su lugar.
+   ═══════════════════════════════════════════════════════════════ */
+.bz-tabs-wrap {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 1.1rem 0 .35rem;
+  background: linear-gradient(to bottom,
+              var(--bg, #f7f4ef) 62%, rgba(247, 244, 239, 0));
+  backdrop-filter: saturate(1.3) blur(10px);
+  -webkit-backdrop-filter: saturate(1.3) blur(10px);
+}
+.bz-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: var(--radio-pill, 40px);
+  background: rgba(255, 255, 255, .72);
+  border: 1.5px solid var(--border);
+  box-shadow: var(--sombra-suave, 0 3px 16px rgba(45, 107, 228, .07));
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.bz-tabs::-webkit-scrollbar { display: none; }
+
+.bz-tab {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text2, #5c5750);
+  background: none;
+  border: none;
+  border-radius: 30px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: color .22s var(--curva, ease), background .22s var(--curva, ease),
+              box-shadow .22s var(--curva, ease);
+}
+.bz-tab svg { width: 15px; height: 15px; flex-shrink: 0; opacity: .75; }
+.bz-tab:hover { color: var(--bz-color, var(--accent)); }
+.bz-tab.active {
+  color: #fff;
+  background: var(--accent-gradient);
+  box-shadow: 0 6px 20px rgba(45, 107, 228, .28);
+}
+.bz-tab.active svg { opacity: 1; }
+
+.bz-tab-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 21px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 12px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  background: var(--gray, #f2efe9);
+  color: var(--text2, #5c5750);
+}
+.bz-tab.active .bz-tab-n { background: rgba(255, 255, 255, .26); color: #fff; }
+
+.bz-panel { padding: 1.6rem 0 3rem; }
+.bz-panel-head { margin-bottom: 1.5rem; }
+.bz-panel-head h3 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.9rem;
+  letter-spacing: .02em;
+  color: var(--black, #12161f);
+  line-height: 1;
+}
+.bz-panel-head p { font-size: 13.5px; color: var(--text2, #5c5750); margin-top: 6px; }
+
+/* ── Estrellas, en todo el sitio ─────────────────────────────── */
+.st-estrellas { display: inline-flex; gap: 1px; line-height: 1; }
+.st-estrella { color: var(--border, #d4cfc6); font-size: 1em; }
+.st-estrella.llena { color: #f5a623; }
+/* La media estrella se pinta rellenando solo su mitad izquierda */
+.st-estrella.media {
+  background: linear-gradient(90deg, #f5a623 50%, var(--border, #d4cfc6) 50%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ── Prendas ya vendidas ─────────────────────────────────────── */
+.bz-grid-vendidos .card-vendida { cursor: default; }
+/* La prenda vendida se ve tal cual: el sello basta para marcar el estado */
+.card-vendida .card-img img { filter: none; opacity: 1; }
+.card-vendida-sello {
+  position: absolute;
+  top: 10px; left: 10px;
+  z-index: 2;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(18, 22, 31, .72);
+  -webkit-backdrop-filter: saturate(1.5) blur(10px);
+  backdrop-filter: saturate(1.5) blur(10px);
+  border-radius: 30px;
+  padding: 6px 12px;
+  box-shadow: 0 4px 14px rgba(18, 22, 31, .3);
+}
+.card-vendida-sello::before {
+  content: ''; width: 5px; height: 5px; border-radius: 50%;
+  background: #ff6b6b; box-shadow: 0 0 0 3px rgba(255, 107, 107, .28);
+}
+.card-vendida-a {
+  font-size: 12px;
+  color: var(--text2, #5c5750);
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px dashed var(--border);
+}
+.card-vendida-a b { color: var(--bz-color, var(--accent)); font-weight: 700; }
+.card-vendida-fecha { font-size: 11px; color: var(--muted, #8a8178); margin-top: 3px; }
+
+/* ── Reseñas del bazar ───────────────────────────────────────── */
+.rs-resumen {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: center;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radio-grande, 22px);
+  padding: 26px 30px;
+  box-shadow: var(--sombra-suave, 0 3px 16px rgba(45, 107, 228, .07));
+  margin-bottom: 1.7rem;
+}
+.rs-nota { text-align: center; min-width: 128px; }
+.rs-nota-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3.6rem;
+  line-height: .9;
+  color: var(--black, #12161f);
+}
+.rs-nota-estrellas { font-size: 17px; margin-top: 8px; }
+.rs-nota-total {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted, #8a8178);
+  margin-top: 8px;
+}
+
+.rs-barras { display: grid; gap: 7px; }
+.rs-barra { display: grid; grid-template-columns: 34px 1fr 26px; gap: 10px; align-items: center; }
+.rs-barra-n { font-size: 11px; font-weight: 700; color: var(--text2, #5c5750); }
+.rs-barra-riel {
+  height: 7px;
+  border-radius: 6px;
+  background: var(--gray, #f2efe9);
+  overflow: hidden;
+}
+.rs-barra-relleno {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--accent-gradient);
+  transition: width .5s var(--curva, ease);
+}
+.rs-barra-c { font-size: 11px; color: var(--muted, #8a8178); text-align: right; }
+
+.rs-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(288px, 1fr));
+  gap: 14px;
+}
+.rs-card {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radio, 16px);
+  padding: 18px 20px;
+  transition: border-color .22s var(--curva, ease), box-shadow .22s var(--curva, ease);
+}
+.rs-card:hover {
+  border-color: var(--bz-tinte-borde, rgba(45, 107, 228, .24));
+  box-shadow: var(--sombra-suave, 0 3px 16px rgba(45, 107, 228, .07));
+}
+.rs-card-head { display: flex; align-items: center; gap: 11px; }
+.rs-avatar {
+  width: 36px; height: 36px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: var(--accent-gradient);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+}
+.rs-card-quien { flex: 1; min-width: 0; }
+.rs-autor {
+  font-size: 13px; font-weight: 700; color: var(--text-dark, #1a1f2e);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rs-prenda {
+  font-size: 11.5px; color: var(--muted, #8a8178);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rs-card-estrellas { font-size: 13px; flex-shrink: 0; }
+.rs-comentario {
+  font-size: 13.5px; line-height: 1.6;
+  color: var(--text2, #5c5750);
+  margin-top: 12px;
+}
+.rs-etiquetas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.rs-etiqueta {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
+  color: var(--bz-color, var(--accent));
+  background: var(--bz-tinte-suave, rgba(45, 107, 228, .10));
+  border: 1px solid var(--bz-tinte-borde, rgba(45, 107, 228, .22));
+  border-radius: 30px;
+  padding: 4px 10px;
+}
+.rs-fecha { font-size: 11px; color: var(--muted, #8a8178); margin-top: 12px; }
+
+/* La reputación, junto al perfil del bazar */
+.bz-meta-rating { display: inline-flex; align-items: center; gap: 6px; }
+.bz-rating-estrellas { font-size: 13px; }
+.bz-rating-total { opacity: .7; }
+
+@media (max-width: 700px) {
+  .bz-tab { font-size: 10px; padding: 11px 12px; letter-spacing: .08em; }
+  .bz-tab svg { display: none; }
+  .rs-resumen { grid-template-columns: 1fr; gap: 1.3rem; padding: 22px; }
+  .rs-lista { grid-template-columns: 1fr; }
 }

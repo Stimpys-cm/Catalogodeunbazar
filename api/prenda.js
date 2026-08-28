@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     try {
       bazar = await db.collection('bazares').findOne({ id: Number(item.bazarId || 1) });
     } catch (_) {}
-    const sitio = bazar?.nombre ? `${bazar.nombre} · Bazar En Linea` : 'Bazar En Linea';
+    const sitio = bazar?.nombre ? `${bazar.nombre} · STMP MARKET` : 'STMP MARKET';
 
     const imgs  = Array.isArray(item.imagenes) ? item.imagenes : [];
     const img   = imgs[0] || '';

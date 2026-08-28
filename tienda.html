@@ -3,26 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Bazar En Linea | Prendas Disponibles</title>
+  <title>STMP MARKET | Prendas Disponibles</title>
 
   <!-- SEO -->
-  <meta name="description" content="Bazar En Linea · Streetwear, vintage y prendas únicas seleccionadas. Envíos a todo México desde Reynosa, Tamaulipas.">
+  <meta name="description" content="STMP MARKET · Streetwear, vintage y prendas únicas seleccionadas. Envíos a todo México desde Reynosa, Tamaulipas.">
   <meta name="keywords" content="bazar, streetwear, vintage, ropa, prendas, Reynosa, México, segunda mano">
-  <meta name="author" content="Bazar En Linea">
+  <meta name="author" content="STMP MARKET">
   <meta name="theme-color" content="#2d6be4">
   <link rel="canonical" href="https://catalogodeunbazar.vercel.app/tienda.html">
 
   <!-- Open Graph / WhatsApp / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Bazar En Linea">
-  <meta property="og:title" content="Bazar En Linea | Prendas Disponibles">
+  <meta property="og:site_name" content="STMP MARKET">
+  <meta property="og:title" content="STMP MARKET | Prendas Disponibles">
   <meta property="og:description" content="Streetwear, vintage y prendas únicas seleccionadas. Envíos a todo México.">
   <meta property="og:url" content="https://catalogodeunbazar.vercel.app/tienda.html">
   <meta property="og:locale" content="es_MX">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Bazar En Linea | Prendas Disponibles">
+  <meta name="twitter:title" content="STMP MARKET | Prendas Disponibles">
   <meta name="twitter:description" content="Streetwear, vintage y prendas únicas. Envíos a todo México.">
 
   <!-- Favicon (SVG inline, sin peticiones externas) -->
@@ -75,8 +75,8 @@
 
   <div class="header-row">
   <a href="inicio.html" class="logo">
-    <span class="logo-full">Bazar En Linea</span>
-    <span class="logo-short">Bazar</span><span>.</span>
+    <span class="logo-full">STMP MARKET</span>
+    <span class="logo-short">STMP</span><span>.</span>
   </a>
 
   <!-- Búsqueda expandible -->
@@ -158,6 +158,41 @@
     </div>
   </section>
 
+  <!-- ── PESTAÑAS DEL BAZAR ──────────────────────────────────
+       Solo aparecen dentro de ?bazar=slug: separan el catálogo activo
+       del historial de ventas y de la reputación del bazar. -->
+  <div class="bz-tabs-wrap hidden" id="bzTabsWrap">
+    <div class="h-wrap">
+      <div class="bz-tabs" role="tablist" aria-label="Secciones del bazar">
+        <button class="bz-tab active" id="bzTabDisponibles" role="tab" aria-selected="true"
+                onclick="setBazarTab('disponibles')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9h18M3 9l1.5-5h15L21 9M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9"/></svg>
+          Disponibles <span class="bz-tab-n" id="bzNDisponibles">0</span>
+        </button>
+        <button class="bz-tab" id="bzTabVendidos" role="tab" aria-selected="false"
+                onclick="setBazarTab('vendidos')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          Vendidos <span class="bz-tab-n" id="bzNVendidos">0</span>
+        </button>
+        <button class="bz-tab" id="bzTabResenas" role="tab" aria-selected="false"
+                onclick="setBazarTab('resenas')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Reseñas <span class="bz-tab-n" id="bzNResenas">0</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historial público de ventas del bazar -->
+  <section class="bz-panel hidden" id="bzPanelVendidos" role="tabpanel" aria-labelledby="bzTabVendidos">
+    <div class="h-wrap" id="bzVendidosCont"></div>
+  </section>
+
+  <!-- Reputación del bazar -->
+  <section class="bz-panel hidden" id="bzPanelResenas" role="tabpanel" aria-labelledby="bzTabResenas">
+    <div class="h-wrap" id="bzResenasCont"></div>
+  </section>
+
   <div class="shop-toolbar">
     <div class="shop-toolbar-left">
       <button class="filters-fab" id="filtersFab" onclick="openFilterDrawer()" aria-label="Abrir filtros">
@@ -233,7 +268,7 @@
 <footer class="site-footer">
   <div class="sf-inner">
     <div class="sf-col sf-brand">
-      <a href="inicio.html" class="sf-logo">Bazar En Linea<span>.</span></a>
+      <a href="inicio.html" class="sf-logo">STMP MARKET<span>.</span></a>
       <p class="sf-desc">
         Catálogo digital de bazares independientes. Streetwear, vintage y prendas
         únicas de segunda mano. Cada prenda pertenece al bazar que la publica.
@@ -266,13 +301,13 @@
   <div class="sf-aviso">
     <strong>Importante:</strong> todas las prendas son de segunda mano y se venden
     <em>tal como se muestran</em>. <b>No se aceptan cambios ni devoluciones</b> y
-    <b>no se ofrece ninguna garantía</b>. Bazar En Linea es solo un catálogo: la venta,
+    <b>no se ofrece ninguna garantía</b>. STMP MARKET es solo un catálogo: la venta,
     el pago y el envío se acuerdan directamente con cada bazar.
     <a href="terminos.html">Leer los términos completos</a>
   </div>
 
   <div class="sf-base">
-    <span>Bazar En Linea &copy; <span id="anioActual">2026</span> · Todos los derechos reservados</span>
+    <span>STMP MARKET &copy; <span id="anioActual">2026</span> · Todos los derechos reservados</span>
     <span class="sf-base-links">
       <a href="terminos.html">Términos</a>
       <a href="terminos.html#privacidad">Privacidad</a>

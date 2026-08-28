@@ -172,7 +172,7 @@ function pintarPrenda(p) {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', color);
 
-  document.title = `${p.nombre}${p.marca ? ' · ' + p.marca : ''} | Bazar En Linea`;
+  document.title = `${p.nombre}${p.marca ? ' · ' + p.marca : ''} | STMP MARKET`;
 
   // Migas de pan
   const cats = Array.isArray(p.categorias) ? p.categorias : [];
@@ -315,7 +315,7 @@ function compartir(btn) {
   const url = location.href;
   const orig = btn.innerHTML;
   if (navigator.share) {
-    navigator.share({ title: prenda?.nombre || 'Bazar En Linea', url }).catch(() => {});
+    navigator.share({ title: prenda?.nombre || 'STMP MARKET', url }).catch(() => {});
     return;
   }
   navigator.clipboard.writeText(url).catch(() => {});
@@ -371,7 +371,7 @@ function noSePudoCargar(detalle) {
         <a class="h-btn h-btn-wa" href="tienda.html">Ir al catálogo</a>
       </div>
     </div>`;
-  document.title = 'No se pudo cargar | Bazar En Linea';
+  document.title = 'No se pudo cargar | STMP MARKET';
 }
 
 // Espera a la base de datos, pero no para siempre
@@ -401,7 +401,7 @@ function prendaNoDisponible() {
       <p>Puede que se haya vendido o que el bazar la haya quitado del catálogo.</p>
       <a class="h-btn h-btn-primary" href="tienda.html">Ver el catálogo</a>
     </div>`;
-  document.title = 'Prenda no disponible | Bazar En Linea';
+  document.title = 'Prenda no disponible | STMP MARKET';
 
   const recientes = getDB().filter(x => !x.vendido && !x.oculto).slice(0, 10);
   pintarRail('ppRailRecientes', recientes, 'ppSeccionRecientes');

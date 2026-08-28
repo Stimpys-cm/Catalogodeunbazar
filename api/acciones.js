@@ -5,11 +5,18 @@
 //   /api/acciones?op=logs               (GET lista / POST agrega)
 //   /api/acciones?op=borrar-prenda      (POST)
 //   /api/acciones?op=gestionar-usuario  (POST)
+//   /api/acciones?op=marcar-vendido     (POST)  → registra la venta
+//   /api/acciones?op=revertir-venta     (POST)  → deshace la venta
+//   /api/acciones?op=resena-comprador   (POST)  → califica al comprador
 
 import { getDB } from './_db.js';
 import { requireAuth } from './_auth.js';
 import { hashPassword } from './_password.js';
 import { puede, esGlobal, mismoBazar } from './_bazar.js';
+import {
+  normalizarUsername, usernameValido, siguienteId,
+  instantaneaPrenda, asegurarIndices, ETIQUETAS_COMPRADOR,
+} from './_ventas.js';
 
 function invalidarCache() {
   try { global._syncCache = null; global._syncCacheTime = 0; global._syncCachePub = null; } catch (_) {}
@@ -23,6 +30,9 @@ export default async function handler(req, res) {
     if (op === 'logs')              return await handleLogs(req, res);
     if (op === 'borrar-prenda')     return await handleBorrarPrenda(req, res);
     if (op === 'gestionar-usuario') return await handleGestionarUsuario(req, res);
+    if (op === 'marcar-vendido')    return await handleMarcarVendido(req, res);
+    if (op === 'revertir-venta')    return await handleRevertirVenta(req, res);
+    if (op === 'resena-comprador')  return await handleResenaComprador(req, res);
     return res.status(400).json({ error: 'op no reconocida' });
   } catch (err) {
     console.error('[acciones:' + op + ']', err);
@@ -315,3 +325,190 @@ async function handleGestionarUsuario(req, res) {
 }
 
 function normalize({ _id, ...rest }) { return rest; }
+
+
+/* ═══════════════════════════════════════════════════════════
+   VENTAS — el vendedor marca una prenda como vendida y le pone
+   el @username del comprador. Ese dato es el que hace aparecer
+   la prenda en "Mis Compras" y en la pestaña "Vendidos" del bazar.
+   ═══════════════════════════════════════════════════════════ */
+async function handleMarcarVendido(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
+
+  const user = await requireAuth(req, res);
+  if (!user) return;
+
+  const { id } = req.body || {};
+  const comprador = normalizarUsername(req.body?.comprador);
+
+  if (id == null) return res.status(400).json({ error: 'Falta id' });
+  if (!usernameValido(comprador)) {
+    return res.status(400).json({ error: 'Escribe el @username del comprador (3 a 30 caracteres).' });
+  }
+
+  await asegurarIndices();
+  const db     = await getDB();
+  const inv    = db.collection('inventario');
+  const ventas = db.collection('ventas');
+
+  const prenda = await inv.findOne({ id: Number(id) });
+  if (!prenda) return res.status(404).json({ error: 'Prenda no encontrada' });
+
+  // Multi-bazar: cada bazar solo vende lo suyo
+  if (!mismoBazar(user, prenda.bazarId)) {
+    return res.status(403).json({ error: 'Esa prenda pertenece a otro bazar.' });
+  }
+  if (!esGlobal(user) && !(await puede(user, 'editarPrendas'))) {
+    return res.status(403).json({ error: 'Tu bazar no tiene permitido marcar ventas.' });
+  }
+
+  // El @username tiene que existir: si no, la compra no le llegaría a nadie
+  const cliente = await db.collection('clientes').findOne({ username: comprador });
+  if (!cliente) {
+    return res.status(404).json({ error: `No hay ninguna cuenta con @${comprador} en STMP MARKET.` });
+  }
+
+  // Si la prenda ya estaba vendida se reutiliza el registro: cambiar de
+  // comprador no debe duplicar la venta ni dejar reseñas huérfanas.
+  const previa = await ventas.findOne({ prendaId: Number(id) });
+  const bazarId = Number(prenda.bazarId || 1);
+  const fecha   = new Date();
+
+  let ventaId;
+  if (previa) {
+    ventaId = previa.id;
+    await ventas.updateOne({ id: ventaId }, { $set: {
+      comprador, bazarId, fecha,
+      prenda: instantaneaPrenda(prenda),
+      vendedor: user.username,
+    } });
+    // Cambió el comprador → la reseña anterior ya no corresponde
+    if (previa.comprador !== comprador) {
+      await db.collection('resenas').deleteMany({ ventaId });
+      await ventas.updateOne({ id: ventaId }, { $set: { resenaBazar: false, resenaComprador: false } });
+    }
+  } else {
+    ventaId = await siguienteId('ventas');
+    await ventas.insertOne({
+      id: ventaId,
+      prendaId: Number(id),
+      bazarId,
+      comprador,
+      vendedor: user.username,
+      prenda: instantaneaPrenda(prenda),
+      fecha,
+      resenaBazar: false,
+      resenaComprador: false,
+    });
+  }
+
+  await inv.updateOne({ id: Number(id) }, { $set: {
+    vendido: true, vendidoA: comprador, vendidoEn: fecha, ventaId,
+  } });
+
+  invalidarCache();
+  return res.status(200).json({ ok: true, ventaId, comprador });
+}
+
+async function handleRevertirVenta(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
+
+  const user = await requireAuth(req, res);
+  if (!user) return;
+
+  const { id } = req.body || {};
+  if (id == null) return res.status(400).json({ error: 'Falta id' });
+
+  const db  = await getDB();
+  const inv = db.collection('inventario');
+
+  const prenda = await inv.findOne({ id: Number(id) });
+  if (!prenda) return res.status(404).json({ error: 'Prenda no encontrada' });
+  if (!mismoBazar(user, prenda.bazarId)) {
+    return res.status(403).json({ error: 'Esa prenda pertenece a otro bazar.' });
+  }
+  if (!esGlobal(user) && !(await puede(user, 'editarPrendas'))) {
+    return res.status(403).json({ error: 'Tu bazar no tiene permitido modificar ventas.' });
+  }
+
+  const venta = await db.collection('ventas').findOne({ prendaId: Number(id) });
+  if (venta) {
+    await db.collection('resenas').deleteMany({ ventaId: venta.id });
+    await db.collection('ventas').deleteOne({ id: venta.id });
+  }
+
+  await inv.updateOne({ id: Number(id) }, {
+    $set: { vendido: false },
+    $unset: { vendidoA: '', vendidoEn: '', ventaId: '', resenadoComprador: '' },
+  });
+
+  invalidarCache();
+  return res.status(200).json({ ok: true });
+}
+
+
+// El otro lado de la reputación: el bazar califica a quien le compró.
+// Eso es lo que llena la pestaña "Mis Reseñas" de la cuenta del comprador.
+async function handleResenaComprador(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
+
+  const user = await requireAuth(req, res);
+  if (!user) return;
+
+  await asegurarIndices();
+  const ventaId   = Number(req.body?.ventaId);
+  const estrellas = Math.round(Number(req.body?.estrellas));
+
+  if (!Number.isFinite(ventaId)) return res.status(400).json({ error: 'Falta la venta' });
+  if (!(estrellas >= 1 && estrellas <= 5)) {
+    return res.status(400).json({ error: 'Elige de 1 a 5 estrellas' });
+  }
+
+  const db    = await getDB();
+  const venta = await db.collection('ventas').findOne({ id: ventaId });
+  if (!venta) return res.status(404).json({ error: 'Esa venta no existe' });
+
+  // Solo el bazar que hizo la venta puede calificar a ese comprador
+  if (!mismoBazar(user, venta.bazarId)) {
+    return res.status(403).json({ error: 'Esa venta es de otro bazar.' });
+  }
+
+  const yaHay = await db.collection('resenas').findOne({ ventaId, tipo: 'comprador' });
+  if (yaHay) return res.status(409).json({ error: 'Ya calificaste a este comprador' });
+
+  const texto = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+  const etiquetas = (Array.isArray(req.body?.etiquetas) ? req.body.etiquetas : [])
+    .map(e => texto(e, 40))
+    .filter(e => ETIQUETAS_COMPRADOR.includes(e))
+    .slice(0, ETIQUETAS_COMPRADOR.length);
+
+  const resena = {
+    id: await siguienteId('resenas'),
+    ventaId,
+    tipo: 'comprador',
+    bazarId: Number(venta.bazarId || 1),
+    prendaId: venta.prendaId,
+    prendaNombre: venta.prenda?.nombre || '',
+    autor: user.username,
+    destino: venta.comprador,
+    estrellas,
+    etiquetas,
+    comentario: texto(req.body?.comentario, 500),
+    creadoEn: new Date(),
+  };
+
+  try {
+    await db.collection('resenas').insertOne(resena);
+  } catch (e) {
+    if (e?.code === 11000) return res.status(409).json({ error: 'Ya calificaste a este comprador' });
+    throw e;
+  }
+
+  await db.collection('ventas').updateOne({ id: ventaId }, { $set: { resenaComprador: true } });
+  // El panel lee el inventario, no las ventas: la marca viaja con la prenda
+  await db.collection('inventario').updateOne(
+    { id: venta.prendaId }, { $set: { resenadoComprador: true } });
+
+  invalidarCache();
+  return res.status(200).json({ ok: true, resena: { ...resena, creadoEn: resena.creadoEn.toISOString() } });
+}

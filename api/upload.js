@@ -3,8 +3,18 @@
 // Sube la imagen a Cloudinary y devuelve la URL pública.
 // Protegido: solo usuarios con sesión pueden subir (evita abuso anónimo).
 
-import { requireAuth } from './_auth.js';
+import { getUser } from './_auth.js';
 import { rateLimit } from './_rateLimit.js';
+import { getDB } from './_db.js';
+
+// Un comprador con sesión también sube foto: la necesita para su perfil
+// en STMP MARKET. Es la misma cookie httpOnly que usa /api/cuenta.
+async function clienteConSesion(req) {
+  const m = (req.headers.cookie || '').match(/(?:^|;\s*)cliente=([^;]+)/);
+  if (!m) return null;
+  const db = await getDB();
+  return db.collection('clientes').findOne({ sesionToken: decodeURIComponent(m[1]) });
+}
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -12,12 +22,20 @@ export default async function handler(req, res) {
 
   // 🔒 La cookie httpOnly de sesión se envía sola (mismo dominio), así que
   // esto funciona sin cambiar la llamada fetch de admin.js.
-  const user = await requireAuth(req, res);
-  if (!user) return;
+  // Vale la sesión del panel (vendedor) o la del comprador.
+  const user    = await getUser(req).catch(() => null);
+  const cliente = user ? null : await clienteConSesion(req).catch(() => null);
+  if (!user && !cliente) {
+    return res.status(401).json({ error: 'No autenticado. Inicia sesión.' });
+  }
 
   // Tope de subidas por IP: evita que alguien con una sesión llene tu
-  // cuenta de Cloudinary (y tu factura) a base de peticiones.
-  if (!(await rateLimit(req, res, { key: 'upload', max: 120, windowSec: 3600 }))) return;
+  // cuenta de Cloudinary (y tu factura) a base de peticiones. El comprador
+  // solo cambia su foto de perfil, así que su cupo es mucho más chico.
+  const cupo = user
+    ? { key: 'upload', max: 120, windowSec: 3600 }
+    : { key: 'upload-cliente', max: 10, windowSec: 3600 };
+  if (!(await rateLimit(req, res, cupo))) return;
 
   const file = req.body?.file;
   if (typeof file !== 'string' || !file) {
@@ -43,7 +61,7 @@ export default async function handler(req, res) {
 
   try {
     const timestamp = Math.floor(Date.now() / 1000);
-    const folder    = 'bazar';
+    const folder    = user ? 'bazar' : 'bazar/perfiles';
 
     const crypto  = await import('crypto');
     const toSign  = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <base href="/">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Bazar En Linea | Admin</title>
+<title>STMP MARKET | Admin</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#1a1f2e">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
@@ -32,7 +32,72 @@
 .re-cancel:hover{border-color:var(--muted,#8a8178);}
 .re-save{flex:1;padding:13px 22px;border:none;background:var(--accent-gradient,linear-gradient(135deg,#2d6be4,#4a90d9));color:#fff;border-radius:12px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;letter-spacing:.03em;cursor:pointer;box-shadow:0 4px 16px rgba(45,107,228,.3);transition:opacity .2s,box-shadow .2s;}
 .re-save:hover{opacity:.9;box-shadow:0 6px 22px rgba(45,107,228,.4);}
+/* ══ MODAL REGISTRAR VENTA ══ */
+.vt-modal{width:460px;}
+.vt-prenda{display:flex;gap:14px;align-items:center;background:var(--gray,#f2efe9);border:1.5px solid var(--border,#d4cfc6);border-radius:16px;padding:12px;}
+.vt-prenda img,.vt-prenda-sinfoto{width:58px;height:72px;object-fit:cover;border-radius:11px;background:var(--border,#d4cfc6);flex-shrink:0;}
+.vt-prenda-datos{min-width:0;display:flex;flex-direction:column;gap:3px;}
+.vt-prenda-nombre{font-size:14px;font-weight:700;color:var(--text-dark,#1a1f2e);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.vt-prenda-meta{font-size:11.5px;color:var(--muted,#8a8178);}
+.vt-prenda-precio{font-size:15px;font-weight:800;color:var(--accent,#2d6be4);letter-spacing:.01em;}
+.vt-campo{display:block;}
+.vt-campo>span{display:block;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted,#8a8178);margin-bottom:8px;}
+.vt-input-wrap{display:flex;align-items:center;background:#fff;border:1.5px solid var(--border,#d4cfc6);border-radius:13px;padding:0 14px;transition:border-color .2s,box-shadow .2s;}
+.vt-input-wrap:focus-within{border-color:var(--accent,#2d6be4);box-shadow:0 0 0 3px rgba(45,107,228,.14);}
+.vt-arroba{font-size:16px;font-weight:800;color:var(--accent,#2d6be4);padding-right:2px;}
+.vt-input-wrap input{flex:1;border:none;outline:none;background:none;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;letter-spacing:.01em;color:var(--text-dark,#1a1f2e);padding:14px 4px;min-width:0;}
+.vt-ayuda{font-size:12px;line-height:1.6;color:var(--muted,#8a8178);margin:0;}
+.vt-error{display:none;background:rgba(224,92,92,.08);border:1px solid rgba(224,92,92,.32);color:#c94a4a;font-size:12.5px;border-radius:12px;padding:10px 13px;}
+.vt-error.visible{display:block;}
+.vt-intro{margin:0;}
+.vt-campo textarea{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.55;color:var(--text-dark,#1a1f2e);background:#fff;border:1.5px solid var(--border,#d4cfc6);border-radius:13px;padding:12px 14px;outline:none;resize:vertical;transition:border-color .2s,box-shadow .2s;}
+.vt-campo textarea:focus{border-color:var(--accent,#2d6be4);box-shadow:0 0 0 3px rgba(45,107,228,.14);}
+.vt-estrellas{display:flex;align-items:center;gap:3px;flex-wrap:wrap;}
+.vt-estrella{font-size:32px;line-height:1;color:var(--border,#d4cfc6);background:none;border:none;padding:0 2px;cursor:pointer;transition:color .18s,transform .18s;}
+.vt-estrella:hover{transform:scale(1.14);}
+.vt-estrella.on{color:#f5a623;}
+.vt-estrellas-txt{margin-left:8px;font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--muted,#8a8178);}
+.vt-etiquetas{display:flex;flex-wrap:wrap;gap:6px;}
+.vt-etiqueta{font-family:'DM Sans',sans-serif;font-size:11.5px;font-weight:600;color:var(--muted,#8a8178);background:#fff;border:1.5px solid var(--border,#d4cfc6);border-radius:30px;padding:8px 13px;cursor:pointer;transition:border-color .2s,color .2s,background .2s;}
+.vt-etiqueta:hover{border-color:var(--accent,#2d6be4);color:var(--accent,#2d6be4);}
+.vt-etiqueta.on{color:var(--accent,#2d6be4);background:rgba(45,107,228,.1);border-color:var(--accent,#2d6be4);}
+/* Calificar al comprador, desde la tarjeta ya vendida.
+   Es un cuarto botón en una fila pensada para tres: se le da su propia
+   línea (order al final + base 100%) para que no empuje a los demás. */
+.item-actions{flex-wrap:wrap;}
+.act-btn.cal,.act-btn.cal-hecha{order:9;flex:1 0 100%;}
+.act-btn.cal{color:#b8811a;border-color:rgba(245,166,35,.4);background:rgba(245,166,35,.09);}
+.act-btn.cal:hover{border-color:#f5a623;background:rgba(245,166,35,.16);}
+.act-btn.cal-hecha{display:inline-flex;align-items:center;justify-content:center;color:#2e8b5b;border:1.5px solid rgba(46,139,91,.3);background:rgba(46,139,91,.1);cursor:default;}
+/* ══ DIÁLOGO GENÉRICO (sustituye a prompt/confirm) ══ */
+.dlg-overlay{position:fixed;inset:0;z-index:700;background:rgba(26,31,46,.5);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .24s;}
+.dlg-overlay.active{opacity:1;pointer-events:auto;}
+.dlg{position:fixed;z-index:701;top:50%;left:50%;transform:translate(-50%,-46%) scale(.97);width:430px;max-width:calc(100vw - 32px);max-height:90dvh;display:flex;flex-direction:column;background:var(--card,#faf8f4);border:1.5px solid var(--border,#d4cfc6);border-radius:20px;box-shadow:0 24px 70px rgba(26,31,46,.28);opacity:0;pointer-events:none;overflow:hidden;transition:opacity .24s,transform .28s cubic-bezier(.16,1,.3,1);}
+.dlg.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
+.dlg-head{padding:22px 24px 0;}
+.dlg-titulo{font-family:'Bebas Neue',sans-serif;font-size:1.55rem;letter-spacing:.02em;line-height:1.15;color:var(--text-dark,#1a1f2e);margin:0;}
+.dlg-sub{font-size:12px;color:var(--muted,#8a8178);margin:5px 0 0;}
+.dlg-body{padding:18px 24px 4px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
+.dlg-msg{font-size:13.5px;line-height:1.6;color:var(--text2,#5c5750);margin:0;}
+.dlg-campo{display:block;}
+.dlg-campo>span{display:block;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted,#8a8178);margin-bottom:7px;}
+.dlg-campo input{width:100%;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text-dark,#1a1f2e);background:#fff;border:1.5px solid var(--border,#d4cfc6);border-radius:12px;padding:13px 14px;outline:none;transition:border-color .2s,box-shadow .2s;}
+.dlg-campo input:focus{border-color:var(--accent,#2d6be4);box-shadow:0 0 0 3px rgba(45,107,228,.14);}
+.dlg-foot{display:flex;gap:10px;padding:18px 24px 20px;}
+.dlg-btn{font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.04em;border-radius:12px;padding:13px 20px;cursor:pointer;transition:opacity .2s,border-color .2s,box-shadow .2s;}
+.dlg-cancel{flex:0 0 auto;background:#fff;color:var(--text-dark,#1a1f2e);border:1.5px solid var(--border,#d4cfc6);}
+.dlg-cancel:hover{border-color:var(--muted,#8a8178);}
+.dlg-ok{flex:1;border:none;color:#fff;background:var(--accent-gradient,linear-gradient(135deg,#2d6be4,#4a90d9));box-shadow:0 4px 16px rgba(45,107,228,.3);}
+.dlg-ok:hover{opacity:.92;}
+.dlg-ok.dlg-peligro{background:linear-gradient(135deg,#e05c5c,#eb8080);box-shadow:0 4px 16px rgba(224,92,92,.32);}
+/* Pasar una categoría o marca al catálogo común */
+.act-btn.general{flex:0 0 auto;padding:8px 12px;color:var(--accent,#2d6be4);border-color:rgba(45,107,228,.35);background:rgba(45,107,228,.07);}
+.act-btn.general:hover{border-color:var(--accent,#2d6be4);background:rgba(45,107,228,.14);}
+/* Quién compró la prenda, en la tarjeta del inventario */
+.inv-card-comprador{font-size:11.5px;color:var(--muted,#8a8178);margin-top:2px;}
+.inv-card-comprador b{color:var(--accent,#2d6be4);font-weight:700;}
 @media (max-width:600px){
+  .vt-modal{width:100vw;}
   .re-modal{top:auto;bottom:0;left:0;transform:translateY(100%);width:100vw;max-width:100vw;max-height:94dvh;border-radius:22px 22px 0 0;border-bottom:none;}
   .re-modal.open{transform:translateY(0);}
   .re-modal::before{content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);width:42px;height:5px;border-radius:3px;background:var(--border,#d4cfc6);z-index:5;}
@@ -47,7 +112,7 @@
 
   <!-- Logo -->
   <div class="sidebar-logo">
-    <span class="sidebar-logo-text">BAZAR<span>.</span></span>
+    <span class="sidebar-logo-text">STMP<span> MARKET</span></span>
   </div>
 
   <!-- Perfil -->
@@ -147,7 +212,7 @@
     <button class="sidebar-toggle" onclick="toggleSidebar()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
-    <span class="topbar-title">BAZAR<span>.</span></span>
+    <span class="topbar-title">STMP<span> MARKET</span></span>
   </div>
 
   <!-- ── INVENTARIO ── -->
@@ -600,6 +665,44 @@
   </div>
 
 </div><!-- /admin-main -->
+
+<!-- ── MODAL: REGISTRAR VENTA ──────────────────────────────── -->
+<!-- El bazar marca la prenda como vendida y anota el @username del
+     comprador: ese dato es el que mueve la prenda a la pestaña
+     "Vendidos" de su tienda y a "Mis Compras" del comprador. -->
+<div class="re-overlay" id="ventaOverlay" onclick="cerrarModalVenta()"></div>
+<div class="re-modal vt-modal" id="ventaModal" role="dialog" aria-modal="true" aria-labelledby="ventaTitulo">
+  <div class="re-modal-head">
+    <div>
+      <h3 class="re-modal-title" id="ventaTitulo">Registrar venta</h3>
+      <p class="re-modal-sub">¿A quién se la vendiste?</p>
+    </div>
+    <button class="re-close" onclick="cerrarModalVenta()" aria-label="Cerrar">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="re-modal-body" id="ventaModalBody"></div>
+  <div class="re-modal-foot">
+    <button class="re-cancel" onclick="cerrarModalVenta()">Cancelar</button>
+    <button class="re-save" id="ventaGuardar" onclick="guardarModalVenta()">Marcar como vendido</button>
+  </div>
+</div>
+
+<!-- ── DIÁLOGO GENÉRICO ────────────────────────────────────
+     Reemplaza a prompt() y confirm() del navegador. Lo llena
+     _dlgAbrir() en js/admin.js. -->
+<div class="dlg-overlay" id="dlgOverlay"></div>
+<div class="dlg" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitulo">
+  <div class="dlg-head">
+    <h3 class="dlg-titulo" id="dlgTitulo"></h3>
+    <p class="dlg-sub" id="dlgSub"></p>
+  </div>
+  <div class="dlg-body" id="dlgBody"></div>
+  <div class="dlg-foot">
+    <button class="dlg-btn dlg-cancel" id="dlgCancelar">Cancelar</button>
+    <button class="dlg-btn dlg-ok" id="dlgAceptar">Aceptar</button>
+  </div>
+</div>
 
 <!-- Overlay sidebar móvil -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>

@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const wa = document.getElementById('waHero');
   if (wa) wa.href = `https://wa.me/${WA_NUM}?text=` +
-    encodeURIComponent('Hola! Vengo del catálogo Bazar En Linea y quiero preguntar por una prenda.');
+    encodeURIComponent('Hola! Vengo del catálogo STMP MARKET y quiero preguntar por una prenda.');
 
   await waitForDB();
   pintarInicio();

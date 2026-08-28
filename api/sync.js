@@ -12,6 +12,7 @@
 import { getDB } from './_db.js';
 import { getUser } from './_auth.js';
 import { bazarPublico } from './_bazar.js';
+import { resenaPublica } from './_ventas.js';
 
 // Caché en memoria compartido vía global — así los endpoints de escritura
 // (inventario, config) pueden invalidarlo tras un PUT y evitar servir datos
@@ -69,7 +70,7 @@ export default async function handler(req, res) {
   try {
     const db = await getDB();
 
-    const [inv, cats, brands, users, activos, logs, drops, bazares] = await Promise.all([
+    const [inv, cats, brands, users, activos, logs, drops, bazares, resenas] = await Promise.all([
       db.collection('inventario').find({}).sort({ _id: -1 }).toArray(),
       db.collection('categorias').find({}).sort({ id: 1 }).toArray(),
       db.collection('marcas').find({}).sort({ id: 1 }).toArray(),
@@ -80,6 +81,9 @@ export default async function handler(req, res) {
       db.collection('logs').find({}).sort({ ts: -1 }).limit(200).toArray(),
       db.collection('drops').find({}).sort({ _id: -1 }).toArray(),
       db.collection('bazares').find({}).sort({ id: 1 }).toArray(),
+      // Reseñas públicas de los bazares: alimentan la pestaña "Reseñas"
+      // de cada tienda y la estrella promedio del perfil.
+      db.collection('resenas').find({ tipo: 'bazar' }).sort({ creadoEn: -1 }).limit(500).toArray(),
     ]);
 
     global._syncCache = {
@@ -95,6 +99,7 @@ export default async function handler(req, res) {
       drops:      drops.map(normalize),
       // Solo datos públicos del bazar (los permisos no se exponen aquí)
       bazares:    bazares.map(bazarPublico),
+      resenas:    resenas.map(resenaPublica),
     };
     global._syncCacheTime = now;
     global._syncCachePub  = recortarPublico(global._syncCache);
@@ -127,6 +132,7 @@ function recortarPublico(todo) {
     categorias: todo.categorias || [],
     marcas:     todo.marcas     || [],
     bazares:    todo.bazares    || [],
+    resenas:    todo.resenas    || [],
   };
 }
 

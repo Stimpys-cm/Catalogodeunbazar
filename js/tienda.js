@@ -861,7 +861,7 @@ function _openProductDetailDrawer(p) {
 
   // Deep link: actualizar URL con el id de la prenda
   history.pushState({ productId: p.id }, '', `?id=${p.id}`);
-  document.title = `${p.nombre} · Bazar En Linea`;
+  document.title = `${p.nombre} · STMP MARKET`;
 
   // El detalle se tiñe con el color del bazar dueño de la prenda
   const pdDrawerEl = document.getElementById('pdDrawer');
@@ -884,7 +884,7 @@ function closePD() {
   document.getElementById('pdOverlay').classList.remove('active');
   document.body.style.overflow = '';
   history.pushState({}, '', location.pathname);
-  document.title = 'Bazar En Linea | Prendas Disponibles';
+  document.title = 'STMP MARKET | Prendas Disponibles';
 }
 
 function pdSetImg(idx) {
@@ -1022,7 +1022,12 @@ function aplicarBazarURL() {
 
   filterBazar = b.id;
   pintarPortadaBazar(b);
-  document.title = `${b.nombre} · Bazar En Linea`;
+  document.title = `${b.nombre} · STMP MARKET`;
+
+  // El apartado del bazar se divide en tres pestañas
+  document.getElementById('bzTabsWrap')?.classList.remove('hidden');
+  actualizarContadoresBazar();
+  setBazarTab('disponibles');
 }
 
 // ─── COLOR DEL BAZAR ─────────────────────────────────────────
@@ -1078,6 +1083,8 @@ function pintarPortadaBazar(b) {
   const logo = b.logo || b.portada || '';
   const n    = getDB().filter(p => !p.vendido && !p.oculto &&
                 Number(p.bazarId || 1) === Number(b.id)).length;
+  // La reputación va junto al perfil: es lo primero que mira un comprador
+  const rating = (typeof ratingDeBazar === 'function') ? ratingDeBazar(b.id) : { promedio: 0, total: 0 };
 
   // El bazar manda en su apartado: su color tiñe los acentos y su banner
   // se usa de fondo.
@@ -1105,6 +1112,11 @@ function pintarPortadaBazar(b) {
         ${b.descripcion ? `<p>${esc(b.descripcion)}</p>` : ''}
         <div class="bz-meta">
           <span class="bz-meta-item"><b>${n}</b> prenda${n !== 1 ? 's' : ''} disponible${n !== 1 ? 's' : ''}</span>
+          ${rating.total ? `<span class="bz-meta-item bz-meta-rating">
+            ${estrellasHTML(rating.promedio, 'st-estrellas bz-rating-estrellas')}
+            <b>${rating.promedio.toFixed(1)}</b> / 5.0
+            <span class="bz-rating-total">(${rating.total})</span>
+          </span>` : ''}
           ${b.ubicacion ? `<span class="bz-meta-item">${esc(b.ubicacion)}</span>` : ''}
         </div>
         <div class="bz-links">
@@ -1116,6 +1128,200 @@ function pintarPortadaBazar(b) {
       </div>
     </div>`;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   PESTAÑAS DEL BAZAR — Disponibles · Vendidos · Reseñas
+   El catálogo activo no se mezcla con lo que ya salió: cada cosa
+   tiene su pestaña bajo el perfil del bazar.
+   ═══════════════════════════════════════════════════════════ */
+let bazarTab = 'disponibles';
+
+// Las prendas del bazar que se está viendo
+function prendasDelBazar() {
+  if (!filterBazar) return [];
+  return getDB().filter(p => Number(p.bazarId || 1) === Number(filterBazar) && !p.oculto);
+}
+
+function setBazarTab(tab) {
+  if (!filterBazar) return;
+  bazarTab = tab;
+
+  ['disponibles', 'vendidos', 'resenas'].forEach(t => {
+    const btn = document.getElementById('bzTab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (btn) {
+      btn.classList.toggle('active', t === tab);
+      btn.setAttribute('aria-selected', String(t === tab));
+    }
+  });
+
+  // El catálogo activo trae su barra de filtros; las otras dos no
+  const esCatalogo = tab === 'disponibles';
+  document.querySelector('.shop-toolbar')?.classList.toggle('hidden', !esCatalogo);
+  document.querySelector('.shop-layout')?.classList.toggle('hidden', !esCatalogo);
+  document.getElementById('shopPaginacion')?.classList.toggle('hidden', !esCatalogo);
+  document.querySelector('.cat-nav')?.classList.toggle('hidden', !esCatalogo);
+
+  document.getElementById('bzPanelVendidos')?.classList.toggle('hidden', tab !== 'vendidos');
+  document.getElementById('bzPanelResenas')?.classList.toggle('hidden', tab !== 'resenas');
+
+  if (tab === 'vendidos') renderBazarVendidos();
+  if (tab === 'resenas')  renderBazarResenas();
+}
+
+// Cuenta de cada pestaña, siempre a la vista
+function actualizarContadoresBazar() {
+  if (!filterBazar) return;
+  const prendas = prendasDelBazar();
+  const disp = prendas.filter(p => !p.vendido).length;
+  const vend = prendas.filter(p =>  p.vendido).length;
+  const res  = (typeof resenasDeBazar === 'function' ? resenasDeBazar(filterBazar) : []).length;
+
+  const set = (id, n) => { const e = document.getElementById(id); if (e) e.textContent = n; };
+  set('bzNDisponibles', disp);
+  set('bzNVendidos', vend);
+  set('bzNResenas', res);
+}
+
+// ── Pestaña "Vendidos": el archivo público de ventas ─────────
+function renderBazarVendidos() {
+  const cont = document.getElementById('bzVendidosCont');
+  if (!cont) return;
+
+  const vendidas = prendasDelBazar()
+    .filter(p => p.vendido)
+    .sort((a, b) => new Date(b.vendidoEn || 0) - new Date(a.vendidoEn || 0));
+
+  if (!vendidas.length) {
+    cont.innerHTML = `<div class="empty">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <div class="empty-title">Todavía sin ventas</div>
+      <div class="empty-sub">Cuando este bazar entregue su primera prenda, aparecerá aquí.</div>
+    </div>`;
+    return;
+  }
+
+  cont.innerHTML = `
+    <div class="bz-panel-head">
+      <h3>Historial de ventas</h3>
+      <p>${vendidas.length} prenda${vendidas.length !== 1 ? 's' : ''} entregada${vendidas.length !== 1 ? 's' : ''} por este bazar.</p>
+    </div>
+    <div class="grid bz-grid-vendidos">
+      ${vendidas.map(tarjetaVendida).join('')}
+    </div>`;
+}
+
+function tarjetaVendida(p) {
+  const imgs = Array.isArray(p.imagenes) ? p.imagenes : [];
+  const img  = imgs[0]
+    ? `<img src="${imgOptimizada(imgs[0], 500)}" alt="${esc(p.nombre)}" loading="lazy" decoding="async">`
+    : `<div class="no-photo">Sin foto</div>`;
+  const fecha = p.vendidoEn
+    ? new Date(p.vendidoEn).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
+    : '';
+
+  return `<article class="card card-vendida">
+    <div class="card-img">
+      ${img}
+      <div class="card-vendida-sello">Vendido</div>
+    </div>
+    <div class="card-body">
+      <div class="card-name">${esc(p.nombre)}</div>
+      <div class="card-meta">Talla ${esc(p.talla || '–')}${p.marca ? ' · ' + esc(p.marca) : ''}</div>
+      <div class="card-vendida-a">
+        ${p.vendidoA
+          ? `Vendido a <b>@${esc(p.vendidoA)}</b>`
+          : 'Prenda entregada'}
+      </div>
+      ${fecha ? `<div class="card-vendida-fecha">${esc(fecha)}</div>` : ''}
+    </div>
+  </article>`;
+}
+
+// ── Pestaña "Reseñas": la reputación del bazar ───────────────
+function renderBazarResenas() {
+  const cont = document.getElementById('bzResenasCont');
+  if (!cont) return;
+
+  const lista  = (typeof resenasDeBazar === 'function' ? resenasDeBazar(filterBazar) : [])
+    .slice().sort((a, b) => new Date(b.creadoEn || 0) - new Date(a.creadoEn || 0));
+  const rating = (typeof ratingDeBazar === 'function') ? ratingDeBazar(filterBazar) : { promedio: 0, total: 0 };
+
+  if (!lista.length) {
+    cont.innerHTML = `<div class="empty">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <div class="empty-title">Sin reseñas todavía</div>
+      <div class="empty-sub">Los compradores califican al bazar desde su cuenta después de recibir la prenda.</div>
+    </div>`;
+    return;
+  }
+
+  // Cuántas reseñas hay de cada puntuación, para la barra de la izquierda
+  const conteo = [0, 0, 0, 0, 0];
+  lista.forEach(r => {
+    const n = Math.round(Number(r.estrellas) || 0);
+    if (n >= 1 && n <= 5) conteo[n - 1]++;
+  });
+
+  const barras = [5, 4, 3, 2, 1].map(n => {
+    const c   = conteo[n - 1];
+    const pct = rating.total ? Math.round((c / rating.total) * 100) : 0;
+    return `<div class="rs-barra">
+      <span class="rs-barra-n">${n} ★</span>
+      <span class="rs-barra-riel"><span class="rs-barra-relleno" style="width:${pct}%"></span></span>
+      <span class="rs-barra-c">${c}</span>
+    </div>`;
+  }).join('');
+
+  cont.innerHTML = `
+    <div class="rs-resumen">
+      <div class="rs-nota">
+        <div class="rs-nota-num">${rating.promedio.toFixed(1)}</div>
+        ${estrellasHTML(rating.promedio, 'st-estrellas rs-nota-estrellas')}
+        <div class="rs-nota-total">${rating.total} reseña${rating.total !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="rs-barras">${barras}</div>
+    </div>
+
+    <div class="rs-lista">
+      ${lista.map(tarjetaResena).join('')}
+    </div>`;
+}
+
+function tarjetaResena(r) {
+  const fecha = r.creadoEn
+    ? new Date(r.creadoEn).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+    : '';
+  const inicial = (r.autor || '?').charAt(0).toUpperCase();
+
+  return `<article class="rs-card">
+    <div class="rs-card-head">
+      <span class="rs-avatar">${esc(inicial)}</span>
+      <div class="rs-card-quien">
+        <div class="rs-autor">@${esc(r.autor || 'comprador')}</div>
+        ${r.prendaNombre ? `<div class="rs-prenda">sobre ${esc(r.prendaNombre)}</div>` : ''}
+      </div>
+      ${estrellasHTML(r.estrellas, 'st-estrellas rs-card-estrellas')}
+    </div>
+    ${r.comentario ? `<p class="rs-comentario">${esc(r.comentario)}</p>` : ''}
+    ${Array.isArray(r.etiquetas) && r.etiquetas.length
+      ? `<div class="rs-etiquetas">${r.etiquetas.map(e => `<span class="rs-etiqueta">${esc(e)}</span>`).join('')}</div>`
+      : ''}
+    ${fecha ? `<div class="rs-fecha">${esc(fecha)}</div>` : ''}
+  </article>`;
+}
+
+// Las reseñas y el inventario llegan por el poll: si estoy viendo una de
+// esas pestañas, se repinta sola.
+window.addEventListener('db:resenas', () => {
+  if (!filterBazar) return;
+  actualizarContadoresBazar();
+  if (bazarTab === 'resenas') renderBazarResenas();
+});
+window.addEventListener('db:inventario', () => {
+  if (!filterBazar) return;
+  actualizarContadoresBazar();
+  if (bazarTab === 'vendidos') renderBazarVendidos();
+});
 
 document.addEventListener('DOMContentLoaded', async () => {
   renderSkeletons();          // placeholders mientras carga la BD

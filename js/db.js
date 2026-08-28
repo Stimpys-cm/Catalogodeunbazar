@@ -21,6 +21,7 @@ let _activos = [];
 let _logs    = [];
 let _drops   = [];
 let _bazares = [];
+let _resenas = [];        // reseñas públicas de los bazares
 let _dbReady = false;
 
 // ── Helper HTTP ──────────────────────────────────────────────
@@ -49,6 +50,7 @@ async function _loadAll() {
     _logs    = data.logs        || [];
     _drops   = data.drops       || [];
     _bazares = data.bazares     || [];
+    _resenas = data.resenas     || [];
     _dbReady = true;
     window.dispatchEvent(new CustomEvent('db:ready'));
   } catch (e) {
@@ -65,6 +67,7 @@ let _hActivos = '';
 let _hLogs   = '';
 let _hDrops  = '';
 let _hBazares = '';
+let _hResenas = '';
 
 function _h(arr) { return JSON.stringify(arr); }
 
@@ -111,6 +114,7 @@ async function _poll() {
     const logs    = data.logs       || [];
     const drops   = data.drops      || [];
     const bazares = data.bazares    || [];
+    const resenas = data.resenas    || [];
 
     if (!_escudoActivo('inventario') && _h(inv) !== _hInv) {
       _hInv = _h(inv); _db = inv; _huboCambioEnPoll = true;
@@ -139,6 +143,10 @@ async function _poll() {
     if (!_escudoActivo('bazares') && _h(bazares) !== _hBazares) {
       _hBazares = _h(bazares); _bazares = bazares; _huboCambioEnPoll = true;
       window.dispatchEvent(new CustomEvent('db:bazares', { detail: bazares }));
+    }
+    if (_h(resenas) !== _hResenas) {
+      _hResenas = _h(resenas); _resenas = resenas; _huboCambioEnPoll = true;
+      window.dispatchEvent(new CustomEvent('db:resenas', { detail: resenas }));
     }
     if (!_escudoActivo('drops') && _h(drops) !== _hDrops) {
       _hDrops = _h(drops); _drops = drops; _huboCambioEnPoll = true;
@@ -328,6 +336,31 @@ const WA_FALLBACK = '528995284602';
 function whatsappDe(p) {
   const b = bazarDe(p);
   return (b && b.whatsapp) ? String(b.whatsapp).replace(/[^0-9]/g, '') : WA_FALLBACK;
+}
+
+/* ── RESEÑAS ──────────────────────────────────────────────────
+   Las reseñas que los compradores dejan a cada bazar. Llegan con el
+   sync público, así que la tienda las pinta sin pedir nada extra. */
+function getResenas()          { return _resenas; }
+function resenasDeBazar(id)    { return _resenas.filter(r => Number(r.bazarId) === Number(id)); }
+
+// Promedio en estrellas de un bazar: { promedio, total }
+function ratingDeBazar(id) {
+  const lista = resenasDeBazar(id).filter(r => Number(r.estrellas) > 0);
+  if (!lista.length) return { promedio: 0, total: 0 };
+  const suma = lista.reduce((s, r) => s + Number(r.estrellas), 0);
+  return { promedio: Math.round((suma / lista.length) * 10) / 10, total: lista.length };
+}
+
+// Estrellas en texto para las tarjetas: ★★★★☆
+function estrellasHTML(valor, clase = 'st-estrellas') {
+  const v = Math.max(0, Math.min(5, Number(valor) || 0));
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    const estado = v >= i ? 'llena' : (v >= i - .5 ? 'media' : 'vacia');
+    html += `<span class="st-estrella ${estado}">★</span>`;
+  }
+  return `<span class="${clase}" role="img" aria-label="${v} de 5 estrellas">${html}</span>`;
 }
 
 function saveBazares(list) {

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Mi cuenta | Bazar En Linea</title>
-  <meta name="description" content="Entra o crea tu cuenta para guardar tus prendas favoritas en Bazar En Linea.">
+  <title>Mi cuenta | STMP MARKET</title>
+  <meta name="description" content="Entra o crea tu cuenta para guardar tus prendas favoritas en STMP MARKET.">
   <meta name="theme-color" content="#f7f4ef">
   <meta name="robots" content="noindex">
 
@@ -33,8 +33,8 @@
 <header>
   <div class="header-row">
     <a href="inicio.html" class="logo">
-      <span class="logo-full">Bazar En Linea</span>
-      <span class="logo-short">Bazar</span><span>.</span>
+      <span class="logo-full">STMP MARKET</span>
+      <span class="logo-short">STMP</span><span>.</span>
     </a>
     <div class="header-actions">
       <a href="tienda.html" class="h-nav-cta h-nav-cta-ghost">Catálogo</a>
@@ -62,7 +62,7 @@
 <footer class="site-footer">
   <div class="sf-inner">
     <div class="sf-col sf-brand">
-      <a href="inicio.html" class="sf-logo">Bazar En Linea<span>.</span></a>
+      <a href="inicio.html" class="sf-logo">STMP MARKET<span>.</span></a>
       <p class="sf-desc">
         Catálogo digital de bazares independientes. Streetwear, vintage y prendas
         únicas de segunda mano. Cada prenda pertenece al bazar que la publica.
@@ -86,9 +86,31 @@
     </div>
   </div>
   <div class="sf-base">
-    <span>Bazar En Linea &copy; <span id="anioActual">2026</span> · Todos los derechos reservados</span>
+    <span>STMP MARKET &copy; <span id="anioActual">2026</span> · Todos los derechos reservados</span>
   </div>
 </footer>
+
+<!-- ── MODAL: CALIFICAR AL BAZAR ───────────────────────────
+     El comprador cierra el ciclo: estrellas, etiquetas rápidas y
+     comentario. Al enviarlo, la reseña aparece al instante en la
+     pestaña "Reseñas" del bazar. -->
+<div class="ct-modal-overlay" id="ctModalOverlay" onclick="MiCuenta.cerrarCalificar()"></div>
+<div class="ct-modal" id="ctModal" role="dialog" aria-modal="true" aria-labelledby="ctModalTitulo">
+  <div class="ct-modal-head">
+    <div>
+      <h3 class="ct-modal-titulo" id="ctModalTitulo">Calificar bazar</h3>
+      <p class="ct-modal-sub">Tu opinión construye la reputación del bazar</p>
+    </div>
+    <button class="ct-modal-close" onclick="MiCuenta.cerrarCalificar()" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="ct-modal-body" id="ctModalBody"></div>
+  <div class="ct-modal-foot">
+    <button class="ct-modal-cancel" onclick="MiCuenta.cerrarCalificar()">Cancelar</button>
+    <button class="ct-modal-save" id="cfEnviar" onclick="MiCuenta.enviarResena()">Enviar reseña</button>
+  </div>
+</div>
 
 <div class="toast" id="toast" role="alert" aria-live="polite"></div>
 
