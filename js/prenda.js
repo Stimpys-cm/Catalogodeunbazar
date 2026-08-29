@@ -5,7 +5,8 @@ const WA_POR_DEFECTO = '528995284602';
 
 const pEsc = s => String(s ?? '').replace(/[&<>"']/g, c =>
   ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
-const pMoney = n => '$' + Number(n || 0).toLocaleString('es-MX');
+// Precios en pesos mexicanos: el MXN va en pequeño junto al importe
+const pMoney = n => '$' + Number(n || 0).toLocaleString('es-MX') + ' <span class="cur">MXN</span>';
 
 let prenda   = null;
 let fotos    = [];
@@ -123,7 +124,7 @@ function tarjeta(p) {
             : `<div class="h-card-nophoto">Sin foto</div>`}
     </div>
     <div class="h-card-body">
-      <div class="h-card-brand">${pEsc(p.marca || 'Bazar')}</div>
+      <div class="h-card-brand${p.marca ? '' : ' sin-marca'}">${pEsc(p.marca || 'Sin marca')}</div>
       <div class="h-card-name">${pEsc(p.nombre)}</div>
       <div class="h-card-foot">
         <span class="h-card-price">${pMoney(p.precio_venta)}</span>
@@ -175,7 +176,7 @@ function pintarPrenda(p) {
   }
 
   const waMsg = encodeURIComponent(
-    `Hola! Me interesa: ${p.nombre}${p.talla ? ' · Talla ' + p.talla : ''} · $${p.precio_venta}\n${location.href}`);
+    `Hola! Me interesa: ${p.nombre}${p.talla ? ' · Talla ' + p.talla : ''} · $${p.precio_venta} MXN\n${location.href}`);
   const waUrl = `https://wa.me/${wa}?text=${waMsg}`;
 
   const tallaBase   = String(p.talla || '').split('·')[0].trim();
@@ -185,7 +186,7 @@ function pintarPrenda(p) {
     ['Talla', tallaBase || '—'],
     tallaExtras.length ? ['Cómo queda', tallaExtras.join(' · ')] : null,
     ['Condición', p.estado || '—'],
-    p.marca ? ['Marca', p.marca] : null,
+    ['Marca', p.marca || 'Sin marca'],
     cats.length ? ['Categoría', cats.join(', ')] : null,
     ['Ubicación', (bz && bz.ubicacion) || 'Reynosa, Tamps.'],
     ['Disponibilidad', p.vendido ? 'Vendida' : 'Disponible · pieza única'],
@@ -215,7 +216,9 @@ function pintarPrenda(p) {
     </div>
 
     <div class="pp-info">
-      ${p.marca ? `<a class="pp-marca" href="tienda.html?marca=${encodeURIComponent(p.marca)}">${pEsc(p.marca)}</a>` : ''}
+      ${p.marca
+        ? `<a class="pp-marca" href="tienda.html?marca=${encodeURIComponent(p.marca)}">${pEsc(p.marca)}</a>`
+        : '<span class="pp-marca sin-marca">Sin marca</span>'}
       <h1 class="pp-nombre">${pEsc(p.nombre)}</h1>
       <div class="pp-meta">${pEsc(haceCuanto(p))}</div>
 
@@ -291,7 +294,7 @@ function pintarPrenda(p) {
   const barra = document.getElementById('ppBarra');
   if (barra) {
     barra.hidden = false;
-    document.getElementById('ppBarraPrecio').textContent = pMoney(p.precio_venta);
+    document.getElementById('ppBarraPrecio').innerHTML = pMoney(p.precio_venta);
     document.getElementById('ppBarraNombre').textContent = p.nombre;
     document.getElementById('ppBarraWa').href = waUrl;
   }

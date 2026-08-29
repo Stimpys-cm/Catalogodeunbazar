@@ -7,16 +7,33 @@
 const escAdmin = str => String(str ?? '').replace(/[&<>"']/g, c =>
   ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 
-if (!isLoggedIn()) window.location.href = 'login.html';
+// El acceso puede vivir en una dirección secreta (RUTA_PANEL): en ese caso
+// /login.html devuelve 404 a todo el mundo. El servidor nos dijo al entrar
+// cuál es esa dirección y quedó guardada en la sesión.
+function rutaDeAcceso() {
+  const guardada = getSession()?.panel;
+  if (guardada) return guardada;
+  // Sin dato guardado: si no estamos en /admin.html es que llegamos por la
+  // dirección secreta, así que volver ahí es lo correcto.
+  return location.pathname === '/admin.html' ? 'login.html' : location.pathname;
+}
+
+// Sale del panel soltando también la cookie del servidor: sin ella, la
+// puerta vuelve a mostrar el formulario en vez del panel.
+function salirDelPanel(destino) {
+  fetch('/api/auth', { method: 'DELETE' })
+    .catch(() => {})
+    .finally(() => { window.location.href = destino; });
+}
+
+if (!isLoggedIn()) salirDelPanel(rutaDeAcceso());
 const session = getSession();
 
 function logout() {
   removeMyActivity();
+  const destino = rutaDeAcceso();   // se lee antes de borrar la sesión
   clearSession();
-  // Borra las cookies de sesión en el servidor antes de salir
-  fetch('/api/auth', { method: 'DELETE' })
-    .catch(() => {})
-    .finally(() => { window.location.href = 'login.html'; });
+  salirDelPanel(destino);
 }
 
 // Cierre forzado: cuando la cuenta inició sesión en otro dispositivo.
@@ -27,8 +44,9 @@ function forceLogout() {
   if (_kicked) return;
   _kicked = true;
   toast('Tu cuenta inició sesión en otro dispositivo');
+  const destino = rutaDeAcceso();
   clearSession();
-  setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+  setTimeout(() => salirDelPanel(destino), 1500);
 }
 
 // ─── TABS ────────────────────────────────────────────────────
@@ -451,11 +469,11 @@ function renderStats() {
   const adminStats = isAdmin() ? `
     <div class="stat-card green">
       <div class="stat-label">Ganancia Neta</div>
-      <div class="stat-value green">$${ganancia.toFixed(2)}</div>
+      <div class="stat-value green">$${ganancia.toFixed(2)} <span class="cur">MXN</span></div>
     </div>
     <div class="stat-card yellow">
       <div class="stat-label">Total Ventas</div>
-      <div class="stat-value yellow">$${totalVentas.toFixed(2)}</div>
+      <div class="stat-value yellow">$${totalVentas.toFixed(2)} <span class="cur">MXN</span></div>
     </div>` : '';
 
   document.getElementById('statsGrid').innerHTML = `${adminStats}
@@ -606,7 +624,7 @@ function renderInv() {
         <div class="item-meta">Talla ${p.talla||'–'} · ${p.estado||''}</div>
         ${compradorHtml}
         <div class="item-prices">
-          <span class="item-price">$${p.precio_venta}</span>
+          <span class="item-price">$${p.precio_venta} <span class="cur">MXN</span></span>
           ${costoHtml}
         </div>
         <div class="item-actions">
@@ -712,7 +730,7 @@ function abrirModalVenta(id) {
       <div class="vt-prenda-datos">
         <div class="vt-prenda-nombre">${escAdmin(p.nombre || 'Prenda')}</div>
         <div class="vt-prenda-meta">Talla ${escAdmin(p.talla || '–')}${p.marca ? ' · ' + escAdmin(p.marca) : ''}</div>
-        <div class="vt-prenda-precio">$${Number(p.precio_venta || 0).toLocaleString('es-MX')}</div>
+        <div class="vt-prenda-precio">$${Number(p.precio_venta || 0).toLocaleString('es-MX')} <span class="cur">MXN</span></div>
       </div>
     </div>
 
@@ -886,7 +904,7 @@ async function confirmarVenta() {
     cerrarModalVenta();
     renderAll();
     registrarLog('vender', p?.nombre || ('#' + id),
-                 `Vendido a @${comprador} · $${p?.precio_venta ?? '-'}`);
+                 `Vendido a @${comprador} · $${p?.precio_venta ?? '-'} MXN`);
     playActionSound('sell');
     toast(`Vendido a @${comprador}`);
     if (typeof pollAhora === 'function') pollAhora(800);
@@ -1516,7 +1534,13 @@ function renderBazares() {
             <input type="text" id="bz_wa_${b.id}" value="${escAdmin(b.whatsapp || '')}" inputmode="numeric" maxlength="15">
           </label>
           <label>Instagram
-            <input type="text" id="bz_ig_${b.id}" value="${escAdmin(b.instagram || '')}" maxlength="40">
+            <input type="text" id="bz_ig_${b.id}" value="${escAdmin(b.instagram || '')}" maxlength="40" placeholder="usuario, sin @">
+          </label>
+          <label>TikTok
+            <input type="text" id="bz_tt_${b.id}" value="${escAdmin(b.tiktok || '')}" maxlength="40" placeholder="usuario, sin @">
+          </label>
+          <label>Facebook
+            <input type="text" id="bz_fb_${b.id}" value="${escAdmin(b.facebook || '')}" maxlength="60" placeholder="nombre de la página">
           </label>
           <label>Ubicación
             <input type="text" id="bz_ubi_${b.id}" value="${escAdmin(b.ubicacion || '')}" maxlength="60">
@@ -1695,7 +1719,8 @@ async function nuevoBazar() {
   const lista = [...getBazares(), {
     id: nextBazarId(),
     slug, nombre: nombre.trim(), whatsapp,
-    instagram: '', descripcion: '', ubicacion: '', color: '', portada: '',
+    instagram: '', tiktok: '', facebook: '',
+    descripcion: '', ubicacion: '', color: '', portada: '',
     activo: true,
     permisos: {
       crearPrendas: true, editarPrendas: true, borrarPrendas: true,
@@ -1726,6 +1751,8 @@ function guardarBazar(id) {
   b.nombre      = nombre;
   b.whatsapp    = val('wa').replace(/[^0-9]/g, '');
   b.instagram   = val('ig').replace(/^@/, '');
+  b.tiktok      = val('tt').replace(/^@/, '');
+  b.facebook    = val('fb').replace(/^@/, '');
   b.ubicacion   = val('ubi');
   b.descripcion = val('desc');
   const colorEscrito = colorValido(val('colorhex')) || colorValido(val('color'));
@@ -3029,7 +3056,7 @@ function updatePreview() {
 
   // Precio
   const p = parseFloat(precio);
-  document.getElementById('pvPrice').textContent = isNaN(p) ? '$0' : `$${p.toLocaleString('es-MX')}`;
+  document.getElementById('pvPrice').innerHTML = isNaN(p) ? '$0' : `$${p.toLocaleString('es-MX')} <span class="cur">MXN</span>`;
 
   // Galería
   pvImgs = allImgs;
@@ -3225,7 +3252,7 @@ function renderDropCard(d) {
     <div class="drop-prendas-list">
       ${prendas.map(p => `<div class="drop-prenda-item">
         <span>${escAdmin(p.nombre)}</span>
-        <span class="drop-prenda-precio">$${p.precio_venta}</span>
+        <span class="drop-prenda-precio">$${p.precio_venta} <span class="cur">MXN</span></span>
         ${admin ? `<button class="drop-prenda-remove" onclick="quitarPrendaDeDrop('${d.id}',${p.id})" title="Quitar del drop">${IC_X}</button>` : ''}
       </div>`).join('')}
     </div>

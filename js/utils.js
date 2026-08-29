@@ -103,8 +103,11 @@
       ...options,
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
     });
-    if (res.status === 401) {                 // sesión caduca → al login
-      window.location.href = 'login.html';
+    if (res.status === 401) {                 // sesión caduca → al acceso
+      // El acceso puede vivir en una dirección secreta: la usamos si el
+      // panel la conoce, porque /login.html puede devolver 404.
+      window.location.href = (typeof rutaDeAcceso === 'function')
+        ? rutaDeAcceso() : 'login.html';
       throw new Error('Sesión expirada');
     }
     if (!res.ok) {

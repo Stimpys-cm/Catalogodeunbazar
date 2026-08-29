@@ -69,6 +69,8 @@
 .act-btn.cal{color:#b8811a;border-color:rgba(245,166,35,.4);background:rgba(245,166,35,.09);}
 .act-btn.cal:hover{border-color:#f5a623;background:rgba(245,166,35,.16);}
 .act-btn.cal-hecha{display:inline-flex;align-items:center;justify-content:center;color:#2e8b5b;border:1.5px solid rgba(46,139,91,.3);background:rgba(46,139,91,.1);cursor:default;}
+/* Sufijo de moneda: los precios del panel también son en pesos mexicanos */
+.cur{font-size:.52em;font-weight:700;letter-spacing:.1em;opacity:.6;white-space:nowrap;}
 /* ══ DIÁLOGO GENÉRICO (sustituye a prompt/confirm) ══ */
 .dlg-overlay{position:fixed;inset:0;z-index:700;background:rgba(26,31,46,.5);backdrop-filter:blur(3px);opacity:0;pointer-events:none;transition:opacity .24s;}
 .dlg-overlay.active{opacity:1;pointer-events:auto;}
@@ -96,6 +98,16 @@
 /* Quién compró la prenda, en la tarjeta del inventario */
 .inv-card-comprador{font-size:11.5px;color:var(--muted,#8a8178);margin-top:2px;}
 .inv-card-comprador b{color:var(--accent,#2d6be4);font-weight:700;}
+/* En una tarjeta de ~175px, "Marcar como Vendido" no cabe junto a los
+   dos iconos: partía en tres líneas y los deformaba. Se lleva su propia
+   fila y los iconos comparten la siguiente. */
+@media (max-width:720px){
+  /* Tanto "Marcar como Vendido" como "Reactivar" se llevan su fila; si no,
+     uno de los dos iconos se quedaba solo en la siguiente. */
+  .act-btn.sell,.act-btn.unsell{flex:1 0 100%;}
+  /* El precio y el costo llegaban a tocarse: "$1200Costo:" */
+  .item-prices{flex-wrap:wrap;gap:4px 10px;}
+}
 @media (max-width:600px){
   .vt-modal{width:100vw;}
   .re-modal{top:auto;bottom:0;left:0;transform:translateY(100%);width:100vw;max-width:100vw;max-height:94dvh;border-radius:22px 22px 0 0;border-bottom:none;}

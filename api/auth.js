@@ -40,6 +40,10 @@ function setSessionCookie(res, token, username, rol) {
   res.setHeader('Set-Cookie', galletas);
 }
 
+// La puerta del panel: tiene que coincidir con RUTA_POR_DEFECTO de
+// middleware.js. Es a donde se manda al usuario tras iniciar sesión.
+const RUTA_PANEL_DEFECTO = 'manage-x9k2p7q-control';
+
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -145,9 +149,8 @@ export default async function handler(req, res) {
       bazarId: user.bazarId != null ? Number(user.bazarId) : null,
       // A dónde ir tras entrar: la dirección secreta del panel si está
       // configurada. El navegador no la conoce de otra forma.
-      panel: process.env.RUTA_PANEL
-        ? '/' + String(process.env.RUTA_PANEL).replace(/^\/+|\/+$/g, '')
-        : '/admin.html',
+      panel: '/' + String(process.env.RUTA_PANEL || RUTA_PANEL_DEFECTO)
+        .replace(/^\/+|\/+$/g, ''),
     });
 
   } catch (err) {

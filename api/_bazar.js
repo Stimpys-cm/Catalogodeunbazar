@@ -46,9 +46,15 @@ export function bazarPublico(b) {
     nombre: b.nombre,
     whatsapp: b.whatsapp || '',
     instagram: b.instagram || '',
+    tiktok: b.tiktok || '',
+    facebook: b.facebook || '',
     descripcion: b.descripcion || '',
     color: b.color || '',
     portada: b.portada || '',
+    // El panel guardaba logo y banner pero no salían de aquí, así que la
+    // tienda nunca podía pintarlos aunque su código ya los pedía.
+    logo: b.logo || '',
+    banner: b.banner || '',
     ubicacion: b.ubicacion || '',
     activo: b.activo !== false,
     // Los permisos no son secretos: describen qué puede hacer el bazar en su

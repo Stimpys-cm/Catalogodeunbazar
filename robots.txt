@@ -1,8 +1,11 @@
-# Bazar En Linea
+# STMP MARKET
 User-agent: *
 Allow: /
-Disallow: /admin.html
-Disallow: /login.html
 Disallow: /api/
+
+# El panel y su acceso NO se bloquean aquí a propósito: bloquearlos
+# impediría que el buscador leyera su etiqueta noindex y la URL podría
+# seguir apareciendo. Se excluyen con la cabecera X-Robots-Tag que
+# define vercel.json y con el meta noindex de cada página.
 
 Sitemap: https://stiimpys.store/sitemap.xml

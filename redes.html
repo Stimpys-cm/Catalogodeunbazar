@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Los bazares | STMP MARKET</title>
+  <meta name="description" content="Conoce a los bazares de STMP MARKET: sus redes sociales, su reputación y lo último que han publicado.">
+  <meta name="theme-color" content="#f7f4ef">
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/tienda.css">
+  <link rel="stylesheet" href="css/inicio.css">
+  <link rel="stylesheet" href="css/redes.css">
+  <link rel="stylesheet" href="css/dispositivos.css">
+  <link rel="stylesheet" href="css/estetica.css">
+  <style>
+    html, body { overflow-x: hidden; max-width: 100%; }
+    .logo-short { display: none; }
+    @media (max-width: 480px) {
+      .logo-full  { display: none; }
+      .logo-short { display: inline; }
+    }
+  </style>
+  <script src="js/db.js" defer></script>
+  <script src="js/wishlist.js" defer></script>
+  <script src="js/redes.js" defer></script>
+  <script src="js/legal.js" defer></script>
+  <script src="js/cuenta.js" defer></script>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <a href="inicio.html" class="logo">
+      <span class="logo-full">STMP MARKET</span>
+      <span class="logo-short">STMP</span><span>.</span>
+    </a>
+    <div class="header-actions">
+      <button class="btn-wishlist-header" onclick="toggleWishlistPanel()" aria-label="Mi wishlist" id="wishlistHeaderBtn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+        <span class="wishlist-count" id="wishlistCount" style="display:none">0</span>
+      </button>
+      <span id="cuentaSlot"></span>
+      <a href="tienda.html" class="h-nav-cta h-nav-cta-ghost">Catálogo</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero h-shop-hero">
+    <div class="h-wrap">
+      <a href="inicio.html" class="h-crumb">
+        <svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        Volver al inicio
+      </a>
+      <h2>Los <em>bazares</em></h2>
+      <p>Cada prenda de STMP MARKET pertenece a un bazar independiente. Aquí están sus redes, su reputación y lo último que ha publicado cada uno.</p>
+    </div>
+  </section>
+
+  <div class="rd-wrap h-wrap" id="rdContenido">
+    <div class="rd-cargando">Cargando bazares…</div>
+  </div>
+</main>
+
+<!-- ── BOTTOM NAV (solo móvil) ────────────────────────────── -->
+<nav class="bottom-nav" aria-label="Navegación inferior">
+  <a class="bn-item" href="inicio.html" aria-label="Inicio">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
+    <span>Inicio</span>
+  </a>
+  <button class="bn-item" onclick="toggleWishlistPanel()" aria-label="Wishlist">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    <span class="bn-wl-wrap">Wishlist<span class="bn-wl-count" id="bnWlCount" style="display:none">0</span></span>
+  </button>
+  <a class="bn-item active" href="redes.html" aria-label="Bazares">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18M3 9l1.5-5h15L21 9M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9M9 21v-7h6v7"/></svg>
+    <span>Bazares</span>
+  </a>
+</nav>
+
+<footer class="site-footer">
+  <div class="sf-inner">
+    <div class="sf-col sf-brand">
+      <a href="inicio.html" class="sf-logo">STMP MARKET<span>.</span></a>
+      <p class="sf-desc">
+        Catálogo digital de bazares independientes. Streetwear, vintage y prendas
+        únicas de segunda mano. Cada prenda pertenece al bazar que la publica.
+      </p>
+      <div class="sf-ubi">México</div>
+    </div>
+    <div class="sf-col">
+      <h3>Comprar</h3>
+      <a href="tienda.html">Ver catálogo</a>
+      <a href="redes.html">Los bazares</a>
+      <a href="inicio.html#comofunciona">Cómo comprar</a>
+    </div>
+    <div class="sf-col sf-bazares">
+      <h3>Bazares</h3>
+      <div id="footerBazares"><a href="redes.html">Ver todos</a></div>
+    </div>
+    <div class="sf-col">
+      <h3>Legal</h3>
+      <a href="terminos.html">Términos y condiciones</a>
+      <a href="terminos.html#privacidad">Aviso de privacidad</a>
+    </div>
+  </div>
+  <div class="sf-base">
+    <span>STMP MARKET &copy; <span id="anioActual">2026</span> · Todos los derechos reservados</span>
+  </div>
+</footer>
+
+<!-- ── PANEL WISHLIST ─────────────────────────────────────── -->
+<div class="wishlist-overlay" id="wishlistOverlay" onclick="closeWishlistPanel()"></div>
+<aside class="wishlist-panel" id="wishlistPanel" aria-label="Mi wishlist">
+  <div class="wishlist-panel-header">
+    <h3>Mi Wishlist <span class="wishlist-panel-count" id="wishlistPanelCount">0</span></h3>
+    <button onclick="closeWishlistPanel()" aria-label="Cerrar">✕</button>
+  </div>
+  <div class="wishlist-panel-body" id="wishlistPanelBody"></div>
+  <div class="wishlist-panel-footer" id="wishlistPanelFooter" style="display:none">
+    <button class="wl-vaciar" onclick="vaciarWishlist()">Vaciar la lista</button>
+  </div>
+</aside>
+
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
+
+</body>
+</html>

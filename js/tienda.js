@@ -143,126 +143,9 @@ function toggleWishlist(product) {
   const btn = document.querySelector(`[data-wl-id="${product.id}"]`);
   if (btn) btn.classList.toggle('active', isWishlisted(product.id));
 }
-function updateWishlistBadge() {
-  const count = getWishlist().length;
-  const badge = document.getElementById('wishlistCount');
-  const panelCount = document.getElementById('wishlistPanelCount');
-  if (!badge) return;
-  badge.textContent = count;
-  badge.style.display = count > 0 ? 'flex' : 'none';
-  if (panelCount) panelCount.textContent = count;
-  const bn = document.getElementById('bnWlCount');
-  if (bn) { bn.textContent = count; bn.style.display = count > 0 ? 'flex' : 'none'; }
-}
-
-// ─── PANEL WISHLIST ───────────────────────────────────────────
-function toggleWishlistPanel() {
-  const panel   = document.getElementById('wishlistPanel');
-  const overlay = document.getElementById('wishlistOverlay');
-  const isOpen  = panel.classList.contains('open');
-  if (isOpen) {
-    closeWishlistPanel();
-  } else {
-    renderWishlistPanel();
-    panel.classList.add('open');
-    overlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-}
-function closeWishlistPanel() {
-  document.getElementById('wishlistPanel')?.classList.remove('open');
-  document.getElementById('wishlistOverlay')?.classList.remove('active');
-  document.body.style.overflow = '';
-}
-function renderWishlistPanel() {
-  const list    = getWishlist();
-  const body    = document.getElementById('wishlistPanelBody');
-  const footer  = document.getElementById('wishlistPanelFooter');
-  const btnTodo = document.getElementById('wlBtnTodo');
-  if (!body) return;
-
-  if (!list.length) {
-    body.innerHTML = '<div class="wishlist-empty">No tienes prendas guardadas aún.<br><br>Toca el ❤️ en cualquier prenda.</div>';
-    if (footer) footer.style.display = 'none';
-    return;
-  }
-
-  // Mostrar botón "Preguntar por todo" con mensaje armado
-  if (footer) footer.style.display = 'block';
-  // Las prendas guardadas pueden ser de varios bazares: se arma un mensaje
-  // por bazar, cada uno a su propio WhatsApp.
-  if (btnTodo) {
-    const grupos = new Map();
-    list.forEach(p => {
-      const num = whatsappDe(p);
-      if (!grupos.has(num)) grupos.set(num, { bazar: bazarDe(p), items: [] });
-      grupos.get(num).items.push(p);
-    });
-
-    const armar = items => encodeURIComponent(
-      'Hola! Me interesan estas prendas:\n\n' +
-      items.map((p, i) =>
-        `${i + 1}. ${p.nombre} · Talla ${p.talla || '–'} · $${p.precio_venta}`
-      ).join('\n') +
-      '\n\n¿Están disponibles?'
-    );
-
-    if (grupos.size <= 1) {
-      const [num, g] = [...grupos.entries()][0];
-      btnTodo.style.display = '';
-      btnTodo.href = `https://wa.me/${num}?text=${armar(g.items)}`;
-      btnTodo.querySelector('.wl-btn-todo-label')?.remove();
-      const extra = document.getElementById('wlBtnTodoExtra');
-      if (extra) extra.innerHTML = '';
-    } else {
-      // Varios bazares → un botón por cada uno
-      btnTodo.style.display = 'none';
-      let extra = document.getElementById('wlBtnTodoExtra');
-      if (!extra) {
-        extra = document.createElement('div');
-        extra.id = 'wlBtnTodoExtra';
-        btnTodo.parentElement.appendChild(extra);
-      }
-      extra.innerHTML = [...grupos.entries()].map(([num, g]) => `
-        <a href="https://wa.me/${num}?text=${armar(g.items)}" target="_blank" class="wl-btn-todo">
-          Preguntar a ${esc(g.bazar?.nombre || 'el bazar')} (${g.items.length})
-        </a>`).join('');
-    }
-  }
-
-  body.innerHTML = list.map(p => {
-    const img = Array.isArray(p.imagenes) && p.imagenes[0]
-      ? `<img class="wl-item-img" src="${imgOptimizada(p.imagenes[0], 200)}" alt="${esc(p.nombre)}" loading="lazy" decoding="async">`
-      : `<div class="wl-item-img" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:#aaa">Sin foto</div>`;
-    const waMsg = encodeURIComponent(`Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta}`);
-    const waNum = whatsappDe(p);
-    // Serializar datos del producto de forma segura para el onclick
-    const pData = JSON.stringify(p).replace(/\\/g, '\\\\').replace(/`/g, '\\`');
-    return `<div class="wl-item" onclick="(function(e){
-        if(e.target.closest('.wl-btn-wa')||e.target.closest('.wl-btn-remove'))return;
-        closeWishlistPanel();
-        setTimeout(()=>openProductDetail(${pData.replace(/'/g, "\\'")}),320);
-      })(event)">
-      ${img}
-      <div class="wl-item-info">
-        <div class="wl-item-name">${esc(p.nombre)}</div>
-        <div class="wl-item-sub">Talla ${esc(p.talla||'–')} · ${esc(p.estado||'')}</div>
-        <span class="wl-item-price">${money(p.precio_venta)}</span>
-        <div class="wl-item-actions">
-          <a href="https://wa.me/${waNum}?text=${waMsg}" target="_blank" class="wl-btn-wa">WhatsApp</a>
-          <button class="wl-btn-remove" onclick="removeFromWishlist('${p.id}')" aria-label="Eliminar">✕</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-function removeFromWishlist(id) {
-  const list = getWishlist().filter(i => String(i.id) !== String(id) && String(i._id) !== String(id));
-  saveWishlist(list);
-  updateWishlistBadge();
-  renderWishlistPanel();
-  document.querySelectorAll(`[data-wl-id="${id}"]`).forEach(btn => btn.classList.remove('active'));
-}
+// El panel de prendas guardadas vive en js/wishlist.js, compartido con
+// la ficha de prenda: updateWishlistBadge, renderWishlistPanel,
+// toggleWishlistPanel, closeWishlistPanel y removeFromWishlist.
 
 // ─── POBLAR DROPDOWNS ────────────────────────────────────────
 function buildDropdowns() {
@@ -331,7 +214,14 @@ function tiempoDesde(p) {
   const meses = Math.floor(dias/30);
   return `hace ${meses} mes${meses>1?'es':''}`;
 }
-const money = n => '$' + Number(n||0).toLocaleString('es-MX');
+// Los precios son en pesos mexicanos. Se marca en cada importe para que
+// nadie lo confunga con dólares: money() da el texto plano y moneyHTML()
+// pone el MXN en pequeño, para donde el precio se muestra en grande.
+// Cuando la prenda no trae marca hay que escribirlo: dejar el hueco
+// vacío descolocaba la tarjeta y no decía nada al comprador.
+const SIN_MARCA = 'Sin marca';
+const money = n => '$' + Number(n||0).toLocaleString('es-MX') + ' MXN';
+const moneyHTML = n => '$' + Number(n||0).toLocaleString('es-MX') + ' <span class="cur">MXN</span>';
 
 // ─── BAZARES ─────────────────────────────────────────────────
 // El catálogo mezcla las prendas de todos los bazares; cada tarjeta
@@ -348,7 +238,7 @@ function waLink(p, msg) {
   return `https://wa.me/${whatsappDe(p)}?text=${encodeURIComponent(msg)}`;
 }
 function msgPrenda(p) {
-  return `Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta}`;
+  return `Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta} MXN`;
 }
 
 // Escapa texto para insertarlo con seguridad en HTML/atributos
@@ -441,7 +331,7 @@ function renderGrid(query) {
       ? `<img src="${imgOptimizada(imgs[0], 500)}" alt="${esc(p.nombre)}" loading="lazy" decoding="async">`
       : `<div class="no-photo">Sin foto</div>`;
     const marcaTag  = p.marca ? `<div class="brand-tag">${esc(p.marca)}</div>` : '';
-    const waMsg     = encodeURIComponent(`Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta}`);
+    const waMsg     = encodeURIComponent(`Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta} MXN`);
     const favActive = isWishlisted(p._id || p.id) ? 'active' : '';
     const favId     = p._id || p.id;
     const tiempo    = tiempoDesde(p);
@@ -480,10 +370,10 @@ function renderGrid(query) {
       <div class="card-body" data-marca="${p.marca||''}">
         <div class="card-row">
           <div class="card-titles">
-            <div class="card-brand">${esc(p.marca||'')}</div>
+            <div class="card-brand${p.marca ? '' : ' sin-marca'}">${esc(p.marca || SIN_MARCA)}</div>
             <div class="card-name">${esc(p.nombre)}</div>
           </div>
-          <div class="card-price">${money(p.precio_venta)}</div>
+          <div class="card-price">${moneyHTML(p.precio_venta)}</div>
         </div>
         <div class="card-sub" title="${esc(p.talla || '')}">
           <span class="size-tag">Talla ${esc(etiquetaTalla(p.talla) || '–')}</span>${
@@ -632,7 +522,7 @@ function buildShopFilters() {
         <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button>
       <div class="freveal"><div class="fprice">
         <input type="range" class="fprice-range" min="0" max="${shopPriceMax}" step="10" value="${shopFilters.maxPrecio===Infinity?shopPriceMax:shopFilters.maxPrecio}">
-        <div class="fprice-labels"><span>$0</span><span>Hasta <b class="fprice-val">${money(shopFilters.maxPrecio===Infinity?shopPriceMax:shopFilters.maxPrecio)}</b></span></div>
+        <div class="fprice-labels"><span>$0</span><span>Hasta <b class="fprice-val">${moneyHTML(shopFilters.maxPrecio===Infinity?shopPriceMax:shopFilters.maxPrecio)}</b></span></div>
       </div></div>
     </div>`;
 
@@ -694,7 +584,7 @@ function syncShopFilters(){
   document.querySelectorAll('.fchk').forEach(c=> c.checked = shopFilters[c.dataset.key].has(c.dataset.val));
   document.querySelectorAll('.fpill').forEach(p=> p.classList.toggle('active', shopFilters[p.dataset.key].has(p.dataset.val)));
   document.querySelectorAll('.fprice-range').forEach(r=> { r.value = shopFilters.maxPrecio; updateRangeFill(r); });
-  document.querySelectorAll('.fprice-val').forEach(v=> v.textContent = money(shopFilters.maxPrecio));
+  document.querySelectorAll('.fprice-val').forEach(v=> v.innerHTML = moneyHTML(shopFilters.maxPrecio));
 }
 function clearShopFilters(){
   shopFilters.tallas.clear(); shopFilters.marcas.clear(); shopFilters.estados.clear();
@@ -745,7 +635,7 @@ function _openProductDetailDrawer(p) {
   const favActive = isWishlisted(p.id) ? 'active' : '';
   const cats      = Array.isArray(p.categorias) ? p.categorias : [];
   const catChips  = cats.map(c => `<span class="cat-chip">${esc(c)}</span>`).join('');
-  const waMsg     = encodeURIComponent(`Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta}`);
+  const waMsg     = encodeURIComponent(`Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta} MXN`);
   const productData = JSON.stringify(p).replace(/'/g, '&#39;');
   const pdBazar     = bazarDe(p);
 
@@ -782,7 +672,7 @@ function _openProductDetailDrawer(p) {
             <div class="pd-sim-info">
               ${s.marca ? `<span class="pd-sim-brand">${esc(s.marca)}</span>` : ''}
               <span class="pd-sim-name">${esc(s.nombre)}</span>
-              <span class="pd-sim-price">${money(s.precio_venta)}</span>
+              <span class="pd-sim-price">${moneyHTML(s.precio_venta)}</span>
             </div>
           </button>`;
         }).join('')}
@@ -803,12 +693,12 @@ function _openProductDetailDrawer(p) {
     <div class="pd-info">
       <div class="pd-info-scroll">
         <div class="pd-head">
-          ${p.marca ? `<div class="pd-brand">${esc(p.marca)}</div>` : ''}
+          <div class="pd-brand${p.marca ? '' : ' sin-marca'}">${esc(p.marca || SIN_MARCA)}</div>
           <h2 class="pd-name">${esc(p.nombre)}</h2>
           ${cats.length ? `<div class="pd-chips">${catChips}</div>` : ''}
         </div>
 
-        <div class="pd-price">${money(p.precio_venta)}</div>
+        <div class="pd-price">${moneyHTML(p.precio_venta)}</div>
 
         <div class="pd-specs">
           ${p.talla  ? `<div class="pd-spec"><span class="pd-spec-k">Talla</span><span class="pd-spec-v">${esc(p.talla)}</span></div>`  : ''}

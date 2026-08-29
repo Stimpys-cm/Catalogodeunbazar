@@ -1672,7 +1672,10 @@ header {
 @media (max-width: 480px) {
 
   /* Wishlist e Instagram del header ocultos en móvil (ya están en la barra inferior) */
-  .btn-wishlist-header { display: none !important; }
+  /* Se oculta solo donde la barra inferior ya lleva la wishlist (la
+     tienda). En inicio y en la ficha no hay barra, así que este botón
+     es la única forma de abrirla desde el móvil. */
+  body:has(.bottom-nav) .btn-wishlist-header { display: none !important; }
   .header-actions .btn-ig { display: none !important; }
 
   /* Espacio para que la barra inferior no tape contenido (incluye safe-area para notch/gesture bar) */
@@ -1718,17 +1721,9 @@ header {
   /* Cuerpo de la tarjeta */
   .card-body { padding: 10px 12px 12px; }
 
-  /* Marca como texto pequeño arriba del nombre */
-  .card-body::before {
-    content: attr(data-marca);
-    display: block;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 3px;
-  }
+  /* La marca la pinta .card-brand dentro de .card-titles. Aquí había un
+     ::before con attr(data-marca) de cuando la tarjeta no tenía ese
+     elemento: al añadirse, la marca salía dos veces en el móvil. */
 
   .card-name {
     font-size: 13px;
@@ -2030,7 +2025,10 @@ header {
 }
 .card .size-tag { padding: 3px 8px; border-radius: 6px; margin-right: 3px; }
 
-.card .card-bazar-row { margin-top: 12px; }
+/* El pie va anclado abajo con margin-top:auto, que vale 0 cuando el
+   contenido llena la tarjeta: sin este margen inferior el borde del
+   pie quedaba pegado al chip del bazar. */
+.card .card-bazar-row { margin: 12px 0 12px; }
 
 /* margin-top:auto empuja el pie al fondo: las bases se alinean
    aunque una prenda tenga el nombre más largo que otra */
@@ -2374,9 +2372,214 @@ header {
 .bz-rating-estrellas { font-size: 13px; }
 .bz-rating-total { opacity: .7; }
 
+/* ── Tarjeta en pantallas estrechas ───────────────────────────
+   A dos columnas la tarjeta mide ~156px. Con título y precio en la
+   misma fila, el precio (que no encoge) dejaba al nombre en 36px y
+   salía recortado a "DARC …". Se apilan. */
+@media (max-width: 700px) {
+  .card .card-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .card .card-titles { width: 100%; }
+  .card .card-brand { font-size: 9.5px; letter-spacing: .1em; }
+  .card .card-row .card-name {
+    font-size: 12.5px;
+    line-height: 1.35;
+    margin: 2px 0 0;
+    /* Hasta dos líneas y corta con puntos suspensivos */
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card .card-row .card-price { font-size: 1.45rem; margin-top: 5px; }
+  .card .card-bazar-row { margin: 9px 0 10px; }
+  .card .card-foot { padding-top: 10px; font-size: 10.5px; }
+}
+
 @media (max-width: 700px) {
   .bz-tab { font-size: 10px; padding: 11px 12px; letter-spacing: .08em; }
   .bz-tab svg { display: none; }
   .rs-resumen { grid-template-columns: 1fr; gap: 1.3rem; padding: 22px; }
   .rs-lista { grid-template-columns: 1fr; }
 }
+
+/* Sufijo de moneda: los precios son en pesos mexicanos y así no se
+   confunden con dólares. Va discreto para no competir con el importe. */
+.cur {
+  font-size: .5em;
+  font-weight: 700;
+  letter-spacing: .1em;
+  opacity: .62;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+/* Marca ausente: se dice, pero en gris y sin peso, para que no se
+   confunda con una marca real. */
+.sin-marca {
+  opacity: .55;
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: .02em;
+  text-transform: none;
+}
+a.sin-marca, .pp-marca.sin-marca {
+  pointer-events: none;
+  border-bottom: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PANEL DE PRENDAS GUARDADAS
+   Agrupado por bazar, porque cada uno se contacta por su propio
+   WhatsApp: no hay un "preguntar por todo", hay uno por bazar.
+   ═══════════════════════════════════════════════════════════════ */
+.wl-resumen {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; padding: 2px 2px 14px;
+}
+.wl-resumen-n { font-size: 12.5px; color: var(--text2); }
+.wl-resumen-n b { color: var(--black); font-weight: 700; }
+.wl-resumen-total {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem; line-height: 1; color: var(--accent);
+}
+
+/* Aviso de prendas que ya no se pueden comprar */
+.wl-aviso {
+  display: block; width: 100%; text-align: left;
+  font-family: 'DM Sans', sans-serif; font-size: 11.5px; font-weight: 600;
+  color: #b8811a; background: rgba(245, 166, 35, .1);
+  border: 1px solid rgba(245, 166, 35, .3); border-radius: 12px;
+  padding: 10px 13px; margin-bottom: 14px; cursor: pointer;
+  transition: background .2s;
+}
+.wl-aviso:hover { background: rgba(245, 166, 35, .18); }
+
+/* ── Grupo de bazar ──────────────────────────────────────────── */
+.wl-grupo {
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  padding: 12px;
+  margin-bottom: 14px;
+  background: #fff;
+  /* Filo del color del bazar, para distinguirlos de un vistazo */
+  box-shadow: inset 3px 0 0 var(--bz, var(--accent));
+}
+/* Ojo: este bloque NO puede ser un <header>. Más arriba hay una regla
+   global `header { flex-direction: column !important }` para el ticker
+   del sitio, y alcanzaba también a este, dejándolo apilado. */
+.wl-grupo-head {
+  display: flex; flex-direction: row;
+  align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.wl-grupo-logo {
+  width: 32px; height: 32px; flex-shrink: 0;
+  border-radius: 10px; object-fit: cover;
+  background: var(--bz, var(--accent));
+}
+.wl-grupo-inicial {
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-family: 'Bebas Neue', sans-serif; font-size: 1.05rem;
+}
+.wl-grupo-datos { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.wl-grupo-nombre {
+  font-size: 12.5px; font-weight: 800; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--black);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.wl-grupo-slug { font-size: 11px; color: var(--bz, var(--accent)); font-weight: 600; }
+.wl-grupo-sub {
+  font-size: 11px; font-weight: 700; color: var(--muted);
+  white-space: nowrap; flex-shrink: 0;
+}
+.wl-grupo-items { display: grid; gap: 8px; }
+
+/* Botón de WhatsApp del grupo */
+.wl-grupo-wa {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-top: 12px; padding: 12px;
+  font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: #fff; background: #25d366;
+  border-radius: 12px; text-decoration: none;
+  box-shadow: 0 4px 14px rgba(37, 211, 102, .3);
+  transition: opacity .2s, box-shadow .2s;
+}
+.wl-grupo-wa svg { width: 15px; height: 15px; flex-shrink: 0; }
+.wl-grupo-wa:hover { opacity: .92; box-shadow: 0 6px 20px rgba(37, 211, 102, .42); }
+
+/* ── Prenda guardada ─────────────────────────────────────────── */
+.wl-item {
+  display: flex; align-items: center; gap: 11px;
+  background: var(--gray, #f7f4ef);
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 8px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.wl-item:hover { border-color: var(--bz, var(--accent)); background: #fff; }
+.wl-item-foto { position: relative; flex-shrink: 0; }
+.wl-item-img {
+  width: 52px; height: 64px;
+  border-radius: 10px; object-fit: cover; display: block;
+  background: var(--border);
+}
+.wl-item-sinfoto {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: var(--muted); text-align: center;
+}
+.wl-item-sello {
+  position: absolute; inset: auto 0 0 0;
+  font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: #fff; background: rgba(18, 22, 31, .82);
+  text-align: center; padding: 3px 0;
+  border-radius: 0 0 10px 10px;
+}
+.wl-item-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wl-item-name {
+  font-size: 12.5px; font-weight: 700; color: var(--text-dark);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.wl-item-sub { font-size: 11px; color: var(--muted); }
+.wl-item-price { font-size: 14px; font-weight: 800; color: var(--accent); }
+
+.wl-item-fuera { opacity: .55; }
+.wl-item-fuera .wl-item-price { color: var(--muted); text-decoration: line-through; }
+
+.wl-btn-remove {
+  width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: var(--muted);
+  background: none; border: 1px solid var(--border); border-radius: 50%;
+  cursor: pointer; transition: color .2s, border-color .2s, background .2s;
+}
+.wl-btn-remove:hover { color: var(--danger, #e05c5c); border-color: var(--danger, #e05c5c); background: rgba(224,92,92,.08); }
+
+/* ── Sin nada guardado ───────────────────────────────────────── */
+.wishlist-empty { text-align: center; padding: 3rem 1.5rem; color: var(--text2); }
+.wishlist-empty svg { width: 46px; height: 46px; color: var(--border); margin-bottom: 14px; }
+.wl-vacio-titulo {
+  font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem;
+  color: var(--black); letter-spacing: .02em; margin-bottom: 6px;
+}
+.wishlist-empty p { font-size: 13px; line-height: 1.6; max-width: 30ch; margin: 0 auto; }
+.wl-vacio-cta {
+  display: inline-block; margin-top: 18px; padding: 12px 22px;
+  font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: #fff; background: var(--accent-gradient); border-radius: 40px;
+  text-decoration: none; box-shadow: 0 5px 18px rgba(45,107,228,.26);
+}
+
+/* Vaciar, al pie del panel */
+.wl-vaciar {
+  display: block; width: 100%;
+  font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); background: none; border: none;
+  padding: 12px; cursor: pointer; transition: color .2s;
+}
+.wl-vaciar:hover { color: var(--danger, #e05c5c); }

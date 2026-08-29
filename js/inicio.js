@@ -4,7 +4,8 @@ const WA_NUM = '528995284602';
 
 const hEsc = s => String(s ?? '').replace(/[&<>"']/g, c =>
   ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
-const hMoney = n => '$' + Number(n || 0).toLocaleString('es-MX');
+// Precios en pesos mexicanos: el MXN va en pequeño junto al importe
+const hMoney = n => '$' + Number(n || 0).toLocaleString('es-MX') + ' <span class="cur">MXN</span>';
 
 // Prendas visibles (no vendidas ni ocultas), de la más reciente a la más vieja
 function disponibles() {
@@ -33,7 +34,9 @@ function cardHTML(p, badge) {
       ${badge ? `<span class="h-badge">${hEsc(badge)}</span>` : ''}
     </div>
     <div class="h-card-body">
-      ${p.marca ? `<div class="h-card-brand">${hEsc(p.marca)}</div>` : '<div class="h-card-brand">Bazar</div>'}
+      ${p.marca
+        ? `<div class="h-card-brand">${hEsc(p.marca)}</div>`
+        : '<div class="h-card-brand sin-marca">Sin marca</div>'}
       <div class="h-card-name">${hEsc(p.nombre)}</div>
       <div class="h-card-foot">
         <span class="h-card-price">${hMoney(p.precio_venta)}</span>

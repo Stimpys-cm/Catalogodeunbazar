@@ -1969,3 +1969,28 @@ main .hero.bz-hero {
   }
   .ct-modal-head { padding-top: 26px; }
 }
+
+/* Sufijo de moneda: los precios son en pesos mexicanos y así no se
+   confunden con dólares. Va discreto para no competir con el importe. */
+.cur {
+  font-size: .5em;
+  font-weight: 700;
+  letter-spacing: .1em;
+  opacity: .62;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+/* Marca ausente: se dice, pero en gris y sin peso, para que no se
+   confunda con una marca real. */
+.sin-marca {
+  opacity: .55;
+  font-weight: 500;
+  font-style: italic;
+  letter-spacing: .02em;
+  text-transform: none;
+}
+a.sin-marca, .pp-marca.sin-marca {
+  pointer-events: none;
+  border-bottom: none;
+}

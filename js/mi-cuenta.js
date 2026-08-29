@@ -28,7 +28,8 @@
   let _compras   = null;
   let _misReseñas = null;
 
-  const dinero = v => '$' + Number(v || 0).toLocaleString('es-MX');
+  // Precios en pesos mexicanos: el MXN va en pequeño junto al importe
+  const dinero = v => '$' + Number(v || 0).toLocaleString('es-MX') + ' <span class="cur">MXN</span>';
   const fechaCorta = v => v
     ? new Date(v).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
     : '';
