@@ -8,6 +8,13 @@
 //   /api/acciones?op=marcar-vendido     (POST)  → registra la venta
 //   /api/acciones?op=revertir-venta     (POST)  → deshace la venta
 //   /api/acciones?op=resena-comprador   (POST)  → califica al comprador
+//   /api/acciones?op=estadisticas       (GET)   → ganancias por bazar
+//   /api/acciones?op=mantenimiento      (GET/POST) → qué está cerrado
+//   /api/acciones?op=configurar-subasta (POST)  → pone o ajusta una subasta
+//   /api/acciones?op=quitar-subasta     (POST)  → la cancela
+//   /api/acciones?op=subasta-vendedor   (GET)   → ofertas y contacto del ganador
+//   /api/acciones?op=mis-subastas       (GET)   → todas las del bazar, con
+//                                                  sus participantes
 
 import { getDB } from './_db.js';
 import { requireAuth } from './_auth.js';
@@ -17,6 +24,13 @@ import {
   normalizarUsername, usernameValido, siguienteId,
   instantaneaPrenda, asegurarIndices, ETIQUETAS_COMPRADOR,
 } from './_ventas.js';
+import { calcularEstadisticas } from './_estadisticas.js';
+import { leerAjustes, guardarAjustes, SECCIONES } from './_ajustes.js';
+import {
+  guardarSubasta, quitarSubasta, leerSubasta, historial,
+  subastaPublica, ofertaPublica, contactoGanador, asegurarIndicesSubasta,
+  subastasDeBazares, contactosDe, PUESTOS_CON_CONTACTO,
+} from './_subastas.js';
 
 function invalidarCache() {
   try { global._syncCache = null; global._syncCacheTime = 0; global._syncCachePub = null; } catch (_) {}
@@ -33,11 +47,162 @@ export default async function handler(req, res) {
     if (op === 'marcar-vendido')    return await handleMarcarVendido(req, res);
     if (op === 'revertir-venta')    return await handleRevertirVenta(req, res);
     if (op === 'resena-comprador')  return await handleResenaComprador(req, res);
+    if (op === 'estadisticas')      return await handleEstadisticas(req, res);
+    if (op === 'mantenimiento')     return await handleMantenimiento(req, res);
+    if (op === 'configurar-subasta') return await handleConfigurarSubasta(req, res);
+    if (op === 'quitar-subasta')     return await handleQuitarSubasta(req, res);
+    if (op === 'subasta-vendedor')   return await handleSubastaVendedor(req, res);
+    if (op === 'mis-subastas')       return await handleMisSubastas(req, res);
     return res.status(400).json({ error: 'op no reconocida' });
   } catch (err) {
     console.error('[acciones:' + op + ']', err);
     return res.status(500).json({ error: err.message });
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SUBASTAS — lado del vendedor
+   Poner una prenda en subasta, cancelarla, y ver quién ofertó y
+   cómo contactar al que ganó.
+   ═══════════════════════════════════════════════════════════ */
+
+// Comprueba que esta prenda es de quien dice y que puede tocarla.
+async function prendaDelVendedor(req, res, id) {
+  const user = await requireAuth(req, res);
+  if (!user) return null;
+
+  const db = await getDB();
+  const prenda = await db.collection('inventario').findOne({ id: Number(id) });
+  if (!prenda) { res.status(404).json({ error: 'Prenda no encontrada' }); return null; }
+
+  if (!mismoBazar(user, prenda.bazarId)) {
+    res.status(403).json({ error: 'Esa prenda pertenece a otro bazar.' });
+    return null;
+  }
+  if (!esGlobal(user) && !(await puede(user, 'editarPrendas'))) {
+    res.status(403).json({ error: 'Tu bazar no tiene permitido cambiar prendas.' });
+    return null;
+  }
+  return { user, prenda };
+}
+
+async function handleConfigurarSubasta(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
+
+  const { prendaId, precioInicial, fin } = req.body || {};
+  if (prendaId == null) return res.status(400).json({ error: 'Falta la prenda' });
+
+  const ctx = await prendaDelVendedor(req, res, prendaId);
+  if (!ctx) return;
+  if (ctx.prenda.vendido) {
+    return res.status(409).json({ error: 'Esa prenda ya está vendida.' });
+  }
+
+  await asegurarIndicesSubasta();
+  const r = await guardarSubasta({
+    prendaId: Number(prendaId),
+    bazarId:  Number(ctx.prenda.bazarId || 1),
+    precioInicial, fin,
+  });
+  if (!r.ok) return res.status(400).json({ error: r.error });
+
+  invalidarCache();
+  return res.status(200).json({ ok: true, subasta: subastaPublica(r.subasta) });
+}
+
+async function handleQuitarSubasta(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
+
+  const prendaId = Number(req.body?.prendaId);
+  if (!prendaId) return res.status(400).json({ error: 'Falta la prenda' });
+
+  const ctx = await prendaDelVendedor(req, res, prendaId);
+  if (!ctx) return;
+
+  // Cancelar una subasta con gente dentro deja mal al bazar, así que
+  // hay que decirlo a propósito.
+  const s = await leerSubasta(prendaId);
+  if (s && s.totalOfertas > 0 && req.body?.confirmar !== true) {
+    return res.status(409).json({
+      error: `Esta subasta ya tiene ${s.totalOfertas} oferta${s.totalOfertas === 1 ? '' : 's'}.`,
+      requiereConfirmar: true,
+    });
+  }
+
+  await quitarSubasta(prendaId);
+  invalidarCache();
+  return res.status(200).json({ ok: true });
+}
+
+async function handleMisSubastas(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Solo GET' });
+
+  const user = await requireAuth(req, res);
+  if (!user) return;
+
+  const db = await getDB();
+  const todos = await db.collection('bazares').find({}).sort({ id: 1 }).toArray();
+
+  // Un bazar solo ve sus subastas. El admin general las ve todas.
+  const visibles = esGlobal(user)
+    ? todos
+    : todos.filter(b => Number(b.id) === Number(user.bazarId));
+
+  if (!visibles.length) {
+    return res.status(200).json({ subastas: [], bazares: [], generado: new Date().toISOString() });
+  }
+
+  const subastas = await subastasDeBazares(visibles.map(b => b.id));
+
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(200).json({
+    subastas,
+    bazares: visibles.map(b => ({ id: b.id, nombre: b.nombre, slug: b.slug })),
+    esGlobal: esGlobal(user),
+    generado: new Date().toISOString(),
+  });
+}
+
+async function handleSubastaVendedor(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Solo GET' });
+
+  const prendaId = Number(req.query.id);
+  if (!prendaId) return res.status(400).json({ error: 'Falta la prenda' });
+
+  const ctx = await prendaDelVendedor(req, res, prendaId);
+  if (!ctx) return;
+
+  const s = await leerSubasta(prendaId);
+  if (!s) return res.status(404).json({ error: 'Esa prenda no está en subasta' });
+
+  // Los teléfonos solo se entregan cuando la subasta terminó: antes de eso
+  // el vendedor no tiene por qué tener el contacto de nadie. Al cerrar se
+  // dan los del podio, para que si el ganador no responde se pueda ir al
+  // siguiente sin perseguirlo por fuera.
+  const cerrada = s.cerrada === true;
+  const ofertas = (await historial(prendaId, 30)).map(ofertaPublica);
+
+  let contactos = {};
+  if (cerrada) {
+    // El podio se calcula por persona, no por oferta: tres pujas del
+    // mismo no son tres puestos.
+    const vistos = [];
+    for (const o of ofertas) {
+      if (!vistos.includes(o.username)) vistos.push(o.username);
+      if (vistos.length >= PUESTOS_CON_CONTACTO) break;
+    }
+    const mapa = await contactosDe(vistos);
+    contactos = Object.fromEntries(mapa);
+  }
+
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(200).json({
+    subasta:   subastaPublica(s),
+    historial: ofertas,
+    ganador:   cerrada ? await contactoGanador(prendaId) : null,
+    contactos,
+    puestosConContacto: cerrada ? PUESTOS_CON_CONTACTO : 0,
+  });
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -380,6 +545,11 @@ async function handleMarcarVendido(req, res) {
     await ventas.updateOne({ id: ventaId }, { $set: {
       comprador, bazarId, fecha,
       prenda: instantaneaPrenda(prenda),
+      // El costo se congela aquí: editar la prenda después no debe
+      // reescribir la ganancia de una venta ya cerrada. Nunca sale al
+      // comprador (ventaPublica no lo incluye).
+      costo: Number(prenda.costo) || 0,
+      precio: Number(prenda.precio_venta) || 0,
       vendedor: user.username,
     } });
     // Cambió el comprador → la reseña anterior ya no corresponde
@@ -396,6 +566,8 @@ async function handleMarcarVendido(req, res) {
       comprador,
       vendedor: user.username,
       prenda: instantaneaPrenda(prenda),
+      costo: Number(prenda.costo) || 0,
+      precio: Number(prenda.precio_venta) || 0,
       fecha,
       resenaBazar: false,
       resenaComprador: false,
@@ -511,4 +683,69 @@ async function handleResenaComprador(req, res) {
 
   invalidarCache();
   return res.status(200).json({ ok: true, resena: { ...resena, creadoEn: resena.creadoEn.toISOString() } });
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   ESTADÍSTICAS DE GANANCIAS
+   Cada bazar ve las suyas; el admin principal las ve de todos.
+   ═══════════════════════════════════════════════════════════ */
+async function handleEstadisticas(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Solo GET' });
+
+  const user = await requireAuth(req, res);
+  if (!user) return;
+
+  const db = await getDB();
+  const todos = await db.collection('bazares').find({}).sort({ id: 1 }).toArray();
+
+  // Un bazar solo puede pedir sus propios números
+  const visibles = esGlobal(user)
+    ? todos
+    : todos.filter(b => Number(b.id) === Number(user.bazarId));
+
+  if (!visibles.length) {
+    return res.status(200).json({ bazares: [], generado: new Date().toISOString(), ventasConsideradas: 0 });
+  }
+
+  const meses   = Math.min(Math.max(parseInt(req.query.meses)   || 12, 1), 24);
+  const semanas = Math.min(Math.max(parseInt(req.query.semanas) || 12, 1), 52);
+
+  const datos = await calcularEstadisticas({
+    bazares: visibles.map(b => ({ id: b.id, nombre: b.nombre, slug: b.slug, color: b.color })),
+    meses, semanas,
+  });
+  return res.status(200).json({ ...datos, global: esGlobal(user) });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MANTENIMIENTO
+   Solo el admin principal decide qué se cierra. Lo lee cualquiera,
+   porque las páginas públicas necesitan saber si deben mostrarse.
+   ═══════════════════════════════════════════════════════════ */
+async function handleMantenimiento(req, res) {
+  if (req.method === 'GET') {
+    return res.status(200).json(await leerAjustes());
+  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+
+  const user = await requireAuth(req, res);
+  if (!user) return;
+  if (!esGlobal(user)) {
+    return res.status(403).json({ error: 'Solo el administrador principal puede cerrar el sitio.' });
+  }
+
+  const entrada = req.body?.mantenimiento;
+  if (!entrada || typeof entrada !== 'object') {
+    return res.status(400).json({ error: 'Falta el estado de mantenimiento' });
+  }
+  for (const clave of Object.keys(entrada)) {
+    if (!SECCIONES.includes(clave)) {
+      return res.status(400).json({ error: `Sección desconocida: ${clave}` });
+    }
+  }
+
+  const guardado = await guardarAjustes(entrada, user.username);
+  invalidarCache();
+  return res.status(200).json(guardado);
 }

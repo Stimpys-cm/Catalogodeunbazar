@@ -347,6 +347,16 @@ function renderGrid(query) {
       bazarId: p.bazarId || 1
     }).replace(/'/g, '&#39;');
 
+    // Subasta: la tarjeta enseña la puja de ahora, no el precio fijo, y
+    // el botón de WhatsApp sale sobrando (aquí se oferta, no se aparta).
+    const sub = typeof subastaDe === 'function' ? subastaDe(p.id) : null;
+    const subViva = sub && typeof subastaAbierta === 'function' && subastaAbierta(sub);
+    const subCinta = sub ? `<div class="card-subasta${subViva ? '' : ' cerrada'}">
+        ${subViva ? `<span class="card-subasta-punto"></span>Subasta · ${
+          typeof tiempoRestante === 'function' ? tiempoRestante(sub.fin) : ''}`
+                  : 'Subasta terminada'}
+      </div>` : '';
+
     const bz     = bazarDe(p);
     const bzTag  = bz
       ? `<a class="card-bazar" href="tienda.html?bazar=${encodeURIComponent(bz.slug)}"
@@ -356,16 +366,26 @@ function renderGrid(query) {
 
     return `<div class="card" data-product='${productData}' style="cursor:pointer">
       <div class="card-img">
-        ${imgHtml}${marcaTag}
+        ${imgHtml}${marcaTag}${subCinta}
         <button class="card-fav-btn ${favActive}" data-wl-id="${favId}" data-product='${productData}'
           aria-label="Guardar en wishlist">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
         </button>
-        <a href="https://wa.me/${whatsappDe(p)}?text=${waMsg}" target="_blank" class="card-quick" onclick="event.stopPropagation()">
+        ${sub
+          ? (subViva
+              ? `<button type="button" class="card-quick card-quick-sb" data-ofertar="${p.id}"
+                         onclick="event.stopPropagation(); abrirSubasta(${p.id})">
+                   Ofertar desde $${Number(sub.totalOfertas ? sub.ofertaActual + 50 : sub.precioInicial).toLocaleString('es-MX')}
+                 </button>`
+              : `<button type="button" class="card-quick card-quick-sb cerrada"
+                         onclick="event.stopPropagation(); abrirSubasta(${p.id})">
+                   Ver cómo quedó
+                 </button>`)
+          : `<a href="https://wa.me/${whatsappDe(p)}?text=${waMsg}" target="_blank" class="card-quick" onclick="event.stopPropagation()">
           Contactar por WhatsApp
-        </a>
+        </a>`}
       </div>
       <div class="card-body" data-marca="${p.marca||''}">
         <div class="card-row">
@@ -373,7 +393,10 @@ function renderGrid(query) {
             <div class="card-brand${p.marca ? '' : ' sin-marca'}">${esc(p.marca || SIN_MARCA)}</div>
             <div class="card-name">${esc(p.nombre)}</div>
           </div>
-          <div class="card-price">${moneyHTML(p.precio_venta)}</div>
+          <div class="card-price${sub ? ' es-subasta' : ''}">
+            ${sub ? `<span class="card-price-tag">${sub.totalOfertas ? 'Van' : 'Desde'}</span>` : ''}
+            ${moneyHTML(sub ? (sub.totalOfertas ? sub.ofertaActual : sub.precioInicial) : p.precio_venta)}
+          </div>
         </div>
         <div class="card-sub" title="${esc(p.talla || '')}">
           <span class="size-tag">Talla ${esc(etiquetaTalla(p.talla) || '–')}</span>${
@@ -1285,4 +1308,20 @@ window.addEventListener('db:inventario', () => {
   renderGrid();
   buildDropdowns();
   buildShopFilters();
+});
+
+// ── SUBASTAS ────────────────────────────────────────────────
+// Ofertar sin salir del catálogo: el panel es el mismo de la ficha,
+// dentro de un modal (js/subasta.js).
+function abrirSubasta(prendaId) {
+  const p = (typeof getDB === 'function' ? getDB() : []).find(x => Number(x.id) === Number(prendaId));
+  if (!p) { if (typeof aviso === 'function') aviso('No se encontró la prenda'); return; }
+  if (typeof Subasta === 'undefined') { location.href = 'prenda.html?id=' + encodeURIComponent(prendaId); return; }
+  Subasta.abrirModal(p);
+}
+
+// Una oferta hecha desde el modal cambia el precio que enseñan las
+// tarjetas, así que el catálogo se repinta al vuelo.
+window.addEventListener('subasta:oferta', () => {
+  if (typeof pollAhora === 'function') pollAhora(400);
 });

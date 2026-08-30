@@ -13,6 +13,8 @@ import { getDB } from './_db.js';
 import { getUser } from './_auth.js';
 import { bazarPublico } from './_bazar.js';
 import { resenaPublica } from './_ventas.js';
+import { leerAjustes } from './_ajustes.js';
+import { subastaPublica } from './_subastas.js';
 
 // Caché en memoria compartido vía global — así los endpoints de escritura
 // (inventario, config) pueden invalidarlo tras un PUT y evitar servir datos
@@ -70,7 +72,7 @@ export default async function handler(req, res) {
   try {
     const db = await getDB();
 
-    const [inv, cats, brands, users, activos, logs, drops, bazares, resenas] = await Promise.all([
+    const [inv, cats, brands, users, activos, logs, drops, bazares, resenas, ajustes, subastas] = await Promise.all([
       db.collection('inventario').find({}).sort({ _id: -1 }).toArray(),
       db.collection('categorias').find({}).sort({ id: 1 }).toArray(),
       db.collection('marcas').find({}).sort({ id: 1 }).toArray(),
@@ -84,6 +86,12 @@ export default async function handler(req, res) {
       // Reseñas públicas de los bazares: alimentan la pestaña "Reseñas"
       // de cada tienda y la estrella promedio del perfil.
       db.collection('resenas').find({ tipo: 'bazar' }).sort({ creadoEn: -1 }).limit(500).toArray(),
+      // Qué partes del sitio están abiertas: las páginas públicas lo
+      // necesitan para saber si deben mostrarse o pedir disculpas.
+      leerAjustes(),
+      // Las subastas viven aparte de la prenda a propósito: así un
+      // guardado del panel nunca puede borrar las ofertas de la gente.
+      db.collection('subastas').find({}).sort({ fin: 1 }).toArray(),
     ]);
 
     global._syncCache = {
@@ -100,6 +108,8 @@ export default async function handler(req, res) {
       // Solo datos públicos del bazar (los permisos no se exponen aquí)
       bazares:    bazares.map(bazarPublico),
       resenas:    resenas.map(resenaPublica),
+      ajustes,
+      subastas: subastas.map(subastaPublica),
     };
     global._syncCacheTime = now;
     global._syncCachePub  = recortarPublico(global._syncCache);
@@ -133,6 +143,8 @@ function recortarPublico(todo) {
     marcas:     todo.marcas     || [],
     bazares:    todo.bazares    || [],
     resenas:    todo.resenas    || [],
+    ajustes:    todo.ajustes    || null,
+    subastas:   todo.subastas   || [],
   };
 }
 

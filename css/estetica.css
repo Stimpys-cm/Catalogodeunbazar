@@ -120,3 +120,132 @@ header {
     contain-intrinsic-size: auto 520px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PANTALLA DE MANTENIMIENTO
+   Tapa la página cuando el admin cierra el sitio o una de sus partes.
+   ═══════════════════════════════════════════════════════════════ */
+body.mnt-activo { overflow: hidden; }
+.mnt-capa {
+  position: fixed; inset: 0; z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem 1.5rem;
+  background: var(--bg-gradient, linear-gradient(135deg, #f7f4ef 0%, #eef2fb 50%, #e8e2d8 100%));
+  animation: mnt-entra .35s var(--curva, ease) both;
+}
+@keyframes mnt-entra { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .mnt-capa { animation: none; } }
+
+.mnt-caja {
+  max-width: 30rem; width: 100%; text-align: center;
+  background: #fff;
+  border: 1.5px solid var(--border, #d4cfc6);
+  border-radius: var(--radio-grande, 22px);
+  padding: 2.6rem 2rem 2.4rem;
+  box-shadow: var(--sombra, 0 10px 30px rgba(45, 107, 228, .12));
+}
+.mnt-marca {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.15rem; letter-spacing: .12em;
+  color: var(--text2, #5c5750); margin-bottom: 1.6rem;
+}
+.mnt-marca span { color: var(--accent, #2d6be4); }
+.mnt-icono {
+  width: 58px; height: 58px; margin: 0 auto 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 18px;
+  background: var(--accent-gradient, linear-gradient(135deg, #2d6be4, #4a90d9));
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(45, 107, 228, .28);
+}
+.mnt-icono svg { width: 27px; height: 27px; }
+.mnt-titulo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.1rem; line-height: 1; letter-spacing: .02em;
+  color: var(--black, #12161f); margin: 0 0 .7rem;
+}
+.mnt-msg {
+  font-size: 15px; line-height: 1.6;
+  color: var(--text2, #5c5750); margin: 0 auto; max-width: 34ch;
+}
+.mnt-hora {
+  font-size: 13px; color: var(--muted, #8a8178);
+  margin-top: .9rem;
+}
+.mnt-btn {
+  display: inline-block; margin-top: 1.8rem;
+  padding: 13px 26px;
+  font-size: 11px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase;
+  color: #fff; background: var(--accent-gradient, linear-gradient(135deg, #2d6be4, #4a90d9));
+  border-radius: 40px; text-decoration: none;
+  box-shadow: 0 6px 20px rgba(45, 107, 228, .26);
+}
+@media (max-width: 480px) {
+  .mnt-caja { padding: 2.2rem 1.4rem 2rem; }
+  .mnt-titulo { font-size: 1.8rem; }
+}
+
+/* ── VISTA PREVIA (solo la ve el admin general) ──────────────
+   Cuando algo está cerrado, el admin sigue viendo el sitio normal.
+   Esta barra existe para que no se le olvide que el resto no. */
+.mnt-previa {
+  position: fixed; z-index: 9998;
+  left: 50%; transform: translateX(-50%);
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: 12px;
+  max-width: min(680px, calc(100vw - 24px));
+  padding: 12px 18px;
+  background: #1a1f2e; color: #f2f0ec;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 40px;
+  box-shadow: 0 10px 40px rgba(26,31,46,.35);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12.5px; line-height: 1.45;
+  animation: mntPreviaEntra .35s cubic-bezier(.2,.9,.3,1.1);
+}
+.mnt-previa b { color: #fff; font-weight: 700; }
+.mnt-previa-punto {
+  width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+  background: #e0a13c; box-shadow: 0 0 0 4px rgba(224,161,60,.22);
+  animation: mntPulso 2s ease-in-out infinite;
+}
+.mnt-previa-link {
+  flex-shrink: 0; margin-left: 4px;
+  background: #2d6be4; color: #fff; text-decoration: none;
+  padding: 8px 16px; border-radius: 30px;
+  font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  white-space: nowrap; transition: background .2s;
+}
+.mnt-previa-link:hover { background: #4a90d9; }
+
+/* En las páginas con barra inferior se coloca justo encima */
+body:has(.bottom-nav) .mnt-previa {
+  bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+}
+
+@keyframes mntPreviaEntra {
+  from { opacity: 0; transform: translate(-50%, 14px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes mntPulso {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(224,161,60,.22); }
+  50%      { box-shadow: 0 0 0 7px rgba(224,161,60,.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mnt-previa, .mnt-previa-punto { animation: none; }
+}
+
+@media (max-width: 560px) {
+  .mnt-previa {
+    flex-wrap: wrap; justify-content: center; text-align: center;
+    border-radius: 18px; padding: 12px 16px; font-size: 12px;
+    left: 12px; right: 12px; transform: none; max-width: none;
+  }
+  @keyframes mntPreviaEntra {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  /* El punto solo, en su propio renglón, se veía raro */
+  .mnt-previa-punto { display: none; }
+  .mnt-previa-link { margin-left: 0; margin-top: 4px; }
+}

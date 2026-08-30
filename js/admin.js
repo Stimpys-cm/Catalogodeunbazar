@@ -49,11 +49,30 @@ function forceLogout() {
   setTimeout(() => salirDelPanel(destino), 1500);
 }
 
+// Si el admin cierra el panel mientras un bazar ya estaba dentro, se le
+// avisa y se le saca. El admin general nunca se cierra la puerta a sí mismo.
+let _panelCerrado = false;
+function vigilarCierreDelPanel() {
+  if (_panelCerrado) return;
+  if (typeof esAdminGlobal === 'function' && esAdminGlobal()) return;
+  if (typeof enMantenimiento !== 'function' || !enMantenimiento('panel')) return;
+
+  _panelCerrado = true;
+  const msg = (typeof mensajeMantenimiento === 'function' && mensajeMantenimiento('panel'))
+    || 'El panel está en mantenimiento. Vuelve en un rato.';
+  toast(msg, 6000);
+  const destino = rutaDeAcceso();
+  clearSession();
+  setTimeout(() => salirDelPanel(destino), 2500);
+}
+window.addEventListener('db:ajustes', vigilarCierreDelPanel);
+window.addEventListener('db:ready',   vigilarCierreDelPanel);
+
 // ─── TABS ────────────────────────────────────────────────────
 let currentTab = 'inventario';
 
 // Pestañas válidas y las que requieren admin
-const TABS_VALIDAS   = ['inventario','registrar','catalogo','vendedores','bazares','drops','cuenta','sistema'];
+const TABS_VALIDAS   = ['inventario','registrar','catalogo','vendedores','bazares','drops','subastas','ganancias','cuenta','sistema'];
 const TABS_SOLO_ADMIN = ['catalogo'];
 // Sistema (logs de toda la plataforma) es solo del admin principal
 const TABS_SOLO_GLOBAL = ['sistema'];
@@ -160,7 +179,7 @@ function showTab(tab, fromHash) {
   if (tab === 'vendedores' && !esAdminGlobal() && !puedo('gestionarUsuarios')) return;
   if (tab === 'bazares'    && !esAdminGlobal() && !puedo('personalizar'))     return;
   currentTab = tab;
-  ['inventario','registrar','vendedores','catalogo','bazares','cuenta','drops','sistema'].forEach(t => {
+  ['inventario','registrar','vendedores','catalogo','bazares','cuenta','drops','subastas','ganancias','sistema'].forEach(t => {
     const v = document.getElementById('view-'+t);
     const b = document.getElementById('tab-'+t);
     if (v) v.classList.toggle('hidden', t!==tab);
@@ -172,6 +191,8 @@ function showTab(tab, fromHash) {
   if (tab==='catalogo')    renderCatalogo();
   if (tab==='cuenta')      renderCuenta();
   if (tab==='drops')       renderDrops();
+  if (tab==='subastas')    cargarSubastas();
+  if (tab==='ganancias')   cargarGanancias();
   if (tab==='sistema')     renderSistema();
   if (tab==='registrar')   { setTimeout(() => { initPreviewListeners(); updatePreview(); populateDropSelect(); }, 0); }
   closeSidebar();
@@ -184,7 +205,7 @@ function showTab(tab, fromHash) {
   // Título de la pestaña en el navegador
   const titulos = {
     inventario:'Inventario', registrar:'Registrar', catalogo:'Catálogo',
-    vendedores:'Vendedores', bazares:'Bazares', drops:'Drops', cuenta:'Mi cuenta', sistema:'Sistema'
+    vendedores:'Vendedores', bazares:'Bazares', drops:'Drops', subastas:'Subastas', ganancias:'Ganancias', cuenta:'Mi cuenta', sistema:'Sistema'
   };
   document.title = `${titulos[tab] || 'Panel'} · STMP MARKET`;
 }
@@ -613,7 +634,11 @@ function renderInv() {
       ...cats.map(c => `<span class="tag tag-cat">${escAdmin(c)}</span>`)
     ].join('');
 
-    return `<div class="item-card${p.vendido?' vendido':''}" id="card-${p.id}">
+    const subCard = sbDe(p.id);
+    const enSubasta = !!subCard && !p.vendido;
+
+    return `<div class="item-card${p.vendido?' vendido':''}${
+      enSubasta ? (sbViva(subCard) ? ' en-subasta' : ' subasta-cerrada') : ''}" id="card-${p.id}">
       <div class="item-img" data-imgs='${JSON.stringify(imgs).replace(/'/g,"&#39;")}'>
         ${imgHtml}${navHtml}${vendidoBadge}${photoCounterHtml}
       </div>
@@ -623,10 +648,11 @@ function renderInv() {
         <div class="item-tags">${tagsHtml}</div>
         <div class="item-meta">Talla ${p.talla||'–'} · ${p.estado||''}</div>
         ${compradorHtml}
-        <div class="item-prices">
+        ${enSubasta ? '' : `<div class="item-prices">
           <span class="item-price">$${p.precio_venta} <span class="cur">MXN</span></span>
           ${costoHtml}
-        </div>
+        </div>`}
+        ${enSubasta ? bloqueSubasta(p) + (costoHtml ? `<div class="item-prices solo-costo">${costoHtml}</div>` : '') : ''}
         <div class="item-actions">
           ${vendBtn}
           ${calBtn}
@@ -1207,12 +1233,101 @@ function guardarReEdicion() {
 // ─── FORM ────────────────────────────────────────────────────
 let newImages = [], editImages = [];
 
-// Sube una imagen a Cloudinary y devuelve la URL
+/* ── COMPRESIÓN DE FOTOS ──────────────────────────────────────
+   Las fotos salían del teléfono con 3-4 MB y se guardaban así en
+   Cloudinary, aunque la tienda nunca las muestra a más de 600 px de
+   ancho. Eso gastaba la cuota por partida doble: al guardarlas y al
+   servirlas. Aquí se reducen antes de subir, en el propio navegador.
+
+   El cambio no se nota: a 1600 px sigue habiendo de sobra para el zoom
+   de la ficha, y el peso baja del orden de seis veces. */
+const IMG_LADO_MAX = 1600;   // px del lado más largo
+const IMG_CALIDAD  = 0.82;   // suficiente para fotos de ropa
+const IMG_YA_LIGERA = 300 * 1024;   // por debajo de esto no vale la pena tocarla
+
+// data:...;base64 → Blob, sin pasar por fetch() (la política de seguridad
+// del sitio restringe connect-src y bloquearía la petición).
+function _dataUrlABlob(dataUrl) {
+  const coma = dataUrl.indexOf(',');
+  const tipo = (dataUrl.slice(0, coma).match(/data:([^;]+)/) || [])[1] || 'image/jpeg';
+  const bin  = atob(dataUrl.slice(coma + 1));
+  const buf  = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  return new Blob([buf], { type: tipo });
+}
+
+async function _aLienzo(dataUrl) {
+  const blob = _dataUrlABlob(dataUrl);
+  // createImageBitmap respeta la orientación EXIF. Dibujar un <img> en un
+  // canvas NO siempre lo hace, y las fotos verticales salían giradas.
+  if (typeof createImageBitmap === 'function') {
+    try { return await createImageBitmap(blob, { imageOrientation: 'from-image' }); }
+    catch (_) { /* sin soporte para la opción: se cae al plan B */ }
+  }
+  return await new Promise((ok, err) => {
+    const img = new Image();
+    img.onload  = () => ok(img);
+    img.onerror = () => err(new Error('imagen ilegible'));
+    img.src = dataUrl;
+  });
+}
+
+async function comprimirImagen(dataUrl) {
+  if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/')) return dataUrl;
+
+  const tipo = (dataUrl.slice(0, 40).match(/data:(image\/[a-z+-]+)/) || [])[1] || '';
+  if (tipo === 'image/gif') return dataUrl;   // podría estar animado
+
+  const pesoOriginal = Math.round(dataUrl.length * 0.75);   // base64 abulta ~33%
+
+  try {
+    const fuente = await _aLienzo(dataUrl);
+    const ancho0 = fuente.width, alto0 = fuente.height;
+    const lado   = Math.max(ancho0, alto0);
+    const escala = lado > IMG_LADO_MAX ? IMG_LADO_MAX / lado : 1;
+
+    // Ya es chica y ligera: recomprimirla solo la empeoraría
+    if (escala === 1 && pesoOriginal <= IMG_YA_LIGERA) { fuente.close?.(); return dataUrl; }
+
+    const lienzo = document.createElement('canvas');
+    lienzo.width  = Math.round(ancho0 * escala);
+    lienzo.height = Math.round(alto0  * escala);
+    const ctx = lienzo.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(fuente, 0, 0, lienzo.width, lienzo.height);
+    fuente.close?.();
+
+    // WebP pesa menos y conserva la transparencia (importante para los
+    // logos de los bazares). Si el navegador no lo genera, JPEG para las
+    // fotos; lo que pueda tener alfa se deja intacto antes que estropearlo.
+    const haceWebp = lienzo.toDataURL('image/webp', .5).startsWith('data:image/webp');
+    let salida;
+    if (haceWebp)                  salida = lienzo.toDataURL('image/webp', IMG_CALIDAD);
+    else if (tipo === 'image/png') return dataUrl;
+    else                           salida = lienzo.toDataURL('image/jpeg', IMG_CALIDAD);
+
+    // Nunca devolver algo más pesado que lo que entró
+    if (salida.length >= dataUrl.length) return dataUrl;
+
+    const kb = n => (n / 1024).toFixed(0) + ' KB';
+    console.info(`[foto] ${ancho0}×${alto0} ${kb(pesoOriginal)} → ` +
+                 `${lienzo.width}×${lienzo.height} ${kb(salida.length * 0.75)}`);
+    return salida;
+  } catch (_) {
+    return dataUrl;   // ante cualquier fallo, se sube tal cual
+  }
+}
+
+// Sube una imagen a Cloudinary y devuelve la URL.
+// Comprime antes: así todas las vías de subida quedan cubiertas sin
+// tener que acordarse en cada una.
 async function uploadToCloud(base64) {
+  const archivo = await comprimirImagen(base64);
   const res = await fetch('/api/upload', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ file: base64 })
+    body: JSON.stringify({ file: archivo })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Error al subir imagen');
@@ -1281,6 +1396,12 @@ function clearForm() {
   const useDrop = document.getElementById('f_useDrop');
   if (useDrop) useDrop.checked = false;
   toggleDropField();
+  ['f_sbInicial','f_sbFin'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const useSb = document.getElementById('f_useSubasta');
+  if (useSb) useSb.checked = false;
+  toggleSubastaField();
 }
 // Arma un texto con los datos clave de una prenda (para logs de "subir")
 function detallePrenda({ precio, costo, talla, categorias }) {
@@ -1326,7 +1447,7 @@ function diffPrenda(anterior, nuevo) {
   return cambios.length ? cambios.join(' · ') : 'Sin cambios de datos';
 }
 
-function submitForm() {
+async function submitForm() {
   if (!esAdminGlobal() && !puedo('crearPrendas') && !puedo('editarPrendas')) {
     return toast('Tu bazar no tiene permitido publicar prendas');
   }
@@ -1337,8 +1458,14 @@ function submitForm() {
   if (isNaN(precio)||precio<0) { toast('Precio inválido'); return; }
   if (isNaN(costo) ||costo <0) { toast('Costo inválido');  return; }
 
+  // Subasta: se valida antes de guardar nada, para no dejar la prenda
+  // publicada y la subasta a medias.
+  const cfgSubasta = leerSubastaForm();
+  if (cfgSubasta?.error) { toast(cfgSubasta.error); return; }
+
   const combined = [...editImages, ...newImages];
   const editId   = parseInt(document.getElementById('editId').value) || 0;
+  let nuevoIdParaSubasta = editId || null;
   const marca     = document.getElementById('f_marca').value;
   const categorias = getSelectedCats();
   let db = getDB();
@@ -1398,6 +1525,7 @@ function submitForm() {
       bazarId: bazarParaNuevas()
     };
     db.unshift(nuevaPrenda);
+    nuevoIdParaSubasta = nuevaPrenda.id;
 
     const talla = leerTalla('f');
     if (dropIdFinal) {
@@ -1413,7 +1541,19 @@ function submitForm() {
       toast('Prenda publicada');
     }
   }
-  saveDB(db); clearForm(); showTab('inventario');
+  const guardado = saveDB(db);
+
+  // La subasta se cuelga cuando el servidor ya tiene la prenda: antes de
+  // eso no existe el id contra el que colgarla.
+  if (cfgSubasta && nuevoIdParaSubasta != null) {
+    const btn = document.getElementById('submitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'ABRIENDO SUBASTA…'; }
+    try { await guardado; await aplicarSubasta(nuevoIdParaSubasta, cfgSubasta); }
+    catch (_) { toast('La prenda se guardó, pero la subasta no'); }
+    if (btn) { btn.disabled = false; btn.textContent = 'PUBLICAR EN BAZAR'; }
+  }
+
+  clearForm(); showTab('inventario');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2633,8 +2773,1151 @@ if (typeof toast === 'function' && !window._toastWrapped) {
 }
 
 // ─── SISTEMA (rendimiento · módulos · errores) ────────────────
+/* ═══════════════════════════════════════════════════════════
+   SUBASTAS — lado del bazar
+   Poner una prenda a subasta, ver quién ofertó y, al cerrarse,
+   cómo contactar al que ganó.
+
+   Las ofertas NO viven en la prenda: viven en el servidor. Por eso
+   guardar el inventario nunca puede borrarlas.
+   ═══════════════════════════════════════════════════════════ */
+const SB_INCREMENTO = 50;
+
+const sbDinero = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+
+// La subasta de una prenda, tal como llegó con el último sync
+function sbDe(prendaId) {
+  return (typeof subastaDe === 'function') ? subastaDe(prendaId) : null;
+}
+function sbViva(s) {
+  return (typeof subastaAbierta === 'function') ? subastaAbierta(s) : false;
+}
+
+// ── Formulario de registro ──────────────────────────────────
+function toggleSubastaField() {
+  const on   = document.getElementById('f_useSubasta')?.checked;
+  const wrap = document.getElementById('subastaWrap');
+  if (wrap) wrap.classList.toggle('hidden', !on);
+  if (on && !document.getElementById('f_sbFin')?.value) duracionSubasta(72);
+  pistaSubasta();
+}
+
+// Botones de "1 día / 3 días / 1 semana": escriben la fecha por ti
+function duracionSubasta(horas) {
+  const d = new Date(Date.now() + horas * 3600000);
+  d.setSeconds(0, 0);
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  const campo = document.getElementById('f_sbFin');
+  if (campo) campo.value = local.toISOString().slice(0, 16);
+  pistaSubasta();
+}
+
+// Le dice al vendedor, en español, qué va a pasar con lo que escribió
+function pistaSubasta() {
+  const pista = document.getElementById('sbPista');
+  if (!pista) return;
+  const inicial = parseFloat(document.getElementById('f_sbInicial')?.value);
+  const fin     = document.getElementById('f_sbFin')?.value;
+
+  if (!inicial || !fin) {
+    pista.textContent = 'Cada oferta tiene que subir al menos $50. Al cerrarse verás aquí quién ganó y cómo contactarlo.';
+    pista.className = 'sb-pista';
+    return;
+  }
+  const cierre  = new Date(fin);
+  const minutos = (cierre.getTime() - Date.now()) / 60000;
+  if (minutos < 10) {
+    pista.textContent = 'La subasta tiene que durar al menos 10 minutos.';
+    pista.className = 'sb-pista mal';
+    return;
+  }
+  if (minutos > 60 * 24 * 30) {
+    pista.textContent = 'La subasta no puede durar más de 30 días.';
+    pista.className = 'sb-pista mal';
+    return;
+  }
+  const horas = Math.round(minutos / 60);
+  const dur = horas >= 48 ? `${Math.round(horas / 24)} días`
+            : horas >= 1  ? `${horas} h`
+            : `${Math.round(minutos)} min`;
+  pista.textContent =
+    `Empieza en ${sbDinero(inicial)} y dura ${dur}. La primera oferta será de ${sbDinero(inicial)} ` +
+    `y de ahí sube de ${sbDinero(SB_INCREMENTO)} en ${sbDinero(SB_INCREMENTO)} como mínimo.`;
+  pista.className = 'sb-pista bien';
+}
+
+// Lee el formulario. Devuelve null si la subasta está apagada.
+function leerSubastaForm() {
+  if (!document.getElementById('f_useSubasta')?.checked) return null;
+  const inicial = parseFloat(document.getElementById('f_sbInicial')?.value);
+  const fin     = document.getElementById('f_sbFin')?.value;
+  if (!inicial || inicial <= 0) return { error: 'Escribe el precio de salida de la subasta' };
+  if (!fin)                     return { error: 'Elige cuándo cierra la subasta' };
+  const cierre = new Date(fin);
+  if (isNaN(cierre.getTime()))  return { error: 'La fecha de cierre no es válida' };
+  if ((cierre.getTime() - Date.now()) / 60000 < 10) {
+    return { error: 'La subasta tiene que durar al menos 10 minutos' };
+  }
+  return { precioInicial: Math.round(inicial), fin: cierre.toISOString() };
+}
+
+// Se llama después de guardar la prenda: para entonces el servidor ya
+// la tiene y se le puede colgar la subasta.
+async function aplicarSubasta(prendaId, cfg) {
+  if (!cfg) return;
+  try {
+    await api('/api/acciones?op=configurar-subasta', {
+      method: 'POST',
+      body: { prendaId, precioInicial: cfg.precioInicial, fin: cfg.fin },
+    });
+    if (typeof pollAhora === 'function') pollAhora(600);
+    toast('Subasta abierta');
+  } catch (err) {
+    toast(err.message || 'La prenda se guardó, pero la subasta no');
+  }
+}
+
+
+// ── El bloque de subasta dentro de la tarjeta ───────────────
+// Una prenda subastada no se lee como una normal: lo que importa no es
+// el precio que le puso el bazar, sino en cuánto va y cuánto le queda.
+function bloqueSubasta(p) {
+  const s = sbDe(p.id);
+  if (!s) return '';
+
+  const viva  = sbViva(s);
+  const resto = viva && typeof tiempoRestante === 'function' ? tiempoRestante(s.fin) : '';
+  const hayOfertas = s.totalOfertas > 0;
+
+  // Menos de una hora: se avisa, porque es cuando hay que estar pendiente
+  const apura = viva && (new Date(s.fin).getTime() - Date.now()) < 3600000;
+
+  const cierre = new Date(s.fin).toLocaleString('es-MX',
+    { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+  const estado = viva
+    ? `<span class="inv-sb-reloj${apura ? ' apura' : ''}">${resto || 'termina ya'}</span>`
+    : `<span class="inv-sb-reloj fin">${hayOfertas ? 'Terminó' : 'Sin ofertas'}</span>`;
+
+  return `
+  <div class="inv-sb${viva ? '' : ' cerrada'}${!viva && hayOfertas ? ' ganada' : ''}">
+    <div class="inv-sb-top">
+      <span class="inv-sb-tag">${viva ? '<span class="inv-sb-punto"></span>Subasta' : 'Subasta'}</span>
+      ${estado}
+    </div>
+
+    <div class="inv-sb-cifra">
+      <span class="inv-sb-cifra-label">${hayOfertas
+        ? (viva ? 'Última oferta' : 'Oferta ganadora')
+        : 'Precio de salida'}</span>
+      <span class="inv-sb-cifra-monto">${sbDinero(hayOfertas ? s.ofertaActual : s.precioInicial)}
+        <span class="cur">MXN</span></span>
+    </div>
+
+    <div class="inv-sb-datos">
+      ${hayOfertas
+        ? `<span class="inv-sb-lider">${viva ? 'Va ganando' : 'Ganó'} <b>@${escAdmin(s.lider?.username || '')}</b></span>
+           <span class="inv-sb-cuenta">${s.totalOfertas} oferta${s.totalOfertas === 1 ? '' : 's'}</span>`
+        : `<span class="inv-sb-lider vacio">Todavía nadie oferta</span>`}
+    </div>
+
+    <div class="inv-sb-pie">
+      <span class="inv-sb-cierre">${viva ? 'Cierra el' : 'Cerró el'} ${cierre}</span>
+      ${hayOfertas ? `<span class="inv-sb-salida">desde ${sbDinero(s.precioInicial)}</span>` : ''}
+    </div>
+
+    <button class="inv-sb-btn" onclick="abrirModalSubasta(${p.id})">
+      ${!viva && hayOfertas ? 'Ver al ganador y su contacto' : 'Ver las ofertas'}
+    </button>
+  </div>`;
+}
+
+// ── Modal de ofertas ────────────────────────────────────────
+let _sbPrendaAbierta = null;
+let _sbTimer = null;
+
+async function abrirModalSubasta(prendaId) {
+  _sbPrendaAbierta = prendaId;
+  const prenda = getDB().find(x => Number(x.id) === Number(prendaId));
+
+  document.getElementById('sbModalTitulo').textContent = prenda?.nombre || 'Subasta';
+  document.getElementById('sbModalSub').textContent = 'Cargando las ofertas…';
+  document.getElementById('sbModalBody').innerHTML = '<div class="sb-cargando">Un momento…</div>';
+  document.getElementById('sbModal').classList.add('open');
+  document.getElementById('sbModalFondo').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  await refrescarModalSubasta();
+  // Mientras la subasta está viva, el contador y las ofertas se refrescan solos
+  clearInterval(_sbTimer);
+  _sbTimer = setInterval(refrescarModalSubasta, 10000);
+}
+
+function cerrarModalSubasta() {
+  clearInterval(_sbTimer);
+  _sbTimer = null;
+  _sbPrendaAbierta = null;
+  document.getElementById('sbModal')?.classList.remove('open');
+  document.getElementById('sbModalFondo')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function refrescarModalSubasta() {
+  const id = _sbPrendaAbierta;
+  if (id == null) return;
+
+  let datos;
+  try {
+    datos = await api(`/api/acciones?op=subasta-vendedor&id=${id}`, { method: 'GET' });
+  } catch (err) {
+    document.getElementById('sbModalBody').innerHTML =
+      `<div class="sb-cargando">${escAdmin(err.message || 'No se pudo cargar')}</div>`;
+    return;
+  }
+  if (_sbPrendaAbierta !== id) return;   // se cerró mientras cargaba
+
+  const s = datos.subasta;
+  const viva = !s.cerrada;
+  const resto = viva && typeof tiempoRestante === 'function' ? tiempoRestante(s.fin) : '';
+
+  document.getElementById('sbModalSub').textContent = viva
+    ? `Termina en ${resto || 'un momento'} · ${s.totalOfertas} oferta${s.totalOfertas === 1 ? '' : 's'}`
+    : `Cerró el ${new Date(s.fin).toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`;
+
+  const g = datos.ganador;
+  const wa = g?.telefono ? String(g.telefono).replace(/[^0-9]/g, '') : '';
+  const prenda = getDB().find(x => Number(x.id) === Number(id));
+  const waMsg = encodeURIComponent(
+    `¡Hola @${g?.username || ''}! Ganaste la subasta de "${prenda?.nombre || ''}" con ` +
+    `${sbDinero(s.ofertaActual)} MXN. ¿Cómo te la hacemos llegar?`);
+
+  const cabecera = viva ? `
+    <div class="sb-estado viva">
+      <div class="sb-estado-label">Oferta más alta</div>
+      <div class="sb-estado-monto">${s.totalOfertas ? sbDinero(s.ofertaActual) : sbDinero(s.precioInicial)}
+        <span class="cur">MXN</span></div>
+      <div class="sb-estado-pie">${s.totalOfertas
+        ? `Va ganando <b>@${escAdmin(s.lider?.username || '')}</b>`
+        : 'Todavía nadie ofrece. Ése es el precio de salida.'}</div>
+    </div>` : `
+    <div class="sb-estado ${s.totalOfertas ? 'ganada' : 'desierta'}">
+      <div class="sb-estado-label">${s.totalOfertas ? 'Ganó la subasta' : 'Subasta terminada'}</div>
+      <div class="sb-estado-monto">${s.totalOfertas ? sbDinero(s.ofertaActual) : '—'}
+        ${s.totalOfertas ? '<span class="cur">MXN</span>' : ''}</div>
+      <div class="sb-estado-pie">${s.totalOfertas
+        ? `<b>@${escAdmin(g?.username || s.lider?.username || '')}</b>${g?.tipo === 'invitado' ? ' · sin cuenta' : ' · con cuenta'}`
+        : 'Nadie ofertó. Puedes volver a abrirla o venderla normal.'}</div>
+    </div>`;
+
+  const contacto = (!viva && g) ? `
+    <div class="sb-contacto">
+      <div class="sb-contacto-titulo">Contacto del ganador</div>
+      <div class="sb-contacto-datos">
+        ${g.nombre ? `<div><span>Nombre</span><b>${escAdmin(g.nombre)}</b></div>` : ''}
+        <div><span>Usuario</span><b>@${escAdmin(g.username)}</b></div>
+        ${g.telefono ? `<div><span>Teléfono</span><b>${escAdmin(g.telefono)}</b></div>` : ''}
+        ${g.email ? `<div><span>Correo</span><b>${escAdmin(g.email)}</b></div>` : ''}
+      </div>
+      ${wa ? `<a class="sb-contacto-wa" href="https://wa.me/${wa}?text=${waMsg}" target="_blank" rel="noopener">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.558 4.147 1.535 5.886L0 24l6.274-1.507A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.853 0-3.587-.5-5.084-1.367l-.361-.214-3.733.897.931-3.618-.235-.374A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+        Escribirle por WhatsApp</a>` : '<p class="sb-contacto-sin">No dejó teléfono.</p>'}
+      ${!prenda?.vendido ? `<button class="sb-marcar" onclick="marcarGanadorVendido(${id}, '${escAdmin(g.username)}')">
+        Marcar como vendida a @${escAdmin(g.username)}</button>` : ''}
+    </div>` : '';
+
+  // Puesto de cada persona en el podio: se cuenta por persona, no por
+  // oferta, porque tres pujas del mismo no son tres lugares.
+  const puestos = new Map();
+  datos.historial.forEach(o => {
+    if (!puestos.has(o.username)) puestos.set(o.username, puestos.size);
+  });
+
+  const lista = datos.historial.length ? `
+    <div class="sb-ofertas">
+      <div class="sb-ofertas-titulo">Ofertas (${datos.historial.length})</div>
+      ${datos.historial.map((o, i) => {
+        const puesto = puestos.get(o.username);
+        const c = (!viva && puesto < (datos.puestosConContacto || 0))
+          ? datos.contactos?.[o.username] : null;
+        // El contacto se enseña una vez por persona, en su oferta más alta
+        const primera = datos.historial.findIndex(x => x.username === o.username) === i;
+        const tel = c && primera ? String(c.telefono || '').replace(/[^0-9]/g, '') : '';
+        return `
+        <div class="sb-oferta${i === 0 ? ' top' : ''}">
+          <span class="sb-oferta-pos">${i + 1}</span>
+          <span class="sb-oferta-user">@${escAdmin(o.username)}
+            ${o.tipo === 'invitado' ? '<i class="sb-oferta-tag">sin cuenta</i>' : ''}</span>
+          <span class="sb-oferta-monto">${sbDinero(o.monto)}</span>
+          <span class="sb-oferta-fecha">${new Date(o.fecha).toLocaleString('es-MX',
+            { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+          ${c && primera ? `
+            <div class="sb-oferta-contacto">
+              ${c.nombre ? `<span>${escAdmin(c.nombre)}</span>` : ''}
+              ${tel ? `<a href="https://wa.me/${tel}" target="_blank" rel="noopener">${escAdmin(c.telefono)}</a>`
+                    : '<span class="vacio">Sin teléfono</span>'}
+            </div>` : ''}
+        </div>`;
+      }).join('')}
+      ${!viva ? `<p class="sb-ofertas-nota">
+        Se muestra el contacto de los primeros ${datos.puestosConContacto} lugares,
+        por si el ganador no responde.</p>` : ''}
+    </div>` : '<div class="sb-sin-ofertas">Todavía no hay ofertas.</div>';
+
+  const acciones = `
+    <div class="sb-modal-pie">
+      ${viva ? `<button class="sb-alargar" onclick="alargarSubasta(${id}, 24)">Darle 1 día más</button>` : ''}
+      <button class="sb-cancelar" onclick="cancelarSubasta(${id})">
+        ${viva ? 'Cancelar subasta' : 'Quitar la subasta'}
+      </button>
+    </div>`;
+
+  document.getElementById('sbModalBody').innerHTML = cabecera + contacto + lista + acciones;
+}
+
+// Atajo: cerrar la subasta y registrar la venta al ganador de una vez
+async function marcarGanadorVendido(prendaId, username) {
+  const ok = await uiConfirm({
+    titulo: '¿Marcar como vendida?',
+    mensaje: `Se registra la venta a @${username} y la prenda sale del catálogo.`,
+    ok: 'Sí, vendida',
+  });
+  if (!ok) return;
+  try {
+    await api('/api/acciones?op=marcar-vendido', { method: 'POST', body: { id: prendaId, comprador: username } });
+    playActionSound('ok');
+    toast(`Vendida a @${username}`);
+    cerrarModalSubasta();
+    if (typeof pollAhora === 'function') pollAhora(600);
+    refrescarVistaSubastas();
+  } catch (err) {
+    toast(err.message || 'No se pudo registrar la venta');
+  }
+}
+
+// Una subasta se puede alargar, pero nunca acortar: quien ya ofertó contaba
+// con ese tiempo. El servidor vuelve a comprobarlo.
+async function alargarSubasta(prendaId, horas) {
+  const s = sbDe(prendaId);
+  if (!s) return;
+  const nuevoFin = new Date(new Date(s.fin).getTime() + horas * 3600000);
+  try {
+    await api('/api/acciones?op=configurar-subasta', {
+      method: 'POST',
+      body: { prendaId, precioInicial: s.precioInicial, fin: nuevoFin.toISOString() },
+    });
+    playActionSound('ok');
+    toast('La subasta dura un día más');
+    if (typeof pollAhora === 'function') pollAhora(600);
+    await refrescarModalSubasta();
+    refrescarVistaSubastas();
+  } catch (err) {
+    toast(err.message || 'No se pudo alargar');
+  }
+}
+
+async function cancelarSubasta(prendaId) {
+  const s = sbDe(prendaId);
+  const conOfertas = s && s.totalOfertas > 0;
+  const ok = await uiConfirm({
+    titulo: conOfertas ? '¿Cancelar una subasta con ofertas?' : '¿Quitar la subasta?',
+    mensaje: conOfertas
+      ? `Hay ${s.totalOfertas} oferta${s.totalOfertas === 1 ? '' : 's'} en juego. Se borran todas y la prenda vuelve a venderse a precio fijo.`
+      : 'La prenda vuelve a venderse a precio fijo.',
+    ok: conOfertas ? 'Sí, cancelarla' : 'Quitar',
+    peligro: conOfertas,
+  });
+  if (!ok) return;
+
+  try {
+    await api('/api/acciones?op=quitar-subasta', {
+      method: 'POST', body: { prendaId, confirmar: true },
+    });
+    playActionSound('ok');
+    toast('Subasta cancelada');
+    cerrarModalSubasta();
+    if (typeof pollAhora === 'function') pollAhora(600);
+    refrescarVistaSubastas();
+  } catch (err) {
+    toast(err.message || 'No se pudo cancelar');
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('sbModal')?.classList.contains('open')) {
+    cerrarModalSubasta();
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   PESTAÑA SUBASTAS
+   Todas las subastas del bazar en un sitio: en cuánto van, quién
+   está ofertando y, cuando terminan, cómo contactar al que ganó.
+   El admin general las ve de todos los bazares.
+   ═══════════════════════════════════════════════════════════ */
+let _suDatos    = null;
+let _suFiltro   = 'activas';
+let _suBazar    = 'todos';
+let _suAbiertas = new Set();   // qué listas de participantes están desplegadas
+let _suCargando = false;
+let _suReloj    = null;
+
+async function cargarSubastas(forzar) {
+  if (_suCargando) return;
+  if (_suDatos && !forzar) { pintarSubastas(); return; }
+
+  _suCargando = true;
+  const btn = document.getElementById('suRefrescar');
+  if (btn) { btn.disabled = true; btn.textContent = 'Cargando…'; }
+  const lista = document.getElementById('suLista');
+  if (lista && !_suDatos) lista.innerHTML = '<div class="su-vacio">Buscando tus subastas…</div>';
+
+  try {
+    _suDatos = await api('/api/acciones?op=mis-subastas', { method: 'GET' });
+    pintarSubastas();
+    arrancarRelojSubastas();
+  } catch (err) {
+    if (lista) lista.innerHTML = `<div class="su-vacio">${escAdmin(err.message || 'No se pudieron cargar')}</div>`;
+  } finally {
+    _suCargando = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Actualizar'; }
+  }
+}
+
+// Los contadores bajan solos; la lista se vuelve a pedir cada minuto
+function arrancarRelojSubastas() {
+  clearInterval(_suReloj);
+  _suReloj = setInterval(() => {
+    if (currentTab !== 'subastas') { clearInterval(_suReloj); _suReloj = null; return; }
+    document.querySelectorAll('#suLista [data-fin]').forEach(el => {
+      const ms = new Date(el.dataset.fin).getTime() - Date.now();
+      if (ms <= 0) { el.textContent = 'Terminó'; el.classList.add('fin'); return; }
+      el.textContent = tiempoRestante(el.dataset.fin);
+      el.classList.toggle('apura', ms < 3600000);
+    });
+  }, 1000);
+}
+
+function filtrarSubastas(f) {
+  _suFiltro = f;
+  document.querySelectorAll('.su-filtro').forEach(b =>
+    b.classList.toggle('active', b.dataset.f === f));
+  pintarSubastas();
+}
+
+function verSubastasDe(id) {
+  _suBazar = id;
+  pintarSubastas();
+}
+
+// Una subasta "por entregar" ya terminó, tiene ganador y la prenda
+// sigue sin marcarse como vendida: son las que piden acción.
+const suPorEntregar = s => s.cerrada && !!s.ganador && !s.prenda?.vendido;
+
+function suVisibles() {
+  let lista = _suDatos?.subastas || [];
+  if (_suBazar !== 'todos') {
+    lista = lista.filter(s => Number(s.bazarId) === Number(_suBazar));
+  }
+  if (_suFiltro === 'activas')     return lista.filter(s => !s.cerrada);
+  if (_suFiltro === 'terminadas')  return lista.filter(s => s.cerrada);
+  if (_suFiltro === 'porEntregar') return lista.filter(suPorEntregar);
+  return lista;
+}
+
+function pintarSubastas() {
+  if (!_suDatos) return;
+  pintarSelectorBazaresSubasta();
+  pintarTilesSubastas();
+
+  const cont = document.getElementById('suLista');
+  if (!cont) return;
+
+  const lista = suVisibles();
+  if (!lista.length) {
+    const vacios = {
+      activas: 'No tienes subastas en curso. Puedes abrir una al publicar una prenda.',
+      porEntregar: 'Nada pendiente: todas las subastas ganadas ya están entregadas.',
+      terminadas: 'Todavía no ha terminado ninguna subasta.',
+      todas: 'Aún no has puesto ninguna prenda en subasta.',
+    };
+    cont.innerHTML = `<div class="su-vacio">${vacios[_suFiltro]}</div>`;
+    return;
+  }
+
+  // Las que están por entregar van primero: son las que piden algo de ti
+  const orden = [...lista].sort((a, b) => {
+    const pa = suPorEntregar(a) ? 0 : a.cerrada ? 2 : 1;
+    const pb = suPorEntregar(b) ? 0 : b.cerrada ? 2 : 1;
+    if (pa !== pb) return pa - pb;
+    return new Date(b.fin) - new Date(a.fin);
+  });
+
+  cont.innerHTML = orden.map(filaSubasta).join('');
+}
+
+function filaSubasta(s) {
+  const p = s.prenda;
+  const hay = s.totalOfertas > 0;
+  const entregar = suPorEntregar(s);
+  const clase = entregar ? 'entregar' : s.cerrada ? 'cerrada' : 'viva';
+  const abierta = _suAbiertas.has(s.prendaId);
+
+  const bazar = (_suDatos?.esGlobal && _suDatos.bazares.length > 1)
+    ? `<span class="su-chip-bazar">${escAdmin(
+        _suDatos.bazares.find(b => Number(b.id) === Number(s.bazarId))?.nombre || '')}</span>`
+    : '';
+
+  // Una terminada que ya entregaste y una que sigue pendiente no son lo
+  // mismo, y el color tiene que decirlo antes de leer nada.
+  const estado = !s.cerrada
+    ? `<span class="su-estado viva" data-fin="${escAdmin(s.fin)}">${tiempoRestante(s.fin) || 'termina ya'}</span>`
+    : entregar
+      ? `<span class="su-estado pendiente">Por entregar</span>`
+      : `<span class="su-estado ${hay ? 'ganada' : 'desierta'}">${hay ? 'Entregada' : 'Sin ofertas'}</span>`;
+
+  // Marcado de la venta: lo que hay que hacer después de que gana alguien
+  const accion = entregar
+    ? `<button class="su-accion" onclick="marcarGanadorVendido(${s.prendaId}, '${escAdmin(s.ganador.username)}')">
+         Marcar vendida a @${escAdmin(s.ganador.username)}
+       </button>`
+    : (s.cerrada && p?.vendido
+        ? `<span class="su-accion hecha">Entregada a @${escAdmin(p.vendidoA || s.ganador?.username || '')}</span>`
+        : '');
+
+  const wa = s.ganador?.telefono ? String(s.ganador.telefono).replace(/[^0-9]/g, '') : '';
+  const waMsg = encodeURIComponent(
+    `¡Hola @${s.ganador?.username || ''}! Ganaste la subasta de "${p?.nombre || ''}" con ` +
+    `${sbDinero(s.ofertaActual)} MXN. ¿Cómo te la hacemos llegar?`);
+
+  return `
+  <div class="su-card ${clase}">
+    <div class="su-card-main">
+      <div class="su-foto">
+        ${p?.imagen ? `<img src="${escAdmin(p.imagen)}" alt="" loading="lazy">` : '<span>Sin foto</span>'}
+      </div>
+
+      <div class="su-datos">
+        <div class="su-titulo-fila">
+          <div>
+            ${p?.marca ? `<div class="su-marca">${escAdmin(p.marca)}</div>` : ''}
+            <div class="su-nombre">${escAdmin(p?.nombre || 'Prenda borrada')}</div>
+          </div>
+          ${estado}
+        </div>
+        ${bazar}
+
+        <div class="su-cifras">
+          <div class="su-cifra">
+            <span class="su-cifra-label">${hay ? (s.cerrada ? 'Ganó con' : 'Última oferta') : 'Salida'}</span>
+            <span class="su-cifra-val">${sbDinero(hay ? s.ofertaActual : s.precioInicial)}</span>
+          </div>
+          <div class="su-cifra chico">
+            <span class="su-cifra-label">Ofertas</span>
+            <span class="su-cifra-val">${s.totalOfertas}</span>
+          </div>
+          <div class="su-cifra chico">
+            <span class="su-cifra-label">Personas</span>
+            <span class="su-cifra-val">${s.participantes.length}</span>
+          </div>
+          ${hay ? `
+          <div class="su-cifra chico">
+            <span class="su-cifra-label">Sobre la salida</span>
+            <span class="su-cifra-val">+${sbDinero(s.ofertaActual - s.precioInicial)}</span>
+          </div>` : ''}
+        </div>
+
+        <div class="su-pie">
+          <span>${s.cerrada ? 'Cerró' : 'Cierra'} el ${new Date(s.fin).toLocaleString('es-MX',
+            { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+          <span>Salió en ${sbDinero(s.precioInicial)}</span>
+        </div>
+      </div>
+    </div>
+
+    ${s.cerrada && s.ganador ? `
+      <div class="su-ganador">
+        <div class="su-ganador-datos">
+          <span class="su-ganador-label">Ganador</span>
+          <b>@${escAdmin(s.ganador.username)}</b>
+          <span class="su-tipo ${s.ganador.tipo}">${s.ganador.tipo === 'invitado' ? 'sin cuenta' : 'con cuenta'}</span>
+          ${s.ganador.nombre ? `<span class="su-ganador-extra">${escAdmin(s.ganador.nombre)}</span>` : ''}
+          ${s.ganador.telefono ? `<span class="su-ganador-extra">${escAdmin(s.ganador.telefono)}</span>` : ''}
+        </div>
+        <div class="su-ganador-btns">
+          ${wa ? `<a class="su-wa" href="https://wa.me/${wa}?text=${waMsg}" target="_blank" rel="noopener">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.558 4.147 1.535 5.886L0 24l6.274-1.507A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.853 0-3.587-.5-5.084-1.367l-.361-.214-3.733.897.931-3.618-.235-.374A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+            WhatsApp</a>` : '<span class="su-sin-tel">No dejó teléfono</span>'}
+          ${accion}
+        </div>
+      </div>` : ''}
+
+    ${s.participantes.length ? `
+      <button class="su-desplegar${abierta ? ' abierta' : ''}" onclick="alternarParticipantes(${s.prendaId})">
+        <span class="su-desplegar-flecha">▸</span>
+        ${s.participantes.length} participante${s.participantes.length === 1 ? '' : 's'}
+      </button>
+      <div class="su-participantes"${abierta ? '' : ' hidden'}>
+        ${s.participantes.map((u, i) => filaParticipante(u, i, s)).join('')}
+        <p class="su-privacidad">
+          ${s.cerrada
+            ? `Se muestra el contacto de los primeros ${PUESTOS_CONTACTO} lugares, por si el
+               ganador no responde y quieres ofrecérsela al siguiente. Del resto no se comparte.`
+            : 'Mientras la subasta corre no se muestra el teléfono de nadie. Al cerrar aparece el de los primeros ' + PUESTOS_CONTACTO + ' lugares.'}
+        </p>
+      </div>` : `
+      <div class="su-sin-gente">Todavía nadie ha ofertado.</div>`}
+
+    <div class="su-card-pie">
+      <button class="su-link" onclick="abrirModalSubasta(${s.prendaId})">Ver el detalle</button>
+      <a class="su-link" href="prenda.html?id=${s.prendaId}" target="_blank" rel="noopener">Ver en la tienda</a>
+      ${!s.cerrada ? `<button class="su-link peligro" onclick="cancelarSubasta(${s.prendaId})">Cancelar</button>` : ''}
+    </div>
+  </div>`;
+}
+
+// Cuántos puestos llevan contacto. Tiene que coincidir con
+// PUESTOS_CON_CONTACTO de api/_subastas.js, que es quien manda.
+const PUESTOS_CONTACTO = 3;
+
+function filaParticipante(u, i, s) {
+  const podio = s.cerrada && i < PUESTOS_CONTACTO;
+  const tel   = podio ? String(u.telefono || '').replace(/[^0-9]/g, '') : '';
+  const prenda = s.prenda;
+
+  const msg = encodeURIComponent(
+    i === 0
+      ? `¡Hola @${u.username}! Ganaste la subasta de "${prenda?.nombre || ''}" con ` +
+        `${sbDinero(u.maxOferta)} MXN. ¿Cómo te la hacemos llegar?`
+      : `¡Hola @${u.username}! Quedaste en el lugar ${i + 1} de la subasta de ` +
+        `"${prenda?.nombre || ''}". Se liberó la prenda: ¿te interesa por tu oferta de ` +
+        `${sbDinero(u.maxOferta)} MXN?`);
+
+  return `
+    <div class="su-persona${i === 0 ? ' top' : ''}${podio ? ' podio' : ''}">
+      <span class="su-persona-pos">${i + 1}</span>
+      <span class="su-persona-user">@${escAdmin(u.username)}
+        <span class="su-tipo ${u.tipo}">${u.tipo === 'invitado' ? 'sin cuenta' : 'con cuenta'}</span>
+      </span>
+      <span class="su-persona-monto">${sbDinero(u.maxOferta)}</span>
+      <span class="su-persona-meta">${u.ofertas} oferta${u.ofertas === 1 ? '' : 's'} ·
+        última ${new Date(u.ultima).toLocaleString('es-MX',
+          { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+      ${podio ? `
+        <div class="su-persona-contacto">
+          ${u.nombre ? `<span class="su-dato">${escAdmin(u.nombre)}</span>` : ''}
+          ${tel ? `<span class="su-dato tel">${escAdmin(u.telefono)}</span>` : '<span class="su-dato vacio">Sin teléfono</span>'}
+          ${u.email ? `<span class="su-dato">${escAdmin(u.email)}</span>` : ''}
+          ${tel ? `<a class="su-persona-wa" href="https://wa.me/${tel}?text=${msg}" target="_blank" rel="noopener">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.558 4.147 1.535 5.886L0 24l6.274-1.507A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.853 0-3.587-.5-5.084-1.367l-.361-.214-3.733.897.931-3.618-.235-.374A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+            Escribirle</a>` : ''}
+        </div>` : ''}
+    </div>`;
+}
+
+function alternarParticipantes(prendaId) {
+  if (_suAbiertas.has(prendaId)) _suAbiertas.delete(prendaId);
+  else _suAbiertas.add(prendaId);
+  pintarSubastas();
+}
+
+function pintarSelectorBazaresSubasta() {
+  const cont = document.getElementById('suBazares');
+  if (!cont) return;
+  const lista = _suDatos?.bazares || [];
+  const mostrar = _suDatos?.esGlobal && lista.length > 1;
+  cont.classList.toggle('hidden', !mostrar);
+  if (!mostrar) return;
+
+  cont.innerHTML = [{ id: 'todos', nombre: 'Todos los bazares' }, ...lista].map(b => `
+    <button type="button" class="su-chip${String(b.id) === String(_suBazar) ? ' active' : ''}"
+            onclick="verSubastasDe('${b.id}')">${escAdmin(b.nombre)}</button>`).join('');
+}
+
+function pintarTilesSubastas() {
+  const cont = document.getElementById('suTiles');
+  if (!cont) return;
+
+  let lista = _suDatos?.subastas || [];
+  if (_suBazar !== 'todos') lista = lista.filter(s => Number(s.bazarId) === Number(_suBazar));
+
+  const vivas     = lista.filter(s => !s.cerrada);
+  const entregar  = lista.filter(suPorEntregar);
+  const ganadas   = lista.filter(s => s.cerrada && s.totalOfertas > 0);
+  const recaudado = ganadas.reduce((a, s) => a + s.ofertaActual, 0);
+
+  // Gente distinta que ha ofertado, no ofertas: dos pujas de la misma
+  // persona no son dos interesados.
+  const gente = new Set();
+  lista.forEach(s => s.participantes.forEach(u => gente.add(u.username)));
+
+  const ofertasVivas = vivas.reduce((a, s) => a + s.totalOfertas, 0);
+  const cierraPronto = vivas
+    .filter(s => new Date(s.fin).getTime() - Date.now() < 86400000)
+    .sort((a, b) => new Date(a.fin) - new Date(b.fin))[0];
+
+  const tiles = [
+    { label: 'En curso', val: vivas.length,
+      pie: ofertasVivas ? `${ofertasVivas} oferta${ofertasVivas === 1 ? '' : 's'} recibidas` : 'sin ofertas todavía',
+      fuerte: true },
+    { label: 'Por entregar', val: entregar.length,
+      pie: entregar.length ? 'ganadas, falta marcarlas vendidas' : 'nada pendiente',
+      alerta: entregar.length > 0 },
+    { label: 'Participantes', val: gente.size,
+      pie: 'personas distintas que han ofertado' },
+    { label: 'Recaudado', val: sbDinero(recaudado),
+      pie: `${ganadas.length} subasta${ganadas.length === 1 ? '' : 's'} ganada${ganadas.length === 1 ? '' : 's'}` },
+    { label: 'Cierra pronto', val: cierraPronto ? tiempoRestante(cierraPronto.fin) : '—',
+      pie: cierraPronto ? escAdmin(cierraPronto.prenda?.nombre || '') : 'nada en las próximas 24 h' },
+  ];
+
+  cont.innerHTML = tiles.map(t => `
+    <div class="su-tile${t.fuerte ? ' fuerte' : ''}${t.alerta ? ' alerta' : ''}">
+      <div class="su-tile-label">${t.label}</div>
+      <div class="su-tile-val">${t.val}</div>
+      <div class="su-tile-pie">${t.pie}</div>
+    </div>`).join('');
+}
+
+// Cuando el modal cambia algo (cancelar, alargar, marcar vendida), la
+// lista de atrás tiene que enterarse.
+function refrescarVistaSubastas() {
+  if (currentTab === 'subastas') cargarSubastas(true);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GANANCIAS
+   Cuánto dejó cada venta, agrupado por mes y por semana. Un bazar
+   ve lo suyo; el admin general puede cambiar de bazar y comparar.
+
+   Los colores están validados para daltonismo: azul = ganancia,
+   ámbar = costo. La barra completa es lo que entró.
+   ═══════════════════════════════════════════════════════════ */
+const GAN_MESES   = 12;
+const GAN_SEMANAS = 12;
+
+let _ganDatos    = null;      // respuesta del servidor
+let _ganBazar    = null;      // id del bazar que se está viendo
+let _ganPeriodo  = 'meses';   // 'meses' | 'semanas'
+let _ganCargando = false;
+
+// En el eje no cabe el año completo: "mar 2026" → "mar '26"
+const ganEtiquetaCorta = etq => String(etq).replace(/\s(\d{2})(\d{2})$/, " '$2");
+
+const ganDinero = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+
+// Solo el bazar que se está mirando
+function ganBazarActual() {
+  if (!_ganDatos?.bazares?.length) return null;
+  return _ganDatos.bazares.find(b => Number(b.id) === Number(_ganBazar))
+      || _ganDatos.bazares[0];
+}
+
+async function cargarGanancias(forzar) {
+  if (_ganCargando) return;
+  if (_ganDatos && !forzar) { pintarGanancias(); return; }
+
+  _ganCargando = true;
+  const btn = document.getElementById('ganRefrescar');
+  if (btn) { btn.disabled = true; btn.textContent = 'Cargando…'; }
+  const plot = document.getElementById('ganPlot');
+  if (plot && !_ganDatos) plot.innerHTML = '<div class="gan-vacio">Sacando cuentas…</div>';
+
+  try {
+    _ganDatos = await api(`/api/acciones?op=estadisticas&meses=${GAN_MESES}&semanas=${GAN_SEMANAS}`);
+    if (_ganBazar == null || !_ganDatos.bazares.some(b => Number(b.id) === Number(_ganBazar))) {
+      _ganBazar = _ganDatos.bazares[0] ? Number(_ganDatos.bazares[0].id) : null;
+    }
+    pintarGanancias();
+  } catch (err) {
+    if (plot) plot.innerHTML = `<div class="gan-vacio">${escAdmin(err.message || 'No se pudieron cargar las ganancias')}</div>`;
+  } finally {
+    _ganCargando = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Actualizar'; }
+  }
+}
+
+function cambiarPeriodoGanancias(periodo) {
+  _ganPeriodo = periodo === 'semanas' ? 'semanas' : 'meses';
+  document.querySelectorAll('.gan-rango-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.periodo === _ganPeriodo));
+  pintarGanancias();
+}
+
+function verGananciasDe(id) {
+  _ganBazar = Number(id);
+  pintarGanancias();
+}
+
+function pintarGanancias() {
+  if (!_ganDatos) return;
+  pintarSelectorBazares();
+  const bz = ganBazarActual();
+  if (!bz) {
+    document.getElementById('ganTiles').innerHTML = '';
+    document.getElementById('ganPlot').innerHTML  = '<div class="gan-vacio">Todavía no hay ventas registradas.</div>';
+    document.getElementById('ganTabla').innerHTML = '';
+    return;
+  }
+  pintarTilesGanancias(bz);
+  pintarGraficaGanancias(bz);
+  pintarTablaGanancias(bz);
+  pintarComparativaGanancias();
+
+  const sub = document.getElementById('ganSubtitulo');
+  if (sub) {
+    sub.textContent = esAdminGlobal()
+      ? `Viendo ${bz.nombre} · ${_ganDatos.ventasConsideradas} venta${_ganDatos.ventasConsideradas === 1 ? '' : 's'} en total`
+      : 'Lo que dejó cada venta, por mes y por semana';
+  }
+
+  const aviso = document.getElementById('ganAviso');
+  if (aviso) {
+    const sin = Number(bz.ventasSinCosto || 0);
+    aviso.classList.toggle('hidden', sin === 0);
+    if (sin) {
+      aviso.textContent = `${sin} venta${sin === 1 ? '' : 's'} de antes no guardó su costo; ` +
+        'para ésas se usa el costo actual de la prenda, así que la ganancia es aproximada.';
+    }
+  }
+}
+
+// ── Selector de bazar (admin general) ───────────────────────
+function pintarSelectorBazares() {
+  const cont = document.getElementById('ganBazares');
+  if (!cont) return;
+  const lista = _ganDatos?.bazares || [];
+  const mostrar = esAdminGlobal() && lista.length > 1;
+  cont.classList.toggle('hidden', !mostrar);
+  if (!mostrar) return;
+
+  cont.innerHTML = lista.map(b => `
+    <button type="button" class="gan-bazar-chip${Number(b.id) === Number(_ganBazar) ? ' active' : ''}"
+            onclick="verGananciasDe(${Number(b.id)})">
+      ${escAdmin(b.nombre)}
+      <span class="gan-bazar-monto">${ganDinero(b.total.ganancia)}</span>
+    </button>`).join('');
+}
+
+// ── Números grandes ─────────────────────────────────────────
+function pintarTilesGanancias(bz) {
+  const cont = document.getElementById('ganTiles');
+  if (!cont) return;
+
+  const serie   = bz[_ganPeriodo] || [];
+  const actual  = serie[serie.length - 1] || { ganancia: 0, unidades: 0 };
+  const previo  = serie[serie.length - 2] || null;
+  const conVentas = serie.filter(p => p.unidades > 0);
+  const promedio  = conVentas.length
+    ? conVentas.reduce((a, p) => a + p.ganancia, 0) / conVentas.length : 0;
+  const mejor = serie.reduce((a, p) => (p.ganancia > (a?.ganancia ?? -Infinity) ? p : a), null);
+  const ticket = bz.total.unidades ? bz.total.ganancia / bz.total.unidades : 0;
+
+  let cambio = '';
+  if (previo && previo.ganancia > 0) {
+    const pct = Math.round(((actual.ganancia - previo.ganancia) / previo.ganancia) * 100);
+    const clase = pct > 0 ? 'sube' : pct < 0 ? 'baja' : 'igual';
+    cambio = `<span class="gan-delta ${clase}">${pct > 0 ? '+' : ''}${pct}%</span>`;
+  }
+
+  const unidad = _ganPeriodo === 'meses' ? 'mes' : 'semana';
+  const tiles = [
+    { etiqueta: 'Ganancia total',    valor: ganDinero(bz.total.ganancia),
+      pie: `${bz.total.unidades} prenda${bz.total.unidades === 1 ? '' : 's'} vendida${bz.total.unidades === 1 ? '' : 's'}`, fuerte: true },
+    { etiqueta: `Este ${unidad}`,    valor: ganDinero(actual.ganancia),
+      pie: `${actual.unidades} vendida${actual.unidades === 1 ? '' : 's'} ${cambio}` },
+    { etiqueta: `Promedio por ${unidad}`, valor: ganDinero(promedio),
+      pie: conVentas.length ? `sobre ${conVentas.length} con ventas` : 'sin ventas todavía' },
+    { etiqueta: 'Mejor periodo',     valor: ganDinero(mejor?.ganancia || 0),
+      pie: mejor && mejor.ganancia > 0 ? escAdmin(mejor.etiqueta) : '—' },
+    { etiqueta: 'Ingresos',          valor: ganDinero(bz.total.ingresos),
+      pie: `costo ${ganDinero(bz.total.costo)}` },
+    { etiqueta: 'Ganancia por prenda', valor: ganDinero(ticket),
+      pie: 'promedio de todo el historial' },
+  ];
+
+  cont.innerHTML = tiles.map(t => `
+    <div class="gan-tile${t.fuerte ? ' fuerte' : ''}">
+      <div class="gan-tile-label">${t.etiqueta}</div>
+      <div class="gan-tile-val">${t.valor} <span class="cur">MXN</span></div>
+      <div class="gan-tile-pie">${t.pie}</div>
+    </div>`).join('');
+}
+
+// ── Gráfica de barras apiladas: ganancia + costo = ingresos ──
+function pintarGraficaGanancias(bz) {
+  const cont = document.getElementById('ganPlot');
+  if (!cont) return;
+
+  const serie = bz[_ganPeriodo] || [];
+  if (!serie.length) { cont.innerHTML = '<div class="gan-vacio">Sin datos.</div>'; return; }
+
+  const tope = Math.max(...serie.map(p => Math.max(0, p.costo) + Math.max(0, p.ganancia)), 0);
+  if (tope <= 0) {
+    cont.innerHTML = '<div class="gan-vacio">Todavía no hay ventas en este periodo.</div>';
+    return;
+  }
+  const escala = v => Math.max(0, v) / tope * 100;
+
+  // Solo se etiqueta el periodo más alto: un número en cada barra es ruido
+  const maxIdx = serie.reduce((mejor, p, i) => (p.ganancia > serie[mejor].ganancia ? i : mejor), 0);
+
+  const rejilla = [1, 0.75, 0.5, 0.25, 0].map(f => `
+    <div class="gan-linea" style="bottom:${f * 100}%">
+      <span class="gan-linea-val">${f === 0 ? '0' : ganDinero(tope * f)}</span>
+    </div>`).join('');
+
+  const barras = serie.map((p, i) => {
+    const hayVentas = p.unidades > 0;
+    const hG = escala(p.ganancia), hC = escala(p.costo);
+    const perdida = p.ganancia < 0;
+    return `
+    <div class="gan-col${hayVentas ? '' : ' vacia'}" tabindex="0"
+         data-i="${i}"
+         data-tip="${escAdmin(p.etiqueta)}|${ganDinero(p.ganancia)}|${ganDinero(p.ingresos)}|${ganDinero(p.costo)}|${p.unidades}|${perdida ? '1' : '0'}">
+      ${i === maxIdx && p.ganancia > 0 ? `<span class="gan-col-label">${ganDinero(p.ganancia)}</span>` : ''}
+      <div class="gan-barra">
+        <div class="gan-seg costo"    style="height:${hC}%"></div>
+        <div class="gan-seg ganancia" style="height:${hG}%"></div>
+      </div>
+      <div class="gan-col-x">${escAdmin(ganEtiquetaCorta(p.etiqueta))}</div>
+    </div>`;
+  }).join('');
+
+  cont.innerHTML = `
+    <div class="gan-chart">
+      <div class="gan-rejilla">${rejilla}</div>
+      <div class="gan-cols">${barras}</div>
+      <div class="gan-tip" id="ganTip" hidden></div>
+    </div>`;
+
+  activarTipGanancias(cont);
+}
+
+// Crosshair sencillo: la columna entera es el blanco, no la barra
+function activarTipGanancias(cont) {
+  const chart = cont.querySelector('.gan-chart');
+  const tip   = cont.querySelector('#ganTip');
+  if (!chart || !tip) return;
+
+  const mostrar = col => {
+    const [etq, gan, ing, cos, uds, perdida] = (col.dataset.tip || '').split('|');
+    tip.innerHTML = `
+      <div class="gan-tip-tit">${etq}</div>
+      <div class="gan-tip-fila"><i class="gan-swatch ganancia"></i>Ganancia<b>${gan}</b></div>
+      <div class="gan-tip-fila"><i class="gan-swatch costo"></i>Costo<b>${cos}</b></div>
+      <div class="gan-tip-fila neutra">Ingresos<b>${ing}</b></div>
+      <div class="gan-tip-pie">${uds === '0' ? 'Sin ventas' : uds + (uds === '1' ? ' prenda vendida' : ' prendas vendidas')}${perdida === '1' ? ' · se vendió por debajo del costo' : ''}</div>`;
+    tip.hidden = false;
+
+    // Se coloca al lado de la columna, nunca encima: si tapa la barra,
+    // no se puede comparar lo que dice el globo con lo que se ve.
+    const cRect = chart.getBoundingClientRect();
+    const bRect = col.getBoundingClientRect();
+    const centro = bRect.left - cRect.left + bRect.width / 2;
+    const ancho  = tip.offsetWidth;
+    let x = centro < cRect.width / 2
+      ? bRect.right - cRect.left + 12          // columna a la izquierda → globo a su derecha
+      : bRect.left  - cRect.left - ancho - 12; // y al revés
+    tip.style.left = Math.max(4, Math.min(cRect.width - ancho - 4, x)) + 'px';
+    chart.querySelectorAll('.gan-col').forEach(c => c.classList.toggle('activa', c === col));
+  };
+  const ocultar = () => {
+    tip.hidden = true;
+    chart.querySelectorAll('.gan-col').forEach(c => c.classList.remove('activa'));
+  };
+
+  chart.addEventListener('pointermove', e => {
+    const col = e.target.closest('.gan-col');
+    if (col) mostrar(col); else ocultar();
+  });
+  chart.addEventListener('pointerleave', ocultar);
+  chart.addEventListener('focusin',  e => { const c = e.target.closest('.gan-col'); if (c) mostrar(c); });
+  chart.addEventListener('focusout', ocultar);
+}
+
+// ── Tabla: la misma información sin depender del color ──────
+function pintarTablaGanancias(bz) {
+  const cont = document.getElementById('ganTabla');
+  if (!cont) return;
+  const serie = [...(bz[_ganPeriodo] || [])].reverse();
+
+  cont.innerHTML = `
+    <table class="gan-table">
+      <thead><tr>
+        <th>${_ganPeriodo === 'meses' ? 'Mes' : 'Semana'}</th>
+        <th>Vendidas</th><th>Ingresos</th><th>Costo</th><th>Ganancia</th>
+      </tr></thead>
+      <tbody>${serie.map(p => `
+        <tr${p.unidades ? '' : ' class="sin"'}>
+          <td>${escAdmin(p.etiqueta)}</td>
+          <td>${p.unidades}</td>
+          <td>${ganDinero(p.ingresos)}</td>
+          <td>${ganDinero(p.costo)}</td>
+          <td class="gan-td-fuerte${p.ganancia < 0 ? ' negativa' : ''}">${ganDinero(p.ganancia)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ── Comparativa entre bazares (admin general) ───────────────
+function pintarComparativaGanancias() {
+  const card = document.getElementById('ganComparativaCard');
+  const cont = document.getElementById('ganRanking');
+  if (!card || !cont) return;
+
+  const lista = (_ganDatos?.bazares || []).filter(b => b.total.unidades > 0);
+  const mostrar = esAdminGlobal() && lista.length > 1;
+  card.classList.toggle('hidden', !mostrar);
+  if (!mostrar) return;
+
+  const orden = [...lista].sort((a, b) => b.total.ganancia - a.total.ganancia);
+  const tope  = Math.max(...orden.map(b => b.total.ganancia), 1);
+
+  cont.innerHTML = orden.map(b => `
+    <button type="button" class="gan-rank${Number(b.id) === Number(_ganBazar) ? ' activo' : ''}"
+            onclick="verGananciasDe(${Number(b.id)})">
+      <span class="gan-rank-nombre">${escAdmin(b.nombre)}</span>
+      <span class="gan-rank-pista">
+        <span class="gan-rank-barra" style="width:${Math.max(2, (b.total.ganancia / tope) * 100)}%"></span>
+      </span>
+      <span class="gan-rank-val">${ganDinero(b.total.ganancia)}</span>
+      <span class="gan-rank-uds">${b.total.unidades} vendida${b.total.unidades === 1 ? '' : 's'}</span>
+    </button>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MANTENIMIENTO
+   Cerrar el sitio entero, o solo una parte, para poder trabajar sin
+   que la gente se encuentre cosas a medias. Solo el admin principal.
+   ═══════════════════════════════════════════════════════════ */
+const MNT_SECCIONES = [
+  { id: 'sitio',   nombre: 'Todo el sitio',
+    detalle: 'Cierra las páginas públicas por completo. El panel sigue abierto para ti.' },
+  { id: 'tienda',  nombre: 'Catálogo y fichas',
+    detalle: 'Deja fuera tienda.html y las prendas. El inicio y los bazares siguen visibles.' },
+  { id: 'cuentas', nombre: 'Cuentas de compradores',
+    detalle: 'Pausa el acceso y el registro. Nadie pierde sus datos ni sus favoritos.' },
+  { id: 'panel',   nombre: 'Panel para vendedores',
+    detalle: 'Los bazares no pueden entrar a administrar. Tú sí.' },
+];
+
+let _mntEstado = null;   // lo que hay guardado en el servidor
+
+async function cargarMantenimiento() {
+  try {
+    _mntEstado = await api('/api/acciones?op=mantenimiento', { method: 'GET' });
+  } catch (_) {
+    _mntEstado = null;
+  }
+  pintarMantenimiento();
+}
+
+function pintarMantenimiento() {
+  const cont = document.getElementById('mntControles');
+  if (!cont) return;
+
+  const m = _mntEstado?.mantenimiento || {};
+  cont.innerHTML = MNT_SECCIONES.map(sec => {
+    const v = m[sec.id] || {};
+    const cerrado = v.cerrado === true;
+    return `<div class="mnt-fila${cerrado ? ' cerrada' : ''}">
+      <label class="mnt-switch">
+        <input type="checkbox" id="mnt_${sec.id}" ${cerrado ? 'checked' : ''}
+               onchange="alternarMantenimiento('${sec.id}')">
+        <span class="mnt-palanca"></span>
+      </label>
+      <div class="mnt-datos">
+        <div class="mnt-nombre">${escAdmin(sec.nombre)}
+          <span class="mnt-chip">${cerrado ? 'Cerrado' : 'Abierto'}</span>
+        </div>
+        <div class="mnt-detalle">${escAdmin(sec.detalle)}</div>
+        <div class="mnt-campos" ${cerrado ? '' : 'hidden'}>
+          <label>Mensaje para quien entre
+            <input type="text" id="mntmsg_${sec.id}" maxlength="200"
+                   placeholder="Estamos haciendo mejoras. Volvemos en un rato."
+                   value="${escAdmin(v.mensaje || '')}">
+          </label>
+          <label>Reabrir automáticamente (opcional)
+            <input type="datetime-local" id="mnthasta_${sec.id}"
+                   value="${v.hasta ? new Date(v.hasta).toISOString().slice(0,16) : ''}">
+          </label>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Resumen de arriba
+  const cerradas = MNT_SECCIONES.filter(sec => m[sec.id]?.cerrado);
+  const estado = document.getElementById('mntEstado');
+  if (estado) {
+    estado.textContent = cerradas.length
+      ? (cerradas.some(c => c.id === 'sitio') ? 'Sitio cerrado' : `${cerradas.length} cerrada${cerradas.length !== 1 ? 's' : ''}`)
+      : 'Todo abierto';
+    estado.classList.toggle('cerrado', cerradas.length > 0);
+  }
+  const ultimo = document.getElementById('mntUltimo');
+  if (ultimo) {
+    ultimo.textContent = _mntEstado?.actualizadoEn
+      ? `Último cambio: ${new Date(_mntEstado.actualizadoEn).toLocaleString('es-MX', {
+          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` +
+        (_mntEstado.actualizadoPor ? ` por ${_mntEstado.actualizadoPor}` : '')
+      : '';
+  }
+}
+
+// Muestra u oculta los campos de esa sección sin recargar todo
+function alternarMantenimiento(id) {
+  const marcado = document.getElementById('mnt_' + id)?.checked;
+  const fila = document.getElementById('mnt_' + id)?.closest('.mnt-fila');
+  if (!fila) return;
+  fila.classList.toggle('cerrada', marcado);
+  const campos = fila.querySelector('.mnt-campos');
+  if (campos) campos.hidden = !marcado;
+  const chip = fila.querySelector('.mnt-chip');
+  if (chip) chip.textContent = marcado ? 'Cerrado' : 'Abierto';
+}
+
+async function guardarMantenimiento() {
+  const btn = document.getElementById('mntGuardar');
+  const txt = btn?.textContent;
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+  const mantenimiento = {};
+  for (const sec of MNT_SECCIONES) {
+    const cerrado = document.getElementById('mnt_' + sec.id)?.checked === true;
+    const hasta = document.getElementById('mnthasta_' + sec.id)?.value || '';
+    mantenimiento[sec.id] = {
+      cerrado,
+      mensaje: document.getElementById('mntmsg_' + sec.id)?.value.trim() || '',
+      hasta: hasta ? new Date(hasta).toISOString() : null,
+    };
+  }
+
+  // Cerrar todo el sitio es de las cosas que conviene confirmar
+  if (mantenimiento.sitio.cerrado && !_mntEstado?.mantenimiento?.sitio?.cerrado) {
+    const ok = await uiConfirm({
+      titulo: '¿Cerrar todo el sitio?',
+      mensaje: 'Los visitantes solo verán la pantalla de mantenimiento. Tu panel sigue funcionando.',
+      ok: 'Cerrar el sitio', peligro: true,
+    });
+    if (!ok) { if (btn) { btn.disabled = false; btn.textContent = txt; } return; }
+  }
+
+  try {
+    _mntEstado = await api('/api/acciones?op=mantenimiento', { method: 'POST', body: { mantenimiento } });
+    pintarMantenimiento();
+    playActionSound('ok');
+    toast('Estado del sitio actualizado');
+  } catch (err) {
+    toast(err.message || 'No se pudo guardar');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = txt; }
+  }
+}
+
 function renderSistema() {
   if (!isAdmin()) return;
+  cargarMantenimiento();
   renderLogs();
   renderRespaldos();
   const db = (typeof getDB === 'function' ? getDB() : []) || [];

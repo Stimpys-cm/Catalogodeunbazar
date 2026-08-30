@@ -95,10 +95,31 @@
 
           <label class="ct-campo">
             <span>Contraseña</span>
-            <input type="password" id="ctPass" maxlength="200"
-              autocomplete="${esRegistro ? 'new-password' : 'current-password'}"
-              placeholder="${esRegistro ? 'Mínimo 8 caracteres, con letras y números' : 'Tu contraseña'}">
+            <div class="ct-pw-wrap">
+              <input type="password" id="ctPass" maxlength="200"
+                autocomplete="${esRegistro ? 'new-password' : 'current-password'}"
+                placeholder="${esRegistro ? 'Crea una contraseña segura' : 'Tu contraseña'}"
+                ${esRegistro ? 'oninput="MiCuenta.revisarPass()"' : ''}>
+              <button type="button" class="ct-pw-ojo" tabindex="-1"
+                      aria-label="Mostrar contraseña" onclick="MiCuenta.verPass(this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
           </label>
+
+          ${esRegistro ? `
+            <div class="ct-pw-guia" id="ctPwGuia">
+              <div class="ct-pw-barra"><span id="ctPwNivel"></span></div>
+              <div class="ct-pw-nivel-txt" id="ctPwTexto">Escribe una contraseña</div>
+              <ul class="ct-pw-reglas" id="ctPwReglas">
+                <li data-regla="len"><span class="ct-pw-punto"></span>8 caracteres o más</li>
+                <li data-regla="upper"><span class="ct-pw-punto"></span>Una mayúscula</li>
+                <li data-regla="lower"><span class="ct-pw-punto"></span>Una minúscula</li>
+                <li data-regla="num"><span class="ct-pw-punto"></span>Un número</li>
+                <li data-regla="sym"><span class="ct-pw-punto"></span>Un símbolo (!@#$…)</li>
+                <li data-regla="comun"><span class="ct-pw-punto"></span>Que no sea una contraseña obvia</li>
+              </ul>
+            </div>` : ''}
 
           <button type="submit" class="ct-btn" id="ctEnviar">
             ${esRegistro ? 'Crear mi cuenta' : 'Entrar'}
@@ -129,6 +150,67 @@
     document.getElementById('ctForm').addEventListener('submit', enviar);
   }
 
+  /* ── Contraseñas ──────────────────────────────────────────
+     Las mismas reglas que el panel de los bazares. La idea no es
+     estorbar: es que se vea, mientras escribes, qué le falta. */
+  const PW_OBVIAS = [
+    'password', 'contrasena', 'contraseña', '12345678', '123456789',
+    'qwerty', 'iloveyou', 'admin', 'bienvenido', 'mexico', 'stmpmarket',
+    'stiimpys', 'abc123', 'letmein', 'football', 'princess', 'monkey',
+  ];
+
+  function reglasPass(pw) {
+    const limpio = pw.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return {
+      len:   pw.length >= 8,
+      upper: /[A-Z]/.test(pw),
+      lower: /[a-z]/.test(pw),
+      num:   /[0-9]/.test(pw),
+      sym:   /[^A-Za-z0-9]/.test(pw),
+      // Repetir un carácter o escribir "password1!" cumple lo demás y
+      // sigue siendo de las primeras que alguien probaría.
+      comun: pw.length >= 8
+             && !PW_OBVIAS.some(mala => limpio.includes(mala))
+             && !/^(.)\1+$/.test(pw)
+             && !/^(0?123456789|abcdefgh)/.test(limpio),
+    };
+  }
+
+  function revisarPass() {
+    const pw = document.getElementById('ctPass')?.value || '';
+    const r  = reglasPass(pw);
+    const cumplidas = Object.values(r).filter(Boolean).length;
+    const total = Object.keys(r).length;
+
+    document.querySelectorAll('#ctPwReglas li').forEach(li => {
+      li.classList.toggle('ok', !!r[li.dataset.regla]);
+    });
+
+    const nivel = document.getElementById('ctPwNivel');
+    const texto = document.getElementById('ctPwTexto');
+    const clase = !pw ? '' : cumplidas <= 2 ? 'floja' : cumplidas < total ? 'media' : 'fuerte';
+    if (nivel) {
+      nivel.style.width = pw ? (cumplidas / total) * 100 + '%' : '0%';
+      nivel.className = clase;
+    }
+    if (texto) {
+      texto.textContent = !pw ? 'Escribe una contraseña'
+        : cumplidas <= 2 ? 'Muy fácil de adivinar'
+        : cumplidas < total ? 'Casi: te falta lo que está en gris'
+        : 'Contraseña segura';
+      texto.className = 'ct-pw-nivel-txt ' + clase;
+    }
+    return { reglas: r, cumplidas, total, pw };
+  }
+
+  function verPass(btn) {
+    const input = document.getElementById('ctPass');
+    if (!input) return;
+    const ver = input.type === 'password';
+    input.type = ver ? 'text' : 'password';
+    btn.classList.toggle('viendo', ver);
+  }
+
   async function enviar(e) {
     e.preventDefault();
     error('');
@@ -139,6 +221,19 @@
     const nombre = document.getElementById('ctNombre')?.value.trim() || '';
 
     if (!email || !pass) return error('Faltan datos');
+
+    if (modo === 'registro') {
+      if (!nombre) return error('Escribe tu nombre');
+      const { reglas, cumplidas, total } = revisarPass();
+      if (cumplidas < total) {
+        const falta = {
+          len: 'al menos 8 caracteres', upper: 'una mayúscula', lower: 'una minúscula',
+          num: 'un número', sym: 'un símbolo', comun: 'que no sea una contraseña obvia',
+        };
+        const pendientes = Object.keys(reglas).filter(k => !reglas[k]).map(k => falta[k]);
+        return error('A tu contraseña le falta ' + pendientes.join(', ') + '.');
+      }
+    }
 
     btn.disabled = true;
     const original = btn.textContent;
@@ -656,6 +751,7 @@
     estrellas: elegirEstrellas,
     etiqueta: alternarEtiqueta,
     enviarResena,
+    revisarPass, verPass,
   };
 
   window.addEventListener('cuenta:lista', () => {

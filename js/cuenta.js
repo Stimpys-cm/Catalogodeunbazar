@@ -178,6 +178,11 @@
   // API pública
   window.Cuenta = {
     perfil, haySesion, cargarSesion,
+    // Subastas: leer el estado en vivo y ofertar. Se expone aquí porque
+    // esta es la puerta al backend de comprador (la cookie de sesión va
+    // sola con credentials: 'same-origin').
+    subasta:  id   => pedir(`subasta&id=${encodeURIComponent(id)}`, { method: 'GET' }),
+    ofertar:  body => pedir('ofertar', { method: 'POST', body }),
     registro, entrar, salir, cambiarNombre, guardarPerfil,
     subirWishlist, unirWishlists,
     compras, misResenas, calificar, subirFoto,

@@ -16,6 +16,8 @@ import { getDB } from './_db.js';
 import { verifyPassword, hashPassword, looksHashed } from './_password.js';
 import { rateLimit, resetRateLimit } from './_rateLimit.js';
 import { firmarAcceso, cabeceraCookieAcceso, cabeceraCookieBorrada } from './_firma.js';
+import { leerAjustes, cerrada, mensajeDe } from './_ajustes.js';
+import { esGlobal } from './_bazar.js';
 import crypto from 'crypto';
 
 const MASTER_KEY = process.env.MASTER_KEY;
@@ -98,6 +100,20 @@ export default async function handler(req, res) {
 
     const passOk = await verifyPassword(password, user.password);
     if (!passOk) return res.status(401).json({ error: 'Credenciales incorrectas' });
+
+    // Panel en mantenimiento: los bazares no entran, el admin general sí
+    // (es quien lo abre de nuevo). Un admin de bazar tampoco pasa: manda
+    // en lo suyo, no en la plataforma. La contraseña ya se verificó, así
+    // que este aviso solo lo ve alguien con credenciales buenas.
+    if (!esGlobal(user)) {
+      const ajustes = await leerAjustes();
+      if (cerrada(ajustes, 'panel')) {
+        return res.status(503).json({
+          error: mensajeDe(ajustes, 'panel'),
+          mantenimiento: true,
+        });
+      }
+    }
 
     // Migración gradual: si la guardada estaba en texto plano, hashearla ahora.
     if (!looksHashed(user.password)) {

@@ -22,6 +22,8 @@ let _logs    = [];
 let _drops   = [];
 let _bazares = [];
 let _resenas = [];        // reseñas públicas de los bazares
+let _ajustes = null;      // qué partes del sitio están abiertas
+let _subastas = [];       // prendas que se están subastando
 let _dbReady = false;
 
 // ── Helper HTTP ──────────────────────────────────────────────
@@ -51,6 +53,8 @@ async function _loadAll() {
     _drops   = data.drops       || [];
     _bazares = data.bazares     || [];
     _resenas = data.resenas     || [];
+    _ajustes = data.ajustes     || null;
+    _subastas = data.subastas   || [];
     _dbReady = true;
     window.dispatchEvent(new CustomEvent('db:ready'));
   } catch (e) {
@@ -68,6 +72,8 @@ let _hLogs   = '';
 let _hDrops  = '';
 let _hBazares = '';
 let _hResenas = '';
+let _hAjustes = '';
+let _hSubastas = '';
 
 function _h(arr) { return JSON.stringify(arr); }
 
@@ -115,6 +121,8 @@ async function _poll() {
     const drops   = data.drops      || [];
     const bazares = data.bazares    || [];
     const resenas = data.resenas    || [];
+    const ajustes = data.ajustes    || null;
+    const subastas = data.subastas  || [];
 
     if (!_escudoActivo('inventario') && _h(inv) !== _hInv) {
       _hInv = _h(inv); _db = inv; _huboCambioEnPoll = true;
@@ -143,6 +151,14 @@ async function _poll() {
     if (!_escudoActivo('bazares') && _h(bazares) !== _hBazares) {
       _hBazares = _h(bazares); _bazares = bazares; _huboCambioEnPoll = true;
       window.dispatchEvent(new CustomEvent('db:bazares', { detail: bazares }));
+    }
+    if (_h(ajustes) !== _hAjustes) {
+      _hAjustes = _h(ajustes); _ajustes = ajustes;
+      window.dispatchEvent(new CustomEvent('db:ajustes', { detail: ajustes }));
+    }
+    if (_h(subastas) !== _hSubastas) {
+      _hSubastas = _h(subastas); _subastas = subastas; _huboCambioEnPoll = true;
+      window.dispatchEvent(new CustomEvent('db:subastas', { detail: subastas }));
     }
     if (_h(resenas) !== _hResenas) {
       _hResenas = _h(resenas); _resenas = resenas; _huboCambioEnPoll = true;
@@ -237,8 +253,10 @@ function saveDB(list) {
   const payload = (esAdminGlobal() || !mio)
     ? list
     : list.filter(p => Number(p.bazarId || 1) === Number(mio));
-  api('/api/inventario', { method: 'PUT', body: { list: payload, allowEmpty: true } })
-    .catch(e => console.error('[saveDB]', e));
+  // Devuelve la promesa: quien necesite saber que el servidor ya tiene la
+  // prenda (por ejemplo, para configurarle una subasta) puede esperarla.
+  return api('/api/inventario', { method: 'PUT', body: { list: payload, allowEmpty: true } })
+    .catch(e => { console.error('[saveDB]', e); throw e; });
 }
 function nextId() {
   return _db.length ? Math.max(..._db.map(x => x.id)) + 1 : 1;
@@ -361,6 +379,54 @@ function estrellasHTML(valor, clase = 'st-estrellas') {
     html += `<span class="st-estrella ${estado}">★</span>`;
   }
   return `<span class="${clase}" role="img" aria-label="${v} de 5 estrellas">${html}</span>`;
+}
+
+/* ── ESTADO DEL SITIO ─────────────────────────────────────────
+   Qué partes están abiertas. Llega con el sync, así que las páginas
+   públicas se enteran de un cierre en menos de un minuto sin recargar. */
+function getAjustes() { return _ajustes; }
+
+// ── SUBASTAS ────────────────────────────────────────────────
+// El estado que llega con el sync sirve para pintar las tarjetas del
+// catálogo. Para ofertar, la ficha pide el estado fresco al servidor:
+// una oferta de hace quince segundos ya no dice cuánto hay que pujar.
+function getSubastas() { return _subastas; }
+
+function subastaDe(prendaId) {
+  return _subastas.find(s => Number(s.prendaId) === Number(prendaId)) || null;
+}
+
+// ¿Sigue viva? El cierre por hora se calcula aquí para que la tarjeta
+// no diga "quedan 3 minutos" cuando ya se acabó hace rato.
+function subastaAbierta(s) {
+  return !!s && !s.cerrada && new Date(s.fin).getTime() > Date.now();
+}
+
+// "2d 4h" · "3h 20m" · "14m" · "45s"
+function tiempoRestante(fin) {
+  let ms = new Date(fin).getTime() - Date.now();
+  if (!(ms > 0)) return '';
+  const d = Math.floor(ms / 86400000); ms -= d * 86400000;
+  const h = Math.floor(ms / 3600000);  ms -= h * 3600000;
+  const m = Math.floor(ms / 60000);    ms -= m * 60000;
+  const sg = Math.floor(ms / 1000);
+  if (d) return `${d}d ${h}h`;
+  if (h) return `${h}h ${m}m`;
+  if (m) return `${m}m ${String(sg).padStart(2, '0')}s`;
+  return `${sg}s`;
+}
+
+// ¿Esta sección está cerrada ahora? Un cierre con hora de fin ya pasada
+// se considera terminado: no hay que acordarse de reabrir.
+function enMantenimiento(seccion) {
+  const m = _ajustes?.mantenimiento?.[seccion];
+  if (!m || !m.cerrado) return false;
+  if (m.hasta && new Date(m.hasta).getTime() < Date.now()) return false;
+  return true;
+}
+function mensajeMantenimiento(seccion) {
+  return _ajustes?.mantenimiento?.[seccion]?.mensaje ||
+         'Estamos haciendo mejoras. Volvemos en un rato.';
 }
 
 function saveBazares(list) {

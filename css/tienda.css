@@ -2583,3 +2583,320 @@ a.sin-marca, .pp-marca.sin-marca {
   padding: 12px; cursor: pointer; transition: color .2s;
 }
 .wl-vaciar:hover { color: var(--danger, #e05c5c); }
+
+/* ── SUBASTA en las tarjetas del catálogo ──────────────────── */
+.card-subasta {
+  position: absolute; top: 10px; left: 10px; z-index: 3;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 20px;
+  background: rgba(45,107,228,.94); color: #fff;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 10px; font-weight: 800; letter-spacing: .06em;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 3px 14px rgba(45,107,228,.35);
+  pointer-events: none;
+}
+.card-subasta.cerrada {
+  background: rgba(26,31,46,.86);
+  box-shadow: 0 3px 14px rgba(26,31,46,.28);
+}
+.card-subasta-punto {
+  width: 6px; height: 6px; border-radius: 50%; background: #fff;
+  animation: cardSbLat 1.6s ease-in-out infinite;
+}
+@keyframes cardSbLat { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .card-subasta-punto { animation: none; } }
+
+/* El precio pasa a ser "lo que va", con su etiqueta encima */
+.card-price.es-subasta { color: #2d6be4; }
+.card-price-tag {
+  display: block;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 9px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: #8b8578;
+  margin-bottom: 1px;
+}
+
+/* ── SUBASTA ────────────────────────────────────────────────
+   Sustituye al precio fijo: aquí no se aparta, se oferta. */
+.sb-caja {
+  border: 1.5px solid var(--bz-color, #2d6be4);
+  border-radius: 18px; padding: 20px;
+  background: linear-gradient(160deg, rgba(45,107,228,.055), rgba(45,107,228,.015));
+  margin: 4px 0 20px;
+}
+.sb-caja.cerrada {
+  border-color: rgba(26,31,46,.15);
+  background: rgba(26,31,46,.025);
+}
+.sb-caja.gane { border-color: #2e8b57; background: rgba(46,139,87,.05); }
+
+.sb-cabecera {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+}
+.sb-etiqueta {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--bz-color, #2d6be4);
+}
+.sb-etiqueta.gris  { color: #8b8578; }
+.sb-etiqueta.verde { color: #2e8b57; }
+.sb-latido {
+  width: 8px; height: 8px; border-radius: 50%; background: currentColor;
+  animation: sbLat 1.6s ease-in-out infinite;
+}
+@keyframes sbLat { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .3; transform: scale(.8); } }
+
+.sb-reloj {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: #1a1f2e; background: #fff; padding: 6px 13px; border-radius: 20px;
+  border: 1px solid rgba(26,31,46,.1);
+}
+.sb-reloj.urge { color: #e05c5c; border-color: rgba(224,92,92,.35); background: rgba(224,92,92,.06); }
+.sb-reloj.fin  { color: #8b8578; }
+
+.sb-cifra { text-align: center; padding: 6px 0 16px; }
+.sb-cifra-label {
+  font-size: 10px; letter-spacing: .16em; text-transform: uppercase;
+  color: #8b8578; font-weight: 700; margin-bottom: 6px;
+}
+.sb-cifra-monto {
+  font-family: 'Bebas Neue', sans-serif; font-size: 3rem; line-height: 1;
+  color: var(--bz-color, #2d6be4); letter-spacing: .02em;
+}
+.sb-caja.cerrada .sb-cifra-monto { color: #1a1f2e; }
+.sb-caja.gane    .sb-cifra-monto { color: #2e8b57; }
+.sb-cur { font-size: .32em; color: #8b8578; letter-spacing: .1em; }
+.sb-cifra-pie { font-size: 12.5px; color: #6f6a60; margin-top: 9px; line-height: 1.5; }
+
+.sb-vas-ganando {
+  background: rgba(46,139,87,.1); color: #2e8b57;
+  border: 1px solid rgba(46,139,87,.25); border-radius: 10px;
+  padding: 10px; text-align: center; margin-bottom: 14px;
+  font-size: 12.5px; font-weight: 700;
+}
+
+/* Formulario de oferta */
+.sb-form { display: block; }
+.sb-campo-monto > span {
+  display: block; font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  color: #8b8578; font-weight: 700; margin-bottom: 7px;
+}
+.sb-monto-fila {
+  display: flex; align-items: center; background: #fff;
+  border: 1.5px solid rgba(26,31,46,.13); border-radius: 12px;
+  padding: 0 14px; transition: border-color .18s, box-shadow .18s;
+}
+.sb-monto-fila:focus-within {
+  border-color: var(--bz-color, #2d6be4);
+  box-shadow: 0 0 0 3px rgba(45,107,228,.12);
+}
+.sb-monto-signo {
+  font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: #8b8578; margin-right: 4px;
+}
+.sb-monto-fila input {
+  flex: 1; border: none; outline: none; background: none;
+  font-family: 'Bebas Neue', sans-serif; font-size: 1.9rem; letter-spacing: .02em;
+  color: #1a1f2e; padding: 12px 0; width: 100%; min-width: 0;
+}
+.sb-monto-fila input::-webkit-outer-spin-button,
+.sb-monto-fila input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.sb-monto-fila input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+.sb-saltos { display: flex; gap: 7px; margin: 10px 0 16px; flex-wrap: wrap; }
+.sb-saltos button {
+  flex: 1 1 auto; background: #fff; border: 1.5px solid rgba(26,31,46,.12);
+  border-radius: 20px; padding: 8px 12px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 11.5px; font-weight: 700; color: #4a4640;
+  transition: border-color .18s, color .18s, background .18s;
+}
+.sb-saltos button:hover {
+  border-color: var(--bz-color, #2d6be4); color: var(--bz-color, #2d6be4);
+  background: rgba(45,107,228,.05);
+}
+
+.sb-identidad { margin-bottom: 14px; }
+.sb-identidad.con-cuenta {
+  background: #fff; border: 1px solid rgba(26,31,46,.1); border-radius: 10px;
+  padding: 11px 14px; font-size: 12.5px; color: #6f6a60;
+}
+.sb-identidad.con-cuenta b { color: #1a1f2e; }
+.sb-identidad-nota {
+  font-size: 11.5px; color: #8b8578; line-height: 1.55; margin: 0 0 11px;
+}
+.sb-identidad-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.sb-identidad-campos label { display: block; }
+.sb-identidad-campos > label > span {
+  display: block; font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+  color: #8b8578; font-weight: 700; margin-bottom: 6px;
+}
+.sb-identidad-campos input {
+  width: 100%; background: #fff; border: 1.5px solid rgba(26,31,46,.13);
+  border-radius: 10px; padding: 11px 13px; outline: none;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; color: #1a1f2e;
+  transition: border-color .18s, box-shadow .18s;
+}
+.sb-identidad-campos input:focus {
+  border-color: var(--bz-color, #2d6be4); box-shadow: 0 0 0 3px rgba(45,107,228,.12);
+}
+.sb-arroba { position: relative; }
+.sb-arroba i {
+  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  font-style: normal; color: #8b8578; font-size: 13px; font-weight: 700;
+}
+.sb-arroba input { padding-left: 27px !important; }
+.sb-identidad-link {
+  display: inline-block; margin-top: 9px; font-size: 11.5px;
+  color: var(--bz-color, #2d6be4); text-decoration: none; font-weight: 600;
+}
+.sb-identidad-link:hover { text-decoration: underline; }
+
+.sb-error {
+  display: none; font-size: 12px; color: #e05c5c; font-weight: 600;
+  background: rgba(224,92,92,.08); border: 1px solid rgba(224,92,92,.25);
+  border-radius: 9px; padding: 10px 12px; margin-bottom: 11px; line-height: 1.5;
+}
+.sb-error.visible { display: block; }
+
+.sb-btn, .sb-btn-wa {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; border: none; border-radius: 12px; padding: 15px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: .06em; color: #fff; text-decoration: none;
+  transition: filter .18s, opacity .18s;
+}
+.sb-btn { background: var(--bz-color, #2d6be4); box-shadow: 0 6px 20px rgba(45,107,228,.28); }
+.sb-btn:hover:not(:disabled) { filter: brightness(1.08); }
+.sb-btn:disabled { opacity: .6; cursor: default; box-shadow: none; }
+.sb-btn-wa { background: #25d366; box-shadow: 0 6px 20px rgba(37,211,102,.28); }
+.sb-btn-wa:hover { filter: brightness(1.07); }
+
+/* Historial */
+.sb-historial { margin-top: 16px; }
+.sb-historial summary {
+  cursor: pointer; list-style: none; font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: #8b8578;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.sb-historial summary::-webkit-details-marker { display: none; }
+.sb-historial summary::before { content: '▸'; transition: transform .2s; display: inline-block; }
+.sb-historial[open] summary::before { transform: rotate(90deg); }
+.sb-historial summary:hover { color: var(--bz-color, #2d6be4); }
+.sb-historial-lista { margin-top: 11px; display: flex; flex-direction: column; gap: 2px; }
+.sb-fila {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 12px; border-radius: 9px; background: #fff;
+  border: 1px solid transparent; font-size: 13px;
+}
+.sb-fila.top { border-color: rgba(45,107,228,.28); background: rgba(45,107,228,.05); }
+.sb-fila.mia .sb-fila-user { color: var(--bz-color, #2d6be4); }
+.sb-fila-user { font-weight: 600; color: #4a4640; }
+.sb-fila-user i {
+  font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; background: var(--bz-color, #2d6be4); color: #fff;
+  padding: 2px 7px; border-radius: 20px; margin-left: 7px;
+}
+.sb-fila-monto {
+  font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem;
+  color: #1a1f2e; letter-spacing: .02em;
+}
+.sb-fila.top .sb-fila-monto { color: var(--bz-color, #2d6be4); }
+
+.sb-reglas {
+  font-size: 11px; color: #8b8578; line-height: 1.6;
+  margin: 16px 0 0; padding-top: 14px; border-top: 1px solid rgba(26,31,46,.08);
+}
+
+/* Sin botón de WhatsApp, los otros dos no deben estirarse raro */
+.pp-acciones.sin-wa { justify-content: flex-start; }
+
+@media (max-width: 560px) {
+  .sb-caja { padding: 16px; }
+  .sb-cifra-monto { font-size: 2.5rem; }
+  .sb-identidad-campos { grid-template-columns: 1fr; }
+  .sb-saltos button { flex: 1 1 calc(50% - 4px); }
+}
+
+/* ── SUBASTA: modal del catálogo ─────────────────────────────
+   El mismo panel de la ficha, flotando, para poder ofertar sin
+   perder el lugar en la lista. */
+.sb-mp-fondo {
+  position: fixed; inset: 0; z-index: 1200;
+  background: rgba(26,31,46,.55); backdrop-filter: blur(4px);
+  opacity: 0; visibility: hidden; transition: opacity .24s, visibility .24s;
+}
+.sb-mp-fondo.open { opacity: 1; visibility: visible; }
+
+.sb-mp {
+  position: fixed; z-index: 1201; left: 50%; top: 50%;
+  transform: translate(-50%, -46%) scale(.97);
+  width: min(520px, calc(100vw - 28px));
+  max-height: min(90vh, 880px); overflow-y: auto;
+  background: #fff; border-radius: 22px;
+  box-shadow: 0 26px 80px rgba(26,31,46,.34);
+  opacity: 0; visibility: hidden;
+  transition: opacity .24s, visibility .24s, transform .24s cubic-bezier(.2,.9,.3,1.05);
+}
+.sb-mp.open { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); }
+.sb-mp-body { padding: 18px; }
+.sb-mp-cargando { padding: 3rem 1rem; text-align: center; color: #8b8578; font-size: 13px; }
+/* Dentro del modal la caja ya está enmarcada por el propio modal */
+.sb-mp .sb-caja { border: none; background: none; padding: 0; margin: 0; }
+
+.sb-mp-x {
+  position: sticky; top: 10px; float: right; margin: 10px 10px 0 0;
+  z-index: 2; width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(26,31,46,.06); border: none; cursor: pointer;
+  font-size: 22px; line-height: 1; color: #4a4640;
+  transition: background .18s, color .18s;
+}
+.sb-mp-x:hover { background: rgba(224,92,92,.12); color: #e05c5c; }
+
+body.sb-mp-abierto { overflow: hidden; }
+
+/* Cabecera con la prenda: solo aparece en el modal, porque ahí no hay
+   fotos ni nombre alrededor que digan de qué subasta se trata. */
+.sb-prenda {
+  display: flex; align-items: center; gap: 13px;
+  padding-bottom: 15px; margin-bottom: 15px;
+  border-bottom: 1px solid rgba(26,31,46,.08);
+}
+.sb-prenda-foto {
+  width: 62px; height: 78px; object-fit: cover; border-radius: 11px;
+  flex-shrink: 0; background: #eceef4;
+}
+.sb-prenda-datos { min-width: 0; }
+.sb-prenda-marca {
+  font-size: 10px; font-weight: 800; letter-spacing: .12em;
+  text-transform: uppercase; color: #8b8578; margin-bottom: 2px;
+}
+.sb-prenda-nombre {
+  font-size: 15px; font-weight: 700; color: #1a1f2e; line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
+  -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+}
+.sb-prenda-link {
+  display: inline-block; margin-top: 4px; font-size: 11.5px;
+  color: #2d6be4; text-decoration: none; font-weight: 600;
+}
+.sb-prenda-link:hover { text-decoration: underline; }
+
+/* El botón rápido de la tarjeta, en modo subasta */
+.card-quick-sb {
+  border: none; cursor: pointer; font-family: 'DM Sans', system-ui, sans-serif;
+  background: #2d6be4; color: #fff;
+}
+.card-quick-sb:hover { background: #2559c4; }
+.card-quick-sb.cerrada { background: rgba(26,31,46,.82); }
+
+@media (max-width: 560px) {
+  .sb-mp {
+    width: 100%; max-width: none; left: 0; right: 0; top: auto; bottom: 0;
+    transform: translateY(100%); border-radius: 22px 22px 0 0;
+    max-height: 92vh;
+  }
+  .sb-mp.open { transform: translateY(0); }
+  .sb-mp-body { padding: 14px 16px calc(20px + env(safe-area-inset-bottom, 0px)); }
+}

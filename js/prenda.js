@@ -179,6 +179,10 @@ function pintarPrenda(p) {
     `Hola! Me interesa: ${p.nombre}${p.talla ? ' · Talla ' + p.talla : ''} · $${p.precio_venta} MXN\n${location.href}`);
   const waUrl = `https://wa.me/${wa}?text=${waMsg}`;
 
+  // Si está en subasta, el precio fijo y el botón de apartar sobran: aquí
+  // no se aparta, se oferta.
+  const enSubasta = typeof subastaDe === 'function' && !!subastaDe(p.id) && !p.vendido;
+
   const tallaBase   = String(p.talla || '').split('·')[0].trim();
   const tallaExtras = String(p.talla || '').split('·').slice(1).map(x => x.trim()).filter(Boolean);
 
@@ -189,7 +193,7 @@ function pintarPrenda(p) {
     ['Marca', p.marca || 'Sin marca'],
     cats.length ? ['Categoría', cats.join(', ')] : null,
     ['Ubicación', (bz && bz.ubicacion) || 'Reynosa, Tamps.'],
-    ['Disponibilidad', p.vendido ? 'Vendida' : 'Disponible · pieza única'],
+    ['Disponibilidad', p.vendido ? 'Vendida' : enSubasta ? 'En subasta · pieza única' : 'Disponible · pieza única'],
   ].filter(Boolean);
 
   document.getElementById('ppContenido').innerHTML = `
@@ -222,19 +226,22 @@ function pintarPrenda(p) {
       <h1 class="pp-nombre">${pEsc(p.nombre)}</h1>
       <div class="pp-meta">${pEsc(haceCuanto(p))}</div>
 
+      ${enSubasta ? '' : `
       <div class="pp-precio-fila">
         <span class="pp-precio">${pMoney(p.precio_venta)}</span>
         ${p.vendido ? `<span class="pp-vendida">Vendida</span>` : `<span class="pp-unica">Pieza única</span>`}
-      </div>
+      </div>`}
+
+      <div id="sbPanel" hidden></div>
 
       ${cats.length ? `<div class="pp-chips">${cats.map(c =>
         `<a class="pp-chip" href="tienda.html?cat=${encodeURIComponent(c)}">${pEsc(c)}</a>`).join('')}</div>` : ''}
 
-      <div class="pp-acciones">
-        <a class="pp-btn-wa" href="${waUrl}" target="_blank" rel="noopener">
+      <div class="pp-acciones${enSubasta ? ' sin-wa' : ''}">
+        ${enSubasta ? '' : `<a class="pp-btn-wa" href="${waUrl}" target="_blank" rel="noopener">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.558 4.147 1.535 5.886L0 24l6.274-1.507A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.853 0-3.587-.5-5.084-1.367l-.361-.214-3.733.897.931-3.618-.235-.374A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
           Apartar por WhatsApp
-        </a>
+        </a>`}
         <button class="pp-btn-fav ${wlTiene(id) ? 'active' : ''}" id="ppFav" onclick="wlAlternar()" aria-label="Guardar en wishlist">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -290,14 +297,39 @@ function pintarPrenda(p) {
 
   activarZoom();
 
-  // Barra fija de compra en el celular
+  // Barra fija de compra en el celular. En subasta apunta al panel de
+  // ofertas: mandar a WhatsApp desde ahí sería saltarse la subasta.
   const barra = document.getElementById('ppBarra');
   if (barra) {
     barra.hidden = false;
-    document.getElementById('ppBarraPrecio').innerHTML = pMoney(p.precio_venta);
     document.getElementById('ppBarraNombre').textContent = p.nombre;
-    document.getElementById('ppBarraWa').href = waUrl;
+    const precioBarra = document.getElementById('ppBarraPrecio');
+    const btnBarra    = document.getElementById('ppBarraWa');
+    if (enSubasta) {
+      const s = subastaDe(p.id);
+      if (precioBarra) precioBarra.innerHTML =
+        pMoney(s.totalOfertas ? s.ofertaActual : s.precioInicial) +
+        ` <small style="font-weight:400;opacity:.7">en subasta</small>`;
+      if (btnBarra) {
+        btnBarra.href = '#sbPanel';
+        btnBarra.target = '';
+        btnBarra.textContent = 'Ofertar';
+        btnBarra.onclick = e => {
+          e.preventDefault();
+          document.getElementById('sbPanel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => document.getElementById('sbMonto')?.focus(), 400);
+        };
+      }
+    } else {
+      if (precioBarra) precioBarra.innerHTML = pMoney(p.precio_venta);
+      if (btnBarra) btnBarra.href = waUrl;
+    }
   }
+
+  // El estado real de la subasta se pide al servidor: el del sync puede
+  // tener hasta quince segundos y aquí eso ya es dinero de otro.
+  if (enSubasta) sbCargar(p.id);
+  else { clearInterval(sbTimer); clearInterval(sbPoll); }
 
   pintarRelacionadas(p, bz);
 }
@@ -399,3 +431,310 @@ window.addEventListener('db:inventario', () => {
   const actual = getDB().find(x => String(x.id) === String(prenda.id));
   if (actual) pintarPrenda(actual);
 });
+
+/* ═══════════════════════════════════════════════════════════
+   SUBASTA
+   Gana quien ofrezca más antes de que se acabe el tiempo. Se puede
+   participar con cuenta o dejando un @usuario temporal y un teléfono
+   (si ganas, el bazar necesita poder encontrarte).
+   ═══════════════════════════════════════════════════════════ */
+const SB_INC = 50;
+const SB_INVITADO_KEY = 'stmp_subasta_invitado';
+
+let sbEstado   = null;   // { subasta, historial, yo }
+let sbTimer    = null;   // cuenta regresiva (1s)
+let sbPoll     = null;   // relectura del servidor (8s)
+let sbEnviando = false;
+
+const sbMoney = n => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+
+// Quién soy en esta subasta: la cuenta si hay sesión; si no, el usuario
+// temporal que dejé la última vez en este navegador.
+function sbInvitado() {
+  try { return JSON.parse(localStorage.getItem(SB_INVITADO_KEY)) || null; }
+  catch { return null; }
+}
+function sbGuardarInvitado(username, telefono) {
+  try { localStorage.setItem(SB_INVITADO_KEY, JSON.stringify({ username, telefono })); }
+  catch (_) {}
+}
+function sbYo() {
+  const cuenta = (typeof Cuenta !== 'undefined' && Cuenta.perfil?.()) || null;
+  if (cuenta?.username) return { username: cuenta.username, tipo: 'cuenta' };
+  const inv = sbInvitado();
+  return inv?.username ? { username: inv.username, tipo: 'invitado' } : null;
+}
+
+// ── Carga y refresco ────────────────────────────────────────
+async function sbCargar(prendaId) {
+  try {
+    sbEstado = await Cuenta.subasta(prendaId);
+  } catch (_) {
+    sbEstado = null;                       // no está en subasta, o falló
+  }
+  sbPintar();
+  sbArrancarRelojes(prendaId);
+}
+
+function sbArrancarRelojes(prendaId) {
+  clearInterval(sbTimer); clearInterval(sbPoll);
+  if (!sbEstado || sbEstado.subasta.cerrada) return;
+
+  // El contador baja cada segundo; el servidor se consulta cada 8.
+  sbTimer = setInterval(sbPintarReloj, 1000);
+  sbPoll  = setInterval(async () => {
+    try {
+      const antes = sbEstado?.subasta?.totalOfertas ?? 0;
+      sbEstado = await Cuenta.subasta(prendaId);
+      sbPintar();
+      if (sbEstado.subasta.totalOfertas > antes && antes > 0) {
+        const lider = sbEstado.subasta.lider?.username;
+        const yo = sbYo();
+        if (yo && lider && lider !== yo.username) aviso(`Te superaron: van ${sbMoney(sbEstado.subasta.ofertaActual)}`);
+      }
+      if (sbEstado.subasta.cerrada) { clearInterval(sbPoll); clearInterval(sbTimer); }
+    } catch (_) {}
+  }, 8000);
+}
+
+// Solo el contador, cada segundo, sin repintar todo el panel
+function sbPintarReloj() {
+  const el = document.getElementById('sbReloj');
+  if (!el || !sbEstado) return;
+  const ms = new Date(sbEstado.subasta.fin).getTime() - Date.now();
+  if (ms <= 0) {
+    clearInterval(sbTimer);
+    el.textContent = 'Terminó';
+    el.classList.add('fin');
+    sbPintar();
+    return;
+  }
+  el.textContent = typeof tiempoRestante === 'function' ? tiempoRestante(sbEstado.subasta.fin) : '';
+  el.classList.toggle('urge', ms < 3600000);   // menos de una hora
+}
+
+// ── El panel ────────────────────────────────────────────────
+function sbPintar() {
+  const cont = document.getElementById('sbPanel');
+  if (!cont) return;
+  if (!sbEstado) { cont.innerHTML = ''; cont.hidden = true; return; }
+
+  cont.hidden = false;
+  const s = sbEstado.subasta;
+  const terminada = s.cerrada || new Date(s.fin).getTime() <= Date.now();
+  cont.innerHTML = terminada ? sbPanelCerrado(s) : sbPanelAbierto(s);
+  if (!terminada) sbPintarReloj();
+}
+
+function sbPanelAbierto(s) {
+  const yo = sbYo();
+  const voyGanando = yo && s.lider && s.lider.username === yo.username;
+  const cuenta = (typeof Cuenta !== 'undefined' && Cuenta.perfil?.()) || null;
+  const inv = sbInvitado();
+
+  return `
+    <div class="sb-caja">
+      <div class="sb-cabecera">
+        <span class="sb-etiqueta"><span class="sb-latido"></span>Subasta en curso</span>
+        <span class="sb-reloj" id="sbReloj"></span>
+      </div>
+
+      <div class="sb-cifra">
+        <div class="sb-cifra-label">${s.totalOfertas ? 'Oferta más alta' : 'Precio de salida'}</div>
+        <div class="sb-cifra-monto">${sbMoney(s.totalOfertas ? s.ofertaActual : s.precioInicial)}
+          <span class="sb-cur">MXN</span></div>
+        <div class="sb-cifra-pie">
+          ${s.totalOfertas
+            ? `${s.totalOfertas} oferta${s.totalOfertas === 1 ? '' : 's'} · va ganando <b>@${pEsc(s.lider?.username || '')}</b>`
+            : 'Todavía nadie oferta. Puedes ser el primero.'}
+        </div>
+      </div>
+
+      ${voyGanando ? `<div class="sb-vas-ganando">Vas ganando con ${sbMoney(s.ofertaActual)}</div>` : ''}
+
+      <form class="sb-form" onsubmit="sbEnviar(event)">
+        <label class="sb-campo-monto">
+          <span>Tu oferta (mínimo ${sbMoney(s.minimo)})</span>
+          <div class="sb-monto-fila">
+            <span class="sb-monto-signo">$</span>
+            <input type="number" id="sbMonto" inputmode="numeric"
+                   min="${s.minimo}" step="${SB_INC}" value="${s.minimo}">
+          </div>
+        </label>
+        <div class="sb-saltos">
+          <button type="button" onclick="sbSumar(0)">${sbMoney(s.minimo)}</button>
+          <button type="button" onclick="sbSumar(${SB_INC})">+${SB_INC}</button>
+          <button type="button" onclick="sbSumar(${SB_INC * 2})">+${SB_INC * 2}</button>
+          <button type="button" onclick="sbSumar(${SB_INC * 5})">+${SB_INC * 5}</button>
+        </div>
+
+        ${cuenta ? `
+          <div class="sb-identidad con-cuenta">
+            Ofertas como <b>@${pEsc(cuenta.username || '')}</b>
+          </div>`
+        : `
+          <div class="sb-identidad">
+            <p class="sb-identidad-nota">
+              Para ofertar sin cuenta deja un usuario y un teléfono: si ganas,
+              es como el bazar te encuentra. Tu teléfono no se muestra a nadie más.
+            </p>
+            <div class="sb-identidad-campos">
+              <label>
+                <span>Tu usuario</span>
+                <div class="sb-arroba"><i>@</i>
+                  <input type="text" id="sbUser" maxlength="30" placeholder="comoteconocen"
+                         value="${pEsc(inv?.username || '')}" autocomplete="nickname">
+                </div>
+              </label>
+              <label>
+                <span>Tu WhatsApp</span>
+                <input type="tel" id="sbTel" maxlength="15" placeholder="10 dígitos"
+                       value="${pEsc(inv?.telefono || '')}" autocomplete="tel">
+              </label>
+            </div>
+            <a class="sb-identidad-link" href="cuenta.html?registro=1">¿Mejor con cuenta? Créala en un minuto</a>
+          </div>`}
+
+        <div class="sb-error" id="sbError"></div>
+        <button type="submit" class="sb-btn" id="sbBtn">
+          Ofertar ${sbMoney(s.minimo)}
+        </button>
+      </form>
+
+      ${sbHistorial()}
+
+      <p class="sb-reglas">
+        Cada oferta sube al menos ${sbMoney(SB_INC)}. Al terminar el tiempo,
+        gana la más alta y el bazar contacta al ganador. Ofertar es un
+        compromiso de compra.
+      </p>
+    </div>`;
+}
+
+function sbPanelCerrado(s) {
+  const yo = sbYo();
+  const gane = yo && s.ganador && s.ganador.username === yo.username;
+  const bz = typeof prenda !== 'undefined' ? bazarDe(prenda) : null;
+  const wa = bz && bz.whatsapp ? String(bz.whatsapp).replace(/[^0-9]/g, '') : WA_POR_DEFECTO;
+  const msg = encodeURIComponent(
+    `¡Hola! Soy @${yo?.username || ''} y gané la subasta de "${prenda?.nombre || ''}" ` +
+    `con ${sbMoney(s.ofertaActual)} MXN. ¿Cómo la recojo?\n${location.href}`);
+
+  if (!s.ganador) {
+    return `
+      <div class="sb-caja cerrada">
+        <div class="sb-cabecera">
+          <span class="sb-etiqueta gris">Subasta terminada</span>
+        </div>
+        <div class="sb-cifra">
+          <div class="sb-cifra-label">Nadie ofertó</div>
+          <div class="sb-cifra-pie">Se quedó sin ofertas. Pregúntale al bazar si la vuelve a subastar.</div>
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="sb-caja cerrada${gane ? ' gane' : ''}">
+      <div class="sb-cabecera">
+        <span class="sb-etiqueta ${gane ? 'verde' : 'gris'}">
+          ${gane ? '¡Ganaste la subasta!' : 'Subasta terminada'}
+        </span>
+      </div>
+
+      <div class="sb-cifra">
+        <div class="sb-cifra-label">Oferta ganadora</div>
+        <div class="sb-cifra-monto">${sbMoney(s.ofertaActual)} <span class="sb-cur">MXN</span></div>
+        <div class="sb-cifra-pie">
+          ${gane ? 'Es tuya. Escríbele al bazar para cerrar la entrega.'
+                 : `Se la llevó <b>@${pEsc(s.ganador.username)}</b>`}
+        </div>
+      </div>
+
+      ${gane ? `
+        <a class="sb-btn-wa" href="https://wa.me/${wa}?text=${msg}" target="_blank" rel="noopener">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.558 4.147 1.535 5.886L0 24l6.274-1.507A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.853 0-3.587-.5-5.084-1.367l-.361-.214-3.733.897.931-3.618-.235-.374A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+          Contactar al bazar
+        </a>` : ''}
+
+      ${sbHistorial()}
+    </div>`;
+}
+
+function sbHistorial() {
+  const h = sbEstado?.historial || [];
+  if (!h.length) return '';
+  const yo = sbYo();
+  return `
+    <details class="sb-historial">
+      <summary>Ver las ${h.length} oferta${h.length === 1 ? '' : 's'}</summary>
+      <div class="sb-historial-lista">
+        ${h.map((o, i) => `
+          <div class="sb-fila${i === 0 ? ' top' : ''}${yo && o.username === yo.username ? ' mia' : ''}">
+            <span class="sb-fila-user">@${pEsc(o.username)}${
+              yo && o.username === yo.username ? '<i>tú</i>' : ''}</span>
+            <span class="sb-fila-monto">${sbMoney(o.monto)}</span>
+          </div>`).join('')}
+      </div>
+    </details>`;
+}
+
+// ── Interacción ─────────────────────────────────────────────
+function sbSumar(extra) {
+  const campo = document.getElementById('sbMonto');
+  if (!campo || !sbEstado) return;
+  campo.value = sbEstado.subasta.minimo + extra;
+  const btn = document.getElementById('sbBtn');
+  if (btn) btn.textContent = `Ofertar ${sbMoney(campo.value)}`;
+}
+
+async function sbEnviar(e) {
+  e.preventDefault();
+  if (sbEnviando) return;
+
+  const err = document.getElementById('sbError');
+  const btn = document.getElementById('sbBtn');
+  const decir = m => { if (err) { err.textContent = m; err.classList.add('visible'); } };
+  if (err) { err.textContent = ''; err.classList.remove('visible'); }
+
+  const monto = Number(document.getElementById('sbMonto')?.value);
+  if (!monto || monto < sbEstado.subasta.minimo) {
+    return decir(`La oferta mínima es de ${sbMoney(sbEstado.subasta.minimo)}`);
+  }
+
+  const cuenta = (typeof Cuenta !== 'undefined' && Cuenta.perfil?.()) || null;
+  const cuerpo = { prendaId: prenda.id, monto };
+
+  if (!cuenta) {
+    const username = (document.getElementById('sbUser')?.value || '').trim().replace(/^@+/, '');
+    const telefono = (document.getElementById('sbTel')?.value || '').replace(/[^0-9]/g, '');
+    if (username.length < 3) return decir('Tu usuario necesita al menos 3 caracteres');
+    if (telefono.length < 10) return decir('Escribe tu teléfono a 10 dígitos');
+    cuerpo.username = username;
+    cuerpo.telefono = telefono;
+  }
+
+  sbEnviando = true;
+  if (btn) { btn.disabled = true; btn.textContent = 'Ofertando…'; }
+
+  try {
+    const r = await Cuenta.ofertar(cuerpo);
+    if (cuerpo.username) sbGuardarInvitado(cuerpo.username, cuerpo.telefono);
+    sbEstado = { subasta: r.subasta, historial: r.historial, yo: r.yo };
+    sbPintar();
+    aviso(`¡Vas ganando con ${sbMoney(r.subasta.ofertaActual)}!`);
+  } catch (e2) {
+    decir(e2.message || 'No se pudo registrar tu oferta');
+    // Si fue porque alguien se adelantó, hay que enseñar el precio nuevo
+    try {
+      sbEstado = await Cuenta.subasta(prenda.id);
+      const campo = document.getElementById('sbMonto');
+      const antes = document.getElementById('sbError')?.textContent;
+      sbPintar();
+      if (antes) decir(antes);
+      if (campo) campo.value = sbEstado.subasta.minimo;
+    } catch (_) {}
+  } finally {
+    sbEnviando = false;
+    if (btn) { btn.disabled = false; btn.textContent = `Ofertar ${sbMoney(sbEstado?.subasta?.minimo || 0)}`; }
+  }
+}

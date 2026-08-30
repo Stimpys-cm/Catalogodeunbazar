@@ -194,6 +194,10 @@ function pintarPrenda(p) {
     `Hola! Me interesa: ${p.nombre}${p.talla ? ' · Talla ' + p.talla : ''} · $${p.precio_venta} MXN\n${location.href}`);
   const waUrl = `https://wa.me/${wa}?text=${waMsg}`;
 
+  // Si está en subasta, el precio fijo y el botón de apartar sobran: aquí
+  // no se aparta, se oferta.
+  const enSubasta = typeof subastaDe === 'function' && !!subastaDe(p.id) && !p.vendido;
+
   const tallaBase   = String(p.talla || '').split('·')[0].trim();
   const tallaExtras = String(p.talla || '').split('·').slice(1).map(x => x.trim()).filter(Boolean);
 
@@ -204,7 +208,7 @@ function pintarPrenda(p) {
     ['Marca', p.marca || 'Sin marca'],
     cats.length ? ['Categoría', cats.join(', ')] : null,
     ['Ubicación', (bz && bz.ubicacion) || 'Reynosa, Tamps.'],
-    ['Disponibilidad', p.vendido ? 'Vendida' : 'Disponible · pieza única'],
+    ['Disponibilidad', p.vendido ? 'Vendida' : enSubasta ? 'En subasta · pieza única' : 'Disponible · pieza única'],
   ].filter(Boolean);
 
   document.getElementById('ppContenido').innerHTML = `
@@ -237,19 +241,22 @@ function pintarPrenda(p) {
       <h1 class="pp-nombre">${pEsc(p.nombre)}</h1>
       <div class="pp-meta">${pEsc(haceCuanto(p))}</div>
 
+      ${enSubasta ? '' : `
       <div class="pp-precio-fila">
         <span class="pp-precio">${pMoney(p.precio_venta)}</span>
         ${p.vendido ? `<span class="pp-vendida">Vendida</span>` : `<span class="pp-unica">Pieza única</span>`}
-      </div>
+      </div>`}
+
+      <div id="sbPanel" hidden></div>
 
       ${cats.length ? `<div class="pp-chips">${cats.map(c =>
         `<a class="pp-chip" href="tienda.html?cat=${encodeURIComponent(c)}">${pEsc(c)}</a>`).join('')}</div>` : ''}
 
-      <div class="pp-acciones">
-        <a class="pp-btn-wa" href="${waUrl}" target="_blank" rel="noopener">
+      <div class="pp-acciones${enSubasta ? ' sin-wa' : ''}">
+        ${enSubasta ? '' : `<a class="pp-btn-wa" href="${waUrl}" target="_blank" rel="noopener">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.558 4.147 1.535 5.886L0 24l6.274-1.507A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.853 0-3.587-.5-5.084-1.367l-.361-.214-3.733.897.931-3.618-.235-.374A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
           Apartar por WhatsApp
-        </a>
+        </a>`}
         <button class="pp-btn-fav ${wlTiene(id) ? 'active' : ''}" id="ppFav" onclick="wlAlternar()" aria-label="Guardar en wishlist">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -305,13 +312,40 @@ function pintarPrenda(p) {
 
   activarZoom();
 
-  // Barra fija de compra en el celular
+  // Barra fija de compra en el celular. En subasta apunta al panel de
+  // ofertas: mandar a WhatsApp desde ahí sería saltarse la subasta.
   const barra = document.getElementById('ppBarra');
   if (barra) {
     barra.hidden = false;
-    document.getElementById('ppBarraPrecio').innerHTML = pMoney(p.precio_venta);
     document.getElementById('ppBarraNombre').textContent = p.nombre;
-    document.getElementById('ppBarraWa').href = waUrl;
+    const precioBarra = document.getElementById('ppBarraPrecio');
+    const btnBarra    = document.getElementById('ppBarraWa');
+    if (enSubasta) {
+      const sb = subastaDe(p.id);
+      if (precioBarra) precioBarra.innerHTML =
+        pMoney(sb.totalOfertas ? sb.ofertaActual : sb.precioInicial) +
+        ' <small style="font-weight:400;opacity:.7">en subasta</small>';
+      if (btnBarra) {
+        btnBarra.href = '#sbPanel';
+        btnBarra.removeAttribute('target');
+        btnBarra.textContent = 'Ofertar';
+        btnBarra.onclick = ev => {
+          ev.preventDefault();
+          document.getElementById('sbPanel')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => document.querySelector('#sbPanel .sb-monto')?.focus(), 400);
+        };
+      }
+    } else {
+      if (precioBarra) precioBarra.innerHTML = pMoney(p.precio_venta);
+      if (btnBarra) { btnBarra.href = waUrl; btnBarra.onclick = null; }
+    }
+  }
+
+  // El estado real de la subasta se pide al servidor: el del sync puede
+  // tener hasta quince segundos y aquí eso ya es dinero de otro.
+  if (typeof Subasta !== 'undefined') {
+    if (enSubasta) Subasta.montar(document.getElementById('sbPanel'), p);
+    else Subasta.desmontar();
   }
 
   pintarRelacionadas(p, bz);

@@ -14,6 +14,9 @@
 //   GET  /api/cuenta?op=mis-resenas                 → lo que dicen de mí
 //   POST /api/cuenta?op=resena     { ventaId, estrellas, etiquetas,
 //                                    comentario }   → califica al bazar
+//   GET  /api/cuenta?op=subasta&id=N                → estado en vivo
+//   POST /api/cuenta?op=ofertar    { prendaId, monto, username?,
+//                                    telefono? }    → puja en una subasta
 //
 // La cuenta de un comprador NO da acceso a nada del panel: son colecciones
 // distintas y esta función nunca toca 'usuarios'.
@@ -26,6 +29,13 @@ import {
   ventaPublica, resenaPublica, promedio, asegurarIndices,
   ETIQUETAS_BAZAR,
 } from './_ventas.js';
+import { leerAjustes, cerrada, mensajeDe } from './_ajustes.js';
+import { getUser } from './_auth.js';
+import {
+  leerSubasta, historial, ofertar, subastaPublica, ofertaPublica,
+  registrarInvitado, asegurarIndicesSubasta,
+} from './_subastas.js';
+import { esGlobal } from './_bazar.js';
 import crypto from 'crypto';
 
 const COOKIE = 'cliente';
@@ -50,10 +60,29 @@ function leerToken(req) {
 const texto = (v, max = 200) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 const emailValido = e => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(e) && e.length <= 120;
 
+// Las mismas reglas que muestra la página mientras escribes. Se vuelven
+// a comprobar aquí porque el navegador no es de fiar: cualquiera puede
+// mandar el registro sin pasar por el formulario.
+const PW_OBVIAS = [
+  'password', 'contrasena', 'contraseña', '12345678', '123456789',
+  'qwerty', 'iloveyou', 'admin', 'bienvenido', 'mexico', 'stmpmarket',
+  'stiimpys', 'abc123', 'letmein', 'football', 'princess', 'monkey',
+];
+
 function passwordDebil(pw) {
-  if (typeof pw !== 'string' || pw.length < 8)  return 'La contraseña necesita al menos 8 caracteres';
-  if (pw.length > 200)                          return 'La contraseña es demasiado larga';
-  if (!/[a-z]/i.test(pw) || !/[0-9]/.test(pw))  return 'La contraseña necesita letras y números';
+  if (typeof pw !== 'string' || pw.length < 8) return 'La contraseña necesita al menos 8 caracteres';
+  if (pw.length > 200)                         return 'La contraseña es demasiado larga';
+  if (!/[A-Z]/.test(pw))                       return 'La contraseña necesita al menos una mayúscula';
+  if (!/[a-z]/.test(pw))                       return 'La contraseña necesita al menos una minúscula';
+  if (!/[0-9]/.test(pw))                       return 'La contraseña necesita al menos un número';
+  if (!/[^A-Za-z0-9]/.test(pw))                return 'La contraseña necesita al menos un símbolo (!@#$…)';
+
+  const limpio = pw.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (PW_OBVIAS.some(mala => limpio.includes(mala)) ||
+      /^(.)\1+$/.test(pw) ||
+      /^(0?123456789|abcdefgh)/.test(limpio)) {
+    return 'Esa contraseña es de las primeras que alguien probaría. Elige otra.';
+  }
   return null;
 }
 
@@ -97,6 +126,88 @@ export default async function handler(req, res) {
       try { await col.createIndex({ sesionToken: 1 }); } catch (_) {}
       try { await col.createIndex({ username: 1 }, { unique: true, sparse: true }); } catch (_) {}
       global._idxClientes = true;
+    }
+
+    // ── SUBASTA: estado en vivo ──────────────────────────────
+    // Público y sin caché: la gente necesita ver la oferta de verdad,
+    // no una de hace quince segundos, para saber cuánto ofertar.
+    if (op === 'subasta' && req.method === 'GET') {
+      const prendaId = Number(req.query.id);
+      if (!prendaId) return res.status(400).json({ error: 'Falta el id de la prenda' });
+
+      const s = await leerSubasta(prendaId);
+      if (!s) return res.status(404).json({ error: 'Esa prenda no está en subasta' });
+
+      res.setHeader('Cache-Control', 'no-store');
+      const yo = await clienteDeSesion(req).catch(() => null);
+      return res.status(200).json({
+        subasta:   subastaPublica(s),
+        historial: (await historial(prendaId)).map(ofertaPublica),
+        // Para que la página sepa si quien mira es el que va ganando
+        yo: yo?.username || null,
+      });
+    }
+
+    // ── SUBASTA: ofertar ─────────────────────────────────────
+    if (op === 'ofertar' && req.method === 'POST') {
+      if (!(await rateLimit(req, res, { key: 'ofertar', max: 30, windowSec: 900 }))) return;
+      await asegurarIndicesSubasta();
+
+      const ajustes = await leerAjustes();
+      if (cerrada(ajustes, 'sitio') || cerrada(ajustes, 'tienda')) {
+        const quien = await getUser(req).catch(() => null);
+        if (!esGlobal(quien)) {
+          const seccion = cerrada(ajustes, 'sitio') ? 'sitio' : 'tienda';
+          return res.status(503).json({ error: mensajeDe(ajustes, seccion), mantenimiento: true });
+        }
+      }
+
+      const prendaId = Number(req.body?.prendaId);
+      const monto    = Number(req.body?.monto);
+      if (!prendaId) return res.status(400).json({ error: 'Falta la prenda' });
+
+      // Con cuenta se oferta con tu @username de siempre. Sin cuenta hay
+      // que dejar un nombre temporal y un teléfono: si ganas, el bazar
+      // necesita poder encontrarte.
+      let postor;
+      const yo = await clienteDeSesion(req).catch(() => null);
+      if (yo) {
+        if (!yo.username) return res.status(409).json({ error: 'Tu cuenta todavía no tiene @usuario. Ponle uno en Ajustes de perfil.' });
+        postor = { username: yo.username, tipo: 'cuenta', clienteId: yo.id, telefono: yo.telefono || '' };
+      } else {
+        const alta = await registrarInvitado(req.body?.username, req.body?.telefono);
+        if (!alta.ok) return res.status(409).json({ error: alta.error });
+        postor = { username: alta.invitado.username, tipo: 'invitado', telefono: alta.invitado.telefono };
+      }
+
+      const r = await ofertar({ prendaId, monto, postor });
+      if (!r.ok) return res.status(r.codigo || 400).json({ error: r.error });
+
+      invalidarCacheSync();
+      return res.status(200).json({
+        ok: true,
+        subasta:   subastaPublica(r.subasta),
+        historial: (await historial(prendaId)).map(ofertaPublica),
+        yo: postor.username,
+      });
+    }
+
+    // Si el admin cerró las cuentas, nadie entra ni se registra.
+    // Lo demás (ver la sesión que ya tenías, cerrarla) sigue funcionando.
+    // El admin general es la excepción: necesita poder probar el flujo
+    // completo de comprador mientras arregla lo que sea que esté cerrado.
+    if (op === 'registro' || op === 'entrar') {
+      const ajustes = await leerAjustes();
+      if (cerrada(ajustes, 'cuentas') || cerrada(ajustes, 'sitio')) {
+        const quien = await getUser(req).catch(() => null);
+        if (!esGlobal(quien)) {
+          const seccion = cerrada(ajustes, 'sitio') ? 'sitio' : 'cuentas';
+          return res.status(503).json({
+            error: mensajeDe(ajustes, seccion),
+            mantenimiento: true,
+          });
+        }
+      }
     }
 
     // ── REGISTRO ─────────────────────────────────────────────
