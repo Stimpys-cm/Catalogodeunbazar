@@ -145,6 +145,71 @@ function pintarRail(id, items, seccionId) {
 }
 
 // ─── FICHA ───────────────────────────────────────────────────
+
+// ─── SEO de la ficha ─────────────────────────────────────────
+// El buscador ejecuta el JS de la página, así que la etiqueta canónica y
+// los datos estructurados se escriben aquí, ya con la prenda cargada. El
+// preview de WhatsApp no depende de esto: lo arma api/prenda.js.
+function ppMeta(selector, atributo, valor) {
+  const el = document.querySelector(selector);
+  if (el) el.setAttribute(atributo, valor);
+}
+
+function pintarSEO(p, bz) {
+  const url = `${location.origin}/prenda.html?id=${encodeURIComponent(p._id || p.id)}`;
+
+  let canonica = document.querySelector('link[rel="canonical"]');
+  if (!canonica) {
+    canonica = document.createElement('link');
+    canonica.rel = 'canonical';
+    document.head.appendChild(canonica);
+  }
+  canonica.href = url;
+
+  const resumen = [
+    `$${Number(p.precio_venta || 0).toLocaleString('es-MX')} MXN`,
+    p.talla ? `Talla ${p.talla}` : '',
+    p.estado || '',
+    bz ? `en ${bz.nombre}` : '',
+  ].filter(Boolean).join(' · ');
+
+  ppMeta('meta[name="description"]',        'content', resumen);
+  ppMeta('meta[property="og:title"]',       'content', document.title);
+  ppMeta('meta[property="og:description"]', 'content', resumen);
+
+  const datos = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: p.nombre,
+    image: fotos.length ? fotos : undefined,
+    description: p.descripcion || resumen,
+    brand: p.marca ? { '@type': 'Brand', name: p.marca } : undefined,
+    size: p.talla || undefined,
+    itemCondition: /nuev/i.test(String(p.estado || ''))
+      ? 'https://schema.org/NewCondition'
+      : 'https://schema.org/UsedCondition',
+    offers: {
+      '@type': 'Offer',
+      price: Number(p.precio_venta) || 0,
+      priceCurrency: 'MXN',
+      availability: p.vendido
+        ? 'https://schema.org/SoldOut'
+        : 'https://schema.org/InStock',
+      url,
+      seller: { '@type': 'Organization', name: (bz && bz.nombre) || 'STMP MARKET' },
+    },
+  };
+
+  let bloque = document.getElementById('ppDatos');
+  if (!bloque) {
+    bloque = document.createElement('script');
+    bloque.type = 'application/ld+json';
+    bloque.id = 'ppDatos';
+    document.head.appendChild(bloque);
+  }
+  bloque.textContent = JSON.stringify(datos);
+}
+
 function pintarPrenda(p) {
   prenda = p;
   fotos  = Array.isArray(p.imagenes) ? p.imagenes.filter(Boolean) : [];
@@ -162,6 +227,7 @@ function pintarPrenda(p) {
   if (meta) meta.setAttribute('content', color);
 
   document.title = `${p.nombre}${p.marca ? ' · ' + p.marca : ''} | STMP MARKET`;
+  pintarSEO(p, bz);
 
   // Migas de pan
   const cats = Array.isArray(p.categorias) ? p.categorias : [];

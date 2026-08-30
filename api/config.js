@@ -7,7 +7,7 @@
 //  - usuarios                     → ADMIN completo; un vendedor solo puede
 //    cambiar SU PROPIO avatar (bloquea escalación de privilegios).
 
-import { getDB } from './_db.js';
+import { getDB, invalidarSyncCache } from './_db.js';
 import { requireAuth } from './_auth.js';
 import { esGlobal, puede, normalizarPermisos, PERMISOS_DEFAULT } from './_bazar.js';
 
@@ -21,7 +21,6 @@ const DEFAULTS = {
   marcas: [
     { id:1, nombre:'Nike' }, { id:2, nombre:'Adidas' }, { id:3, nombre:'Supreme' }, { id:4, nombre:'Dickies' },
   ],
-  usuarios: [ { id:1, username:'admin', password:'stiimpys2026', role:'admin', bazarId:null } ],
   bazares: [
     { id:1, slug:'stiimpys', nombre:'Stiimpys', whatsapp:'528995284602',
       instagram:'stiimpys', descripcion:'Streetwear, vintage y prendas únicas seleccionadas a mano.',
@@ -71,6 +70,10 @@ export default async function handler(req, res) {
       }
       if (!Array.isArray(list)) {
         return res.status(400).json({ error: 'body.list debe ser array' });
+      }
+      // El guardado va por id: sin él no se sabe qué documento reemplazar.
+      if (list.some(x => x == null || x.id == null)) {
+        return res.status(400).json({ error: 'Todos los elementos deben tener id' });
       }
 
       const col  = db.collection(colName);
@@ -122,9 +125,8 @@ export default async function handler(req, res) {
               return res.status(400).json({ error: 'Color inválido. Usa formato #2d6be4.' });
             }
           }
-          await col.deleteMany({});
-          if (list.length > 0) await col.insertMany(list);
-          try { global._syncCache = null; global._syncCacheTime = 0; global._syncCachePub = null; } catch (_) {}
+          await guardarColeccion(col, list);
+          invalidarSyncCache();
           return res.status(200).json({ ok: true, count: list.length });
         }
         // Normalizar permisos y no permitir slugs repetidos
@@ -228,11 +230,15 @@ export default async function handler(req, res) {
         const byId = new Map(prev.map(u => [u.id, u]));
         toInsert = list.map(u => {
           const old = byId.get(u.id);
-          const { password: _ignorada, sessionToken: _ignorado, ...limpio } = u;
+          const { password: _ignorada, sessionToken: _ignorado,
+                  tokenExpira: _ignorada2, ...limpio } = u;
           return {
             ...limpio,
             password:     old ? old.password : undefined,
             sessionToken: old ? old.sessionToken : null,
+            // Igual que el token: la caducidad la fija el servidor al
+            // iniciar sesión, nunca el navegador.
+            tokenExpira:  old ? old.tokenExpira : null,
             avatar:       (u.avatar !== undefined) ? u.avatar : (old ? old.avatar : null),
           };
         });
@@ -244,9 +250,8 @@ export default async function handler(req, res) {
         }
       }
 
-      await col.deleteMany({});
-      if (toInsert.length > 0) await col.insertMany(toInsert);
-      try { global._syncCache = null; global._syncCacheTime = 0; global._syncCachePub = null; } catch (_) {}
+      await guardarColeccion(col, toInsert);
+      invalidarSyncCache();
       return res.status(200).json({ ok: true, count: toInsert.length });
     }
 
@@ -254,11 +259,24 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('[config]', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'No se pudo completar la operación.' });
   }
 }
 
-function normalize({ _id, ...rest }) { return rest; }
+// Guardado diff-based, igual que api/inventario.js: cada documento se
+// reemplaza por su id y solo se borran los que ya no están en la lista.
+// Borrar la colección entera y reinsertar deja la base vacía si el insert
+// falla a medias, y aquí viven las cuentas y los bazares.
+async function guardarColeccion(col, lista) {
+  const ids = lista.map(x => x.id);
+  const ops = lista.map(x => ({
+    replaceOne: { filter: { id: x.id }, replacement: sinMongoId(x), upsert: true }
+  }));
+  ops.push({ deleteMany: { filter: { id: { $nin: ids } } } });
+  await col.bulkWrite(ops, { ordered: false });
+}
+
+function sinMongoId({ _id, ...rest }) { return rest; }
 
 // Nada de contraseñas ni tokens sale de aquí, ni siquiera para un admin:
 // el panel no los necesita y así no pueden filtrarse por accidente.

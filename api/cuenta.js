@@ -24,7 +24,7 @@
 // La cuenta de un comprador NO da acceso a nada del panel: son colecciones
 // distintas y esta función nunca toca 'usuarios'.
 
-import { getDB } from './_db.js';
+import { getDB, invalidarSyncCache } from './_db.js';
 import { verifyPassword, hashPassword } from './_password.js';
 import { rateLimit, resetRateLimit } from './_rateLimit.js';
 import {
@@ -103,11 +103,6 @@ const perfilPublico = c => ({
   creadoEn: c.creadoEn,
 });
 
-// La tienda pública se sirve de un caché en memoria: al escribir una
-// reseña hay que tirarlo para que la pestaña del bazar se actualice ya.
-function invalidarCacheSync() {
-  try { global._syncCache = null; global._syncCacheTime = 0; global._syncCachePub = null; } catch (_) {}
-}
 
 async function clienteDeSesion(req) {
   const token = leerToken(req);
@@ -293,7 +288,7 @@ export default async function handler(req, res) {
       const r = await ofertar({ prendaId, monto, postor });
       if (!r.ok) return res.status(r.codigo || 400).json({ error: r.error });
 
-      invalidarCacheSync();
+      invalidarSyncCache();
       return res.status(200).json({
         ok: true,
         subasta:   subastaPublica(r.subasta),
@@ -496,7 +491,7 @@ export default async function handler(req, res) {
           { autor: cliente.username }, { $set: { autor: cambios.username } });
         await db.collection('resenas').updateMany(
           { destino: cliente.username }, { $set: { destino: cambios.username } });
-        invalidarCacheSync();
+        invalidarSyncCache();
       }
 
       return res.status(200).json({ ok: true, perfil: { ...perfilPublico(cliente), ...cambios } });
@@ -597,7 +592,7 @@ export default async function handler(req, res) {
       await db.collection('ventas').updateOne({ id: ventaId }, { $set: { resenaBazar: true } });
 
       // La tienda del bazar tiene que mostrar la reseña de inmediato
-      invalidarCacheSync();
+      invalidarSyncCache();
 
       const todas = await db.collection('resenas')
         .find({ tipo: 'bazar', bazarId: resena.bazarId }).toArray();

@@ -1,14 +1,15 @@
 // api/inventario.js
-// GET /api/inventario        → lista todas las prendas (público)
+// GET /api/inventario        → lista las prendas (sin datos internos si no
+//                              hay sesión: el costo y la reserva son del bazar)
 // PUT /api/inventario        → guarda el inventario (requiere sesión)
 //
 // El guardado es diff-based (bulkWrite): actualiza/inserta cada prenda por su
 // id y borra solo las que ya no están. Esto es más seguro que borrar toda la
 // colección y reinsertar (si algo falla a medias, no se pierde todo).
 
-import { getDB } from './_db.js';
-import { requireAuth } from './_auth.js';
-import { esGlobal, puede } from './_bazar.js';
+import { getDB, asegurarIndicesBase, invalidarSyncCache } from './_db.js';
+import { getUser, requireAuth } from './_auth.js';
+import { esGlobal, puede, prendaPublica } from './_bazar.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -17,16 +18,20 @@ export default async function handler(req, res) {
     const db  = await getDB();
     const col = db.collection('inventario');
 
-    // ── GET (público) ────────────────────────────────────────
+    // ── GET ──────────────────────────────────────────────────
+    // Sin sesión se responde la versión pública: el costo de cada prenda
+    // es el margen del bazar y no tiene por qué salir a la calle.
     if (req.method === 'GET') {
+      const user  = await getUser(req).catch(() => null);
       const items = await col.find({}).sort({ _id: -1 }).toArray();
-      return res.status(200).json(items.map(normalize));
+      return res.status(200).json(items.map(user ? normalize : prendaPublica));
     }
 
     // ── PUT — guarda el inventario (solo con sesión válida) ──
     if (req.method === 'PUT') {
       const user = await requireAuth(req, res);
       if (!user) return;                    // 401 si no hay sesión
+      await asegurarIndicesBase();
 
       const { list } = req.body;
       if (!Array.isArray(list)) return res.status(400).json({ error: 'body.list debe ser array' });
@@ -86,12 +91,9 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('[inventario]', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'No se pudo completar la operación.' });
   }
 }
 
 function normalize({ _id, ...rest }) { return rest; }
 function stripId({ _id, ...rest }) { return rest; }
-function invalidarSyncCache() {
-  try { global._syncCache = null; global._syncCacheTime = 0; global._syncCachePub = null; } catch (_) {}
-}

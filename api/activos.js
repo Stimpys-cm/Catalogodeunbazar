@@ -52,6 +52,6 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('[activos]', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'No se pudo completar la operación.' });
   }
 }

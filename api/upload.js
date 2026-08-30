@@ -85,6 +85,6 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('[upload]', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'No se pudo completar la operación.' });
   }
 }

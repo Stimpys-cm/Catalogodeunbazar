@@ -16,7 +16,7 @@
 //   /api/acciones?op=mis-subastas       (GET)   → todas las del bazar, con
 //                                                  sus participantes
 
-import { getDB } from './_db.js';
+import { getDB, invalidarSyncCache } from './_db.js';
 import { requireAuth } from './_auth.js';
 import { hashPassword } from './_password.js';
 import { puede, esGlobal, mismoBazar } from './_bazar.js';
@@ -31,10 +31,6 @@ import {
   subastaPublica, ofertaPublica, contactoGanador, asegurarIndicesSubasta,
   subastasDeBazares, contactosDe, PUESTOS_CON_CONTACTO,
 } from './_subastas.js';
-
-function invalidarCache() {
-  try { global._syncCache = null; global._syncCacheTime = 0; global._syncCachePub = null; } catch (_) {}
-}
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -56,7 +52,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'op no reconocida' });
   } catch (err) {
     console.error('[acciones:' + op + ']', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'No se pudo completar la operación.' });
   }
 }
 
@@ -106,7 +102,7 @@ async function handleConfigurarSubasta(req, res) {
   });
   if (!r.ok) return res.status(400).json({ error: r.error });
 
-  invalidarCache();
+  invalidarSyncCache();
   return res.status(200).json({ ok: true, subasta: subastaPublica(r.subasta) });
 }
 
@@ -130,7 +126,7 @@ async function handleQuitarSubasta(req, res) {
   }
 
   await quitarSubasta(prendaId);
-  invalidarCache();
+  invalidarSyncCache();
   return res.status(200).json({ ok: true });
 }
 
@@ -375,7 +371,7 @@ async function handleBorrarPrenda(req, res) {
   }
 
   const r = await inv.deleteOne({ id });
-  invalidarCache();
+  invalidarSyncCache();
   return res.status(200).json({ ok: true, borrado: r.deletedCount });
 }
 
@@ -441,7 +437,7 @@ async function handleGestionarUsuario(req, res) {
     const nuevoId = todos.length ? Math.max(...todos.map(u => u.id || 0)) + 1 : 1;
     const passHash = await hashPassword(password);
     await col.insertOne({ id: nuevoId, username, password: passHash, role: rolFinal, sessionToken: null, avatar: null, bazarId: bazarNuevo });
-    invalidarCache();
+    invalidarSyncCache();
     return res.status(200).json({ ok: true, id: nuevoId, rol: rolFinal, bazarId: bazarNuevo });
   }
 
@@ -460,7 +456,7 @@ async function handleGestionarUsuario(req, res) {
       return res.status(403).json({ error: 'Solo el admin principal puede eliminar administradores' });
     }
     await col.deleteOne({ id });
-    invalidarCache();
+    invalidarSyncCache();
     return res.status(200).json({ ok: true });
   }
 
@@ -482,7 +478,7 @@ async function handleGestionarUsuario(req, res) {
     }
     const passHash = await hashPassword(password);
     await col.updateOne({ id }, { $set: { password: passHash } });
-    invalidarCache();
+    invalidarSyncCache();
     return res.status(200).json({ ok: true });
   }
 
@@ -578,7 +574,7 @@ async function handleMarcarVendido(req, res) {
     vendido: true, vendidoA: comprador, vendidoEn: fecha, ventaId,
   } });
 
-  invalidarCache();
+  invalidarSyncCache();
   return res.status(200).json({ ok: true, ventaId, comprador });
 }
 
@@ -614,7 +610,7 @@ async function handleRevertirVenta(req, res) {
     $unset: { vendidoA: '', vendidoEn: '', ventaId: '', resenadoComprador: '' },
   });
 
-  invalidarCache();
+  invalidarSyncCache();
   return res.status(200).json({ ok: true });
 }
 
@@ -688,7 +684,7 @@ async function handleResenaComprador(req, res) {
   await db.collection('inventario').updateOne(
     { id: venta.prendaId }, { $set: { resenadoComprador: true } });
 
-  invalidarCache();
+  invalidarSyncCache();
   return res.status(200).json({ ok: true, resena: { ...resena, creadoEn: resena.creadoEn.toISOString() } });
 }
 
@@ -753,6 +749,6 @@ async function handleMantenimiento(req, res) {
   }
 
   const guardado = await guardarAjustes(entrada, user.username);
-  invalidarCache();
+  invalidarSyncCache();
   return res.status(200).json(guardado);
 }

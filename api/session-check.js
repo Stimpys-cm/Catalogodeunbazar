@@ -27,13 +27,14 @@ export default async function handler(req, res) {
     const col  = db.collection('usuarios');
     const user = await col.findOne({ username });
 
-    // Si el usuario no existe o el token no coincide → sesión inválida.
-    const valid = !!user && user.sessionToken === token;
+    // Si el usuario no existe, el token no coincide o ya caducó → inválida.
+    const vigente = !user?.tokenExpira || new Date(user.tokenExpira) >= new Date();
+    const valid = !!user && user.sessionToken === token && vigente;
     return res.status(200).json({ valid });
 
   } catch (err) {
     console.error('[session-check]', err);
     // Ante error de servidor NO cerramos la sesión (evita falsos positivos).
-    return res.status(500).json({ error: err.message, valid: true });
+    return res.status(500).json({ error: 'No se pudo completar la operación.', valid: true });
   }
 }

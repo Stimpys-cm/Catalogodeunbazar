@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/prenda?sitemap=1"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/:path*"
     },

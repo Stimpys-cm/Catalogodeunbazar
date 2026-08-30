@@ -4341,16 +4341,25 @@ async function cambiarPassword() {
   const s = getSession();
   if (!s)                { errEl.textContent = 'Sesión no encontrada'; return; }
   if (!actual)           { errEl.textContent = 'Escribe tu contraseña actual'; return; }
-  if (nueva.length < 4)  { errEl.textContent = 'Mínimo 4 caracteres'; return; }
+  // Las mismas reglas que aplica el servidor (api/change-password.js): así
+  // el aviso sale al instante y no después de un viaje de ida y vuelta.
+  if (nueva.length < 8)  { errEl.textContent = 'Mínimo 8 caracteres'; return; }
+  if (!/[A-Z]/.test(nueva) || !/[a-z]/.test(nueva) || !/[0-9]/.test(nueva)) {
+    errEl.textContent = 'Necesita mayúscula, minúscula y número'; return;
+  }
+  if (nueva === actual)  { errEl.textContent = 'La nueva debe ser distinta de la actual'; return; }
   if (nueva !== confirm) { errEl.textContent = 'Las contraseñas no coinciden'; return; }
 
   try {
-    await api('/api/change-password', {
+    const r = await api('/api/change-password', {
       method: 'POST',
       body: { username: s.username, actual, nueva }
     });
+    // El servidor rota el token para cerrar las sesiones de otros
+    // dispositivos: hay que quedarse con el nuevo o nos expulsa a nosotros.
+    if (r?.sessionToken) setSession({ ...s, sessionToken: r.sessionToken });
     ['cp_actual','cp_nueva','cp_confirm'].forEach(id => document.getElementById(id).value = '');
-    toast('Contraseña actualizada');
+    toast('Contraseña actualizada. Se cerraron las sesiones en otros dispositivos.');
   } catch (err) {
     errEl.textContent = err.message || 'No se pudo cambiar la contraseña';
   }

@@ -140,6 +140,15 @@ function leerCookie(req, nombre) {
   return m ? decodeURIComponent(m[1]) : '';
 }
 
+// Quién pide la página para previsualizarla, no para leerla. La lista son
+// los que de verdad importan aquí: WhatsApp, Facebook, Twitter, Discord,
+// Telegram y los buscadores.
+const ROBOTS = /bot|crawl|spider|slurp|whatsapp|facebookexternalhit|facebot|twitterbot|discordbot|telegrambot|linkedinbot|pinterest|embedly|skypeuripreview|vkshare|redditbot|googlebot|bingbot|applebot|yandex|duckduckbot|baiduspider/i;
+
+function esRobot(req) {
+  return ROBOTS.test(req.headers.get('user-agent') || '');
+}
+
 export default async function middleware(req) {
   const url  = new URL(req.url);
   const ruta = url.pathname;
@@ -150,6 +159,15 @@ export default async function middleware(req) {
   const esPuerta = !!rutaPanel && (ruta === `/${rutaPanel}` || ruta === `/${rutaPanel}/`);
   const esAdmin  = ruta === '/admin.html' || ruta === '/admin' || ruta.startsWith('/admin/');
   const esLogin  = ruta === '/login.html';
+
+  // Las apps de mensajería y los buscadores piden la ficha para armar el
+  // preview, pero /prenda.html es una página vacía hasta que corre el JS:
+  // el enlace saldría sin foto ni precio. A ellos se les manda al endpoint
+  // que sí escribe las etiquetas (api/prenda.js). A las personas, no.
+  if (ruta === '/prenda.html' && esRobot(req)) {
+    const id = url.searchParams.get('id');
+    if (id) return irA(url.origin, `/api/prenda?id=${encodeURIComponent(id)}`);
+  }
 
   // El resto del sitio pasa sin tocarse
   if (!esPuerta && !esAdmin && !esLogin) return;

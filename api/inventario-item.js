@@ -9,7 +9,7 @@
 // a la vez, la última pisa lo que hizo la otra. Aquí cada prenda viaja
 // sola, así que ninguna de las dos cosas pasa.
 
-import { getDB } from './_db.js';
+import { getDB, invalidarSyncCache } from './_db.js';
 import { requireAuth } from './_auth.js';
 import { esGlobal, mismoBazar, puede } from './_bazar.js';
 
@@ -125,10 +125,7 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('[inventario-item]', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'No se pudo completar la operación.' });
   }
 }
 
-function invalidarSyncCache() {
-  try { global._syncCache = null; global._syncCacheTime = 0; global._syncCachePub = null; } catch (_) {}
-}

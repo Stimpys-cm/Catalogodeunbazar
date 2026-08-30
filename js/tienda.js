@@ -9,6 +9,20 @@ let searchQuery = '';
 const shopFilters = { tallas:new Set(), marcas:new Set(), estados:new Set(), bazares:new Set(), maxPrecio:Infinity };
 let shopPriceMax  = 0;
 let shopSort      = 'recent';
+// Los únicos órdenes válidos: lo que llegue por la URL se contrasta aquí.
+const ORDENES = ['recent', 'priceLow', 'priceHigh', 'brand'];
+// Hasta que el catálogo no está cargado, la vista son esqueletos: escribir
+// la URL en ese momento borraría los filtros que traía el enlace.
+let _dbListaTienda = false;
+
+// Texto comparable: sin mayúsculas, sin acentos y sin espacios de sobra.
+function sinAcentos(txt) {
+  return String(txt || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
 
 // ─── DROPDOWNS ───────────────────────────────────────────────
 function toggleDrop(id) {
@@ -238,7 +252,11 @@ function waLink(p, msg) {
   return `https://wa.me/${whatsappDe(p)}?text=${encodeURIComponent(msg)}`;
 }
 function msgPrenda(p) {
-  return `Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta} MXN`;
+  // El enlace va dentro del mensaje: el bazar recibe decenas al día y sin
+  // él tiene que adivinar de qué prenda le hablan.
+  const ficha = `${location.origin}/prenda.html?id=${encodeURIComponent(p.id)}`;
+  return `Hola! Me interesa: ${p.nombre}` +
+         `${p.talla ? ' · Talla ' + p.talla : ''} · $${p.precio_venta} MXN\n${ficha}`;
 }
 
 // Escapa texto para insertarlo con seguridad en HTML/atributos
@@ -269,14 +287,17 @@ function renderGrid(query) {
   _shopNavegando = false;
   let items = getDB().filter(p => !p.vendido && !p.oculto);
 
-  const q = searchQuery.toLowerCase().trim();
-  if (q) items = items.filter(p =>
-    (p.nombre||'').toLowerCase().includes(q) ||
-    (p.marca||'').toLowerCase().includes(q) ||
-    (p.estado||'').toLowerCase().includes(q) ||
-    (p.talla||'').toLowerCase().includes(q) ||
-    (Array.isArray(p.categorias)?p.categorias:[]).some(c => c.toLowerCase().includes(q))
-  );
+  // La búsqueda ignora acentos y mayúsculas: quien escribe "sueter" en el
+  // teléfono espera encontrar "Suéter". Cada palabra tiene que aparecer en
+  // algún campo, así "nike negro" no obliga a que estén juntas.
+  const palabras = sinAcentos(searchQuery).split(/\s+/).filter(Boolean);
+  if (palabras.length) items = items.filter(p => {
+    const texto = sinAcentos([
+      p.nombre, p.marca, p.estado, p.talla, p.descripcion,
+      ...(Array.isArray(p.categorias) ? p.categorias : []),
+    ].filter(Boolean).join(' '));
+    return palabras.every(w => texto.includes(w));
+  });
   if (filterCat)   items = items.filter(p => Array.isArray(p.categorias) && p.categorias.includes(filterCat));
   if (filterBrand) items = items.filter(p => p.marca === filterBrand);
   if (filterBazar) items = items.filter(p => Number(p.bazarId || 1) === Number(filterBazar));
@@ -315,6 +336,7 @@ function renderGrid(query) {
     </div>`;
     const navE = document.getElementById('shopPaginacion');
     if (navE) navE.innerHTML = '';
+    sincronizarURL();
     return;
   }
 
@@ -443,6 +465,8 @@ function renderGrid(query) {
         <div class="pg-info">${desde}–${hasta} de ${items.length} prendas</div>`;
     }
   }
+
+  sincronizarURL();
 }
 
 // ─── PAGINACIÓN DE LA TIENDA ─────────────────────────────────
@@ -626,6 +650,13 @@ function setSort(val, btn){
   document.getElementById('sortLabel').textContent = btn.textContent;
   document.getElementById('sortMenu').classList.remove('open');
   renderGrid();
+}
+// Al entrar por un enlace con ?orden=, la etiqueta tiene que decir lo mismo
+// que el orden aplicado. El texto se toma del propio botón del menú.
+function sincronizarEtiquetaOrden(){
+  const btn   = document.querySelector(`.sort-opt[data-sort="${shopSort}"]`);
+  const label = document.getElementById('sortLabel');
+  if (btn && label) label.textContent = btn.textContent;
 }
 document.addEventListener('click', e=>{
   if (!e.target.closest('.sort-wrap')) document.getElementById('sortMenu')?.classList.remove('open');
@@ -926,7 +957,61 @@ function aplicarFiltrosURL() {
     if (wrap)  wrap.classList.add('expanded');
   }
 
+  // Filtros del panel lateral, orden y página: separados por coma en la URL
+  ['tallas', 'marcas', 'estados', 'bazares'].forEach(clave => {
+    const valor = params.get(clave);
+    if (!valor) return;
+    shopFilters[clave].clear();
+    valor.split(',').filter(Boolean).forEach(v => shopFilters[clave].add(v));
+  });
+
+  const max = Number(params.get('max'));
+  if (Number.isFinite(max) && max > 0) shopFilters.maxPrecio = max;
+
+  const orden = params.get('orden');
+  if (ORDENES.includes(orden)) shopSort = orden;
+
+  const pagina = parseInt(params.get('p'), 10);
+  if (Number.isFinite(pagina) && pagina > 1) {
+    _shopPagina = pagina - 1;
+    _shopNavegando = true;      // no reiniciar a la primera página al pintar
+  }
+
   updateActiveFilters();
+}
+
+// ─── La URL refleja lo que estás viendo ──────────────────────
+// Sin esto, "sudaderas talla L hasta $500" no se puede compartir, ni
+// guardar en favoritos, ni sobrevivir a un recargado de la página.
+// Se usa replaceState y no pushState: cada clic en un filtro no debe
+// convertirse en un paso más del botón atrás.
+function sincronizarURL() {
+  if (!_dbListaTienda) return;      // aún pintando esqueletos: no tocar la URL
+
+  const params = new URLSearchParams();
+  const poner  = (clave, valor) => { if (valor) params.set(clave, valor); };
+
+  poner('bazar', _slugBazarURL);
+  poner('cat',   filterCat);
+  poner('marca', filterBrand);
+  poner('q',     searchQuery.trim());
+
+  ['tallas', 'marcas', 'estados', 'bazares'].forEach(clave => {
+    if (shopFilters[clave].size) params.set(clave, [...shopFilters[clave]].join(','));
+  });
+
+  // El tope solo va si de verdad recorta algo
+  if (shopFilters.maxPrecio !== Infinity && shopFilters.maxPrecio < shopPriceMax) {
+    params.set('max', String(shopFilters.maxPrecio));
+  }
+  if (shopSort !== 'recent') params.set('orden', shopSort);
+  if (_shopPagina > 0)       params.set('p', String(_shopPagina + 1));
+
+  const cadena = params.toString();
+  const nueva  = location.pathname + (cadena ? '?' + cadena : '');
+  if (nueva !== location.pathname + location.search) {
+    history.replaceState(null, '', nueva);
+  }
 }
 
 // Cuando entras a ?bazar=slug el catálogo se convierte en el apartado de
@@ -1249,6 +1334,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   aplicarBazarURL();
   buildDropdowns();
   buildShopFilters();
+  sincronizarEtiquetaOrden();
+  _dbListaTienda = true;
   renderGrid();
   updateWishlistBadge();
   checkDeepLink();
@@ -1311,6 +1398,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 window.addEventListener('db:inventario', () => {
+  // El catálogo se refrescó solo en segundo plano: eso no es navegar, así
+  // que hay que quedarse en la página que el visitante está viendo.
+  _shopNavegando = true;
   renderGrid();
   buildDropdowns();
   buildShopFilters();

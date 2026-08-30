@@ -34,6 +34,9 @@ export async function getUser(req) {
   const db   = await getDB();
   const user = await db.collection('usuarios').findOne({ sessionToken: token });
   if (!user) return null;
+  // La cookie caduca sola, pero el token guardado no: sin esto, uno copiado
+  // del navegador seguiría abriendo el panel para siempre.
+  if (user.tokenExpira && new Date(user.tokenExpira) < new Date()) return null;
   return {
     id: user.id,
     username: user.username,

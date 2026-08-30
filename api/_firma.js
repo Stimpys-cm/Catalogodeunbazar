@@ -46,3 +46,21 @@ export function cabeceraCookieAcceso(valor) {
 export function cabeceraCookieBorrada() {
   return `${COOKIE_ACCESO}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
 }
+
+// Las dos cookies que abren sesión: la de la API ('sesion') y la firmada
+// que la puerta del panel valida en el borde ('acceso'). Vive aquí para
+// que el login y el cambio de contraseña dejen exactamente las mismas.
+export function cabecerasSesion(token, username, rol) {
+  const galletas = [
+    [
+      `sesion=${encodeURIComponent(token)}`,
+      'HttpOnly', 'Secure', 'SameSite=Lax', 'Path=/',
+      `Max-Age=${HORAS_VALIDA * 60 * 60}`,
+    ].join('; '),
+  ];
+  const acceso = firmarAcceso(username, rol);
+  if (acceso) galletas.push(cabeceraCookieAcceso(acceso));
+  return galletas;
+}
+
+export const HORAS_SESION = HORAS_VALIDA;

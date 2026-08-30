@@ -12,10 +12,10 @@
 //
 // Devuelve { id, username, role, sessionToken } si entra.
 
-import { getDB } from './_db.js';
+import { getDB, asegurarIndicesBase } from './_db.js';
 import { verifyPassword, hashPassword, looksHashed } from './_password.js';
 import { rateLimit, resetRateLimit } from './_rateLimit.js';
-import { firmarAcceso, cabeceraCookieAcceso, cabeceraCookieBorrada } from './_firma.js';
+import { cabecerasSesion, cabeceraCookieBorrada, HORAS_SESION } from './_firma.js';
 import { leerAjustes, cerrada, mensajeDe } from './_ajustes.js';
 import { esGlobal } from './_bazar.js';
 import crypto from 'crypto';
@@ -25,26 +25,24 @@ const SESSION_TIMEOUT_MS = 45000;
 
 function newToken() { return crypto.randomUUID(); }
 
-function setSessionCookie(res, token, username, rol) {
-  const galletas = [
-    [
-      `sesion=${encodeURIComponent(token)}`,
-      'HttpOnly', 'Secure', 'SameSite=Lax', 'Path=/',
-      `Max-Age=${60 * 60 * 8}`,   // 8 horas
-    ].join('; '),
-  ];
-
-  // Cookie firmada para que la puerta del panel pueda validar el acceso
-  // sin consultar la base de datos.
-  const acceso = firmarAcceso(username, rol);
-  if (acceso) galletas.push(cabeceraCookieAcceso(acceso));
-
-  res.setHeader('Set-Cookie', galletas);
-}
-
 // La puerta del panel: tiene que coincidir con RUTA_POR_DEFECTO de
 // middleware.js. Es a donde se manda al usuario tras iniciar sesión.
 const RUTA_PANEL_DEFECTO = 'manage-x9k2p7q-control';
+
+// Crea la cuenta 'admin' la primera vez, con la contraseña de
+// ADMIN_INICIAL_PASS ya hasheada. Devuelve null si la base ya tiene
+// cuentas o si la variable no está configurada.
+async function sembrarAdmin(col) {
+  const inicial = process.env.ADMIN_INICIAL_PASS;
+  if (!inicial) return null;
+  if (await col.countDocuments({}, { limit: 1 })) return null;
+  const doc = {
+    id: 1, username: 'admin', role: 'admin', bazarId: null,
+    password: await hashPassword(inicial),
+  };
+  try { await col.insertOne(doc); } catch (_) { return null; }
+  return doc;
+}
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -80,17 +78,18 @@ export default async function handler(req, res) {
 
   try {
     const db   = await getDB();
+    await asegurarIndicesBase();
     const col  = db.collection('usuarios');
     const act  = db.collection('activos');
 
-    // Insertar admin por defecto si no existe
-    const adminExists = await col.findOne({ username: 'admin' });
-    if (!adminExists) {
-      await col.insertOne({ id: 1, username: 'admin', password: 'stiimpys2026', role: 'admin', bazarId: null });
-    }
-
     // Buscar por username y verificar la contraseña (hash o texto plano)
-    const user = await col.findOne({ username });
+    let user = await col.findOne({ username });
+
+    // Siembra de la primera cuenta: solo con la base vacía y solo si
+    // ADMIN_INICIAL_PASS está definida. La contraseña nunca vive en el
+    // código, y en cuanto existe una cuenta esto no vuelve a ejecutarse.
+    if (!user && username === 'admin') user = await sembrarAdmin(col);
+
     if (!user) {
       // Mismo mensaje y mismo tiempo que una contraseña equivocada:
       // así no se puede averiguar qué usuarios existen.
@@ -147,7 +146,10 @@ export default async function handler(req, res) {
     }
 
     const sessionToken = newToken();
-    await col.updateOne({ id: user.id }, { $set: { sessionToken } });
+    // Misma vida que la cookie: pasadas las 8 horas el token deja de valer
+    // aunque alguien lo haya copiado del navegador.
+    const tokenExpira  = new Date(Date.now() + HORAS_SESION * 60 * 60 * 1000);
+    await col.updateOne({ id: user.id }, { $set: { sessionToken, tokenExpira } });
     await act.updateOne(
       { username },
       { $set: { username, lastActive: new Date() } },
@@ -155,7 +157,7 @@ export default async function handler(req, res) {
     );
 
     // Cookie httpOnly (defensa contra robo de token por XSS)
-    setSessionCookie(res, sessionToken, user.username, user.role);
+    res.setHeader('Set-Cookie', cabecerasSesion(sessionToken, user.username, user.role));
 
     // Quien acertó no arrastra el contador de intentos
     await resetRateLimit(req, 'login');
@@ -171,6 +173,6 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('[auth]', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'No se pudo completar la operación.' });
   }
 }

@@ -63,6 +63,20 @@ export function bazarPublico(b) {
   };
 }
 
+// Campos que NUNCA salen al público: el costo es el margen del bazar y la
+// reserva dice quién está a punto de comprar. Cualquier endpoint que
+// devuelva prendas a quien no tiene sesión pasa por aquí.
+export const CAMPOS_PRIVADOS = ['costo', 'reservedBy', 'reservedUntil'];
+
+export function prendaPublica(p) {
+  const out = {};
+  for (const k of Object.keys(p)) {
+    if (k === '_id' || CAMPOS_PRIVADOS.includes(k)) continue;
+    out[k] = p[k];
+  }
+  return out;
+}
+
 // El admin principal no pertenece a ningún bazar: manda sobre todos.
 export function esGlobal(user) {
   return user?.role === 'admin' && !user?.bazarId;

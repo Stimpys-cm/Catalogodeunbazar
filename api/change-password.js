@@ -3,10 +3,12 @@
 // Verifica la contraseña actual en el servidor y guarda la nueva HASHEADA.
 // Solo puedes cambiar TU propia contraseña (el usuario sale del token).
 
-import { getDB } from './_db.js';
+import { getDB, invalidarSyncCache } from './_db.js';
 import { requireAuth } from './_auth.js';
 import { verifyPassword, hashPassword } from './_password.js';
 import { rateLimit } from './_rateLimit.js';
+import { cabecerasSesion, HORAS_SESION } from './_firma.js';
+import crypto from 'crypto';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -46,12 +48,18 @@ export default async function handler(req, res) {
     const hash = await hashPassword(nueva);
     // Al cambiar la contraseña se invalida cualquier sesión abierta en otro
     // dispositivo: si alguien te robó el acceso, con esto lo dejas fuera.
-    await col.updateOne({ id: user.id }, { $set: { password: hash, sessionToken: null } });
-    try { global._syncCache = null; global._syncCacheTime = 0; global._syncCachePub = null; } catch (_) {}
-    return res.status(200).json({ ok: true, sesionesCerradas: true });
+    // El token se rota en vez de borrarse, así que quien acaba de cambiarla
+    // sigue dentro: los expulsados son los demás.
+    const sessionToken = crypto.randomUUID();
+    const tokenExpira  = new Date(Date.now() + HORAS_SESION * 60 * 60 * 1000);
+    await col.updateOne({ id: user.id },
+      { $set: { password: hash, sessionToken, tokenExpira } });
+    invalidarSyncCache();
+    res.setHeader('Set-Cookie', cabecerasSesion(sessionToken, dbUser.username, dbUser.role));
+    return res.status(200).json({ ok: true, sesionesCerradas: true, sessionToken });
 
   } catch (err) {
     console.error('[change-password]', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'No se pudo completar la operación.' });
   }
 }

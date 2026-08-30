@@ -8,32 +8,48 @@
 //                     piden todos los visitantes, así que se cachea en el
 //                     CDN y casi nunca llega a Mongo.
 //   sin scope       → todo, para el panel de administración.
+//
+// Cada respuesta lleva ETag: si el catálogo no cambió, el navegador recibe
+// un 304 vacío en vez del JSON entero. Con un visitante consultando cada
+// 20 s, eso es la diferencia entre unos bytes y varios cientos de KB.
 
+import crypto from 'crypto';
 import { getDB } from './_db.js';
 import { getUser } from './_auth.js';
-import { bazarPublico } from './_bazar.js';
+import { bazarPublico, prendaPublica } from './_bazar.js';
 import { resenaPublica } from './_ventas.js';
 import { leerAjustes } from './_ajustes.js';
 import { subastaPublica } from './_subastas.js';
 
+// El panel necesita verse en vivo; la tienda no cambia cada dos segundos.
+// El caché público es largo porque toda escritura lo invalida al instante
+// (ver invalidarSyncCache en _db.js).
+const TTL_PANEL   =  2000;
+const TTL_PUBLICO = 30000;
+
 // Caché en memoria compartido vía global — así los endpoints de escritura
 // (inventario, config) pueden invalidarlo tras un PUT y evitar servir datos
 // viejos que "revivan" algo recién borrado.
-const CACHE_TTL = 2000; // 2 segundos de caché
 global._syncCache      = global._syncCache      || null;
 global._syncCacheTime  = global._syncCacheTime  || 0;
 global._syncCachePub   = global._syncCachePub   || null;
+global._syncCachePubTime = global._syncCachePubTime || 0;
 
-// Campos que NUNCA salen al público (costo interno, notas privadas...)
-const CAMPOS_PRIVADOS = ['costo', 'reservedBy', 'reservedUntil'];
+// Deja el cuerpo ya serializado y con su ETag calculado: se hace una vez
+// por refresco, no una vez por visitante.
+function empaquetar(datos) {
+  const cuerpo = JSON.stringify(datos);
+  const etag   = '"' + crypto.createHash('sha1').update(cuerpo).digest('base64') + '"';
+  return { datos, cuerpo, etag };
+}
 
-function prendaPublica(p) {
-  const out = {};
-  for (const k of Object.keys(p)) {
-    if (k === '_id' || CAMPOS_PRIVADOS.includes(k)) continue;
-    out[k] = p[k];
-  }
-  return out;
+function responder(req, res, paquete, cabeceraCache, estadoCache) {
+  res.setHeader('Cache-Control', cabeceraCache);
+  res.setHeader('ETag', paquete.etag);
+  res.setHeader('X-Cache', estadoCache);
+  if (req.headers['if-none-match'] === paquete.etag) return res.status(304).end();
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  return res.status(200).send(paquete.cuerpo);
 }
 
 export default async function handler(req, res) {
@@ -58,30 +74,24 @@ export default async function handler(req, res) {
     ? 'public, max-age=5, s-maxage=15, stale-while-revalidate=120'
     : 'public, max-age=2';
 
-  // Servir desde caché si está fresco (salvo que pidan datos frescos)
-  if (!forzarFresco && global._syncCache && (now - global._syncCacheTime) < CACHE_TTL) {
-    res.setHeader('X-Cache', 'HIT');
-    res.setHeader('Cache-Control', cabeceraCache);
-    if (publico) {
-      global._syncCachePub = global._syncCachePub || recortarPublico(global._syncCache);
-      return res.status(200).json(global._syncCachePub);
-    }
-    return res.status(200).json(global._syncCache);
+  const cache     = publico ? global._syncCachePub : global._syncCache;
+  const cacheTime = publico ? global._syncCachePubTime : global._syncCacheTime;
+  const ttl       = publico ? TTL_PUBLICO : TTL_PANEL;
+
+  if (!forzarFresco && cache && (now - cacheTime) < ttl) {
+    return responder(req, res, cache, cabeceraCache, 'HIT');
   }
 
   try {
     const db = await getDB();
 
-    const [inv, cats, brands, users, activos, logs, drops, bazares, resenas, ajustes, subastas] = await Promise.all([
+    // Cada consulta cuesta, y el visitante no usa ni usuarios, ni el
+    // registro de acciones, ni quién está conectado: en modo público
+    // esas cuatro colecciones ni se tocan.
+    const comunes = [
       db.collection('inventario').find({}).sort({ _id: -1 }).toArray(),
       db.collection('categorias').find({}).sort({ id: 1 }).toArray(),
       db.collection('marcas').find({}).sort({ id: 1 }).toArray(),
-      db.collection('usuarios').find({}).sort({ id: 1 }).toArray(),
-      db.collection('activos').find({
-        lastActive: { $gte: new Date(Date.now() - 45000) }
-      }).toArray(),
-      db.collection('logs').find({}).sort({ ts: -1 }).limit(200).toArray(),
-      db.collection('drops').find({}).sort({ _id: -1 }).toArray(),
       db.collection('bazares').find({}).sort({ id: 1 }).toArray(),
       // Reseñas públicas de los bazares: alimentan la pestaña "Reseñas"
       // de cada tienda y la estrella promedio del perfil.
@@ -92,15 +102,40 @@ export default async function handler(req, res) {
       // Las subastas viven aparte de la prenda a propósito: así un
       // guardado del panel nunca puede borrar las ofertas de la gente.
       db.collection('subastas').find({}).sort({ fin: 1 }).toArray(),
-    ]);
+    ];
 
-    global._syncCache = {
+    if (publico) {
+      const [inv, cats, brands, bazares, resenas, ajustes, subastas] = await Promise.all(comunes);
+      global._syncCachePub = empaquetar({
+        inventario: inv.map(prendaPublica),
+        categorias: cats.map(normalize),
+        marcas:     brands.map(normalize),
+        bazares:    bazares.map(bazarPublico),
+        resenas:    resenas.map(resenaPublica),
+        ajustes,
+        subastas:   subastas.map(subastaPublica),
+      });
+      global._syncCachePubTime = now;
+      return responder(req, res, global._syncCachePub, cabeceraCache, 'MISS');
+    }
+
+    const [inv, cats, brands, bazares, resenas, ajustes, subastas, users, activos, logs, drops] =
+      await Promise.all([
+        ...comunes,
+        db.collection('usuarios').find({}).sort({ id: 1 }).toArray(),
+        db.collection('activos').find({
+          lastActive: { $gte: new Date(Date.now() - 45000) }
+        }).toArray(),
+        db.collection('logs').find({}).sort({ ts: -1 }).limit(200).toArray(),
+        db.collection('drops').find({}).sort({ _id: -1 }).toArray(),
+      ]);
+
+    global._syncCache = empaquetar({
       inventario: inv.map(normalize),
       categorias: cats.map(normalize),
       marcas:     brands.map(normalize),
-      // Nunca exponer password ni sessionToken al público: este endpoint no
-      // tiene autenticación. La verificación de contraseñas vive en el backend
-      // (api/auth.js, api/change-password.js, api/session-check.js).
+      // Nunca exponer password ni sessionToken: la verificación de
+      // contraseñas vive en el backend (api/auth.js, api/change-password.js).
       usuarios:   users.map(publicUser),
       activos:    activos.map(u => ({ username: u.username, lastActive: u.lastActive })),
       logs:       logs.map(normalize),
@@ -109,44 +144,20 @@ export default async function handler(req, res) {
       bazares:    bazares.map(bazarPublico),
       resenas:    resenas.map(resenaPublica),
       ajustes,
-      subastas: subastas.map(subastaPublica),
-    };
+      subastas:   subastas.map(subastaPublica),
+    });
     global._syncCacheTime = now;
-    global._syncCachePub  = recortarPublico(global._syncCache);
-
-    res.setHeader('X-Cache', 'MISS');
-    res.setHeader('Cache-Control', cabeceraCache);
-    return res.status(200).json(publico ? global._syncCachePub : global._syncCache);
+    return responder(req, res, global._syncCache, cabeceraCache, 'MISS');
 
   } catch (err) {
     console.error('[sync]', err);
     // Si falla MongoDB pero hay caché, servir el caché aunque esté viejo
-    if (global._syncCache) {
-      if (publico) {
-        global._syncCachePub = global._syncCachePub || recortarPublico(global._syncCache);
-        return res.status(200).json(global._syncCachePub);
-      }
-      return res.status(200).json(global._syncCache);
-    }
-    return res.status(500).json({ error: err.message });
+    if (cache) return responder(req, res, cache, 'no-store', 'STALE');
+    return res.status(500).json({ error: 'No se pudo completar la operación.' });
   }
 }
 
 function normalize({ _id, ...rest }) { return rest; }
-
-// Versión ligera para la tienda: sin usuarios, sin logs, sin actividad y
-// sin los campos internos de cada prenda.
-function recortarPublico(todo) {
-  return {
-    inventario: (todo.inventario || []).map(prendaPublica),
-    categorias: todo.categorias || [],
-    marcas:     todo.marcas     || [],
-    bazares:    todo.bazares    || [],
-    resenas:    todo.resenas    || [],
-    ajustes:    todo.ajustes    || null,
-    subastas:   todo.subastas   || [],
-  };
-}
 
 // Solo campos no sensibles del usuario (sin password ni sessionToken)
 function publicUser(u) {
