@@ -112,3 +112,20 @@ function ordenTalla(talla) {
   const i = ESCALA_LETRAS.indexOf(letras);
   return i === -1 ? 2000 : i;
 }
+
+// ─── LECTURA DE LA TALLA ─────────────────────────────────────
+// Una talla se guarda como "XL Hombre · Oversize": la base, y detrás los
+// matices. En una tarjeta solo cabe la base; el resto va en el título o
+// en la ficha. Vive aquí, junto al resto del vocabulario, porque lo usan
+// por igual la tienda, la portada y la ficha de la prenda.
+
+// "XL Hombre · Oversize"  →  "XL"
+function etiquetaTalla(t) {
+  const base = String(t || '').split('·')[0].trim();
+  return base.replace(/\s*(Hombre|Mujer)\s*/i, '').trim() || base;
+}
+
+// "XL Hombre · Oversize"  →  ["Oversize"]
+function detallesTalla(t) {
+  return String(t || '').split('·').slice(1).map(x => x.trim()).filter(Boolean);
+}

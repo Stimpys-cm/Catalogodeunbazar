@@ -26,6 +26,7 @@ body{
   background-attachment:fixed;
   color:var(--text-dark);
   min-height:100vh;
+  min-height:100dvh;   /* iOS: 100vh incluye la franja de la barra del navegador */
   overflow-x:hidden;
 }
 a{color:inherit;text-decoration:none}

@@ -56,20 +56,6 @@ header {
   -webkit-backdrop-filter: saturate(1.4) blur(14px);
 }
 
-/* ── Entrada suave del contenido ─────────────────────────────── */
-@media (prefers-reduced-motion: no-preference) {
-  main > section,
-  .pp-wrap,
-  .legal-wrap,
-  .shop-layout {
-    animation: aparecer .45s var(--curva) both;
-  }
-  @keyframes aparecer {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: none; }
-  }
-}
-
 /* ── Botones: el mismo gesto en todos lados ──────────────────── */
 .h-btn, .hb-btn, .bz-link, .pp-btn-wa, .h-nav-cta,
 .submit-btn, .btn-ig, .filter-btn, .estado-pill, .bz-media-btn {
@@ -248,4 +234,187 @@ body:has(.bottom-nav) .mnt-previa {
   /* El punto solo, en su propio renglón, se veía raro */
   .mnt-previa-punto { display: none; }
   .mnt-previa-link { margin-left: 0; margin-top: 4px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MOVIMIENTO — el mismo lenguaje de animación en todo el sitio.
+   Hasta ahora cada archivo elegía su propia curva y su propio
+   tiempo (había diez cubic-bezier distintos). Aquí queda una sola
+   escala para que la aplicación se sienta hecha por un mismo
+   equipo, y las piezas nuevas que faltaban: aparición al hacer
+   scroll, transición entre páginas y respuesta al pulsar.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  /* Tiempos. Micro para lo que responde al dedo, normal para lo que
+     se abre, grande solo para un cambio de contexto. */
+  --t-micro:  .12s;
+  --t-normal: .24s;
+  --t-grande: .42s;
+
+  /* Curvas. "salida" arranca rápido y frena suave: es la que hace
+     que algo se sienta ágil en vez de perezoso. */
+  --curva-salida: cubic-bezier(.22, .61, .36, 1);
+  --curva-suave:  cubic-bezier(.4, 0, .2, 1);
+  --curva-rebote: cubic-bezier(.34, 1.46, .64, 1);
+
+  --mov-micro:  var(--t-micro)  var(--curva-salida);
+  --mov-normal: var(--t-normal) var(--curva-salida);
+  --mov-grande: var(--t-grande) var(--curva-suave);
+}
+
+/* ── Aparición al entrar en pantalla ─────────────────────────────
+   El estado oculto solo existe si el JS está vivo (html.js-mov) y
+   la persona no pidió menos movimiento. Sin JS, todo se ve: una
+   animación nunca puede ser la razón de que no se lea el catálogo. */
+.js-mov [data-revelar] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity var(--t-grande) var(--curva-salida),
+              transform var(--t-grande) var(--curva-salida);
+  transition-delay: var(--retraso, 0ms);
+  will-change: opacity, transform;
+}
+.js-mov [data-revelar].visible {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+/* ── Respuesta al pulsar ─────────────────────────────────────────
+   Lo que se puede tocar se hunde un poco al pulsarlo. Es el gesto
+   que hace que una interfaz se sienta física y no un dibujo. */
+.card, .h-card, .h-bazar, .h-brand, .h-cat, .bz-card,
+.pp-thumb, .wl-item, .filter-chip, .fpill, .sort-opt {
+  transition: transform var(--mov-micro), box-shadow var(--mov-normal),
+              border-color var(--mov-normal), opacity var(--mov-micro);
+}
+.card:active, .h-card:active, .h-bazar:active, .h-brand:active,
+.h-cat:active, .bz-card:active, .pp-thumb:active, .wl-item:active,
+.filter-chip:active, .fpill:active, .sort-opt:active {
+  transform: scale(.978);
+}
+
+/* En pantalla táctil el hover no existe: el press es todo el feedback
+   que hay, así que ahí se nota un poco más. */
+@media (hover: none) {
+  .card:active, .h-card:active, .bz-card:active { transform: scale(.965); }
+}
+
+/* ── Imágenes: entran, no aparecen de golpe ──────────────────────
+   El fondo degradado ya reserva el hueco (aspect-ratio); esto solo
+   evita el parpadeo de blanco a foto. */
+.js-mov img[data-fade] {
+  opacity: 0;
+  transition: opacity var(--t-normal) var(--curva-salida);
+}
+.js-mov img[data-fade].cargada { opacity: 1; }
+
+/* ── Encabezado al bajar ─────────────────────────────────────────
+   Al despegarse de arriba se compacta y gana sombra: da sensación
+   de capa flotante y libera altura en el móvil. */
+header {
+  transition: box-shadow var(--mov-normal), background-color var(--mov-normal);
+}
+header.compacto {
+  box-shadow: 0 6px 24px rgba(26, 31, 46, .10);
+  background-color: rgba(255, 255, 255, .82);
+}
+
+/* ── Transición entre páginas ────────────────────────────────────
+   Nativa del navegador: sin librerías, sin peso y sin bloquear la
+   navegación en los que no la soportan (ahí se ve como siempre). */
+@view-transition { navigation: auto; }
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: vt-sale var(--t-normal) var(--curva-salida) both;
+  }
+  ::view-transition-new(root) {
+    animation: vt-entra var(--t-grande) var(--curva-salida) both;
+  }
+  @keyframes vt-sale  { to   { opacity: 0; } }
+  @keyframes vt-entra { from { opacity: 0; transform: translateY(8px); } }
+
+  /* La foto de la prenda viaja de la tarjeta a la ficha en vez de
+     desaparecer y volver a nacer. Es lo que da continuidad al abrir
+     un producto. El nombre lo pone js/movimiento.js al hacer clic. */
+  ::view-transition-group(prenda-foto) {
+    animation-duration: var(--t-grande);
+    animation-timing-function: var(--curva-suave);
+  }
+}
+
+/* ── Menos movimiento, de verdad ─────────────────────────────────
+   Una sola regla para todo el sitio: si la persona pidió menos
+   movimiento, nada se anima. Antes había que acordarse de añadirlo
+   animación por animación y varias se quedaban fuera. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .js-mov [data-revelar] { opacity: 1; transform: none; }
+  .js-mov img[data-fade] { opacity: 1; }
+  @view-transition { navigation: none; }
+}
+
+/* ── Guardar en favoritos ────────────────────────────────────────
+   Guardar algo merece que se note. El corazón da un latido al
+   activarse: es corto, ocurre bajo el dedo y confirma la acción
+   sin robar un toast ni tapar el catálogo. */
+.card-fav-btn svg,
+.pd-btn-fav svg,
+.pp-fav svg {
+  transition: stroke var(--mov-normal), fill var(--mov-normal),
+              transform var(--t-normal) var(--curva-rebote);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .card-fav-btn.active svg,
+  .pd-btn-fav.active svg,
+  .pp-fav.active svg {
+    animation: latido .34s var(--curva-rebote);
+  }
+  @keyframes latido {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.32); }
+    70%  { transform: scale(.94); }
+    100% { transform: scale(1); }
+  }
+}
+
+/* ── will-change solo cuando hace falta ──────────────────────────
+   Estaba fijo en la imagen de cada tarjeta: con 42 prendas en
+   pantalla, el navegador reservaba 42 capas de GPU permanentes y en
+   un teléfono modesto eso se paga en memoria y en scroll. Solo se
+   pide la capa mientras el cursor está encima, que es cuando de
+   verdad se va a animar. */
+.card-img img { will-change: auto; }
+@media (hover: hover) {
+  .card:hover .card-img img { will-change: transform; }
+}
+
+/* ── Estados vacíos ──────────────────────────────────────────────
+   Que no haya resultados no es un error: es un momento en el que
+   hay que ofrecer la salida. El icono entra suave y el botón para
+   limpiar filtros es lo que más pesa visualmente. */
+.empty {
+  animation: aparecer-vacio var(--t-grande) var(--curva-salida) both;
+}
+.empty-icon {
+  color: var(--accent);
+  opacity: .32;
+}
+.empty-cta {
+  transition: transform var(--mov-micro), box-shadow var(--mov-normal),
+              background var(--mov-normal);
+}
+.empty-cta:active { transform: scale(.97); }
+@media (hover: hover) {
+  .empty-cta:hover { transform: translateY(-2px); box-shadow: var(--sombra); }
+}
+@keyframes aparecer-vacio {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
 }

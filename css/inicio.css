@@ -241,11 +241,22 @@
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px; margin-top: 8px;
 }
-.h-card-price { font-size: 15px; font-weight: 700; color: var(--black); }
+/* El precio manda: nunca encoge ni parte el "MXN" en dos renglones.
+   Con una talla larga ("L Hombre · Oversize") la etiqueta empujaba al
+   precio, la moneda caía debajo y las tarjetas de una misma fila dejaban
+   de alinearse. */
+.h-card-price {
+  font-size: 15px; font-weight: 700; color: var(--black);
+  flex-shrink: 0; white-space: nowrap;
+}
+/* La etiqueta cede: se recorta antes que descuadrar la tarjeta. El texto
+   completo sigue estando en su title y en la ficha. */
 .h-card-size {
   font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
   color: var(--text2); background: var(--gray);
   padding: 4px 9px; border-radius: 20px;
+  min-width: 0; max-width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
 /* ── Categorías ─────────────────────────────────────────────── */

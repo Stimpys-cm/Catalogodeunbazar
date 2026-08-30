@@ -505,20 +505,14 @@ function scrollShopArriba() {
     window.scrollTo({ top: y, behavior: 'smooth' });
   }
 }
-// En el filtro y en las tarjetas se muestra la talla corta ("XL" en vez de
-// "XL Hombre"); el texto completo va en el title y en el detalle.
-function etiquetaTalla(t) {
-  const base = String(t || '').split('·')[0].trim();
-  return base.replace(/\s*(Hombre|Mujer)\s*/i, '').trim() || base;
-}
-
-// Lo que sigue después de la talla base: "Queda como M", "Oversize"...
-function detallesTalla(t) {
-  return String(t || '').split('·').slice(1).map(x => x.trim()).filter(Boolean);
-}
-
 function buildShopFilters() {
-  const all = getDB().filter(p => !p.vendido && !p.oculto);
+  // Los filtros salen de lo que de verdad hay a la vista: dentro del
+  // apartado de un bazar, solo de sus prendas. Ofrecer "Talla XL" o
+  // "Nike" en un bazar que no tiene ninguna solo lleva a una búsqueda
+  // vacía.
+  const all = getDB().filter(p =>
+    !p.vendido && !p.oculto &&
+    (!filterBazar || Number(p.bazarId || 1) === Number(filterBazar)));
   // Tallas agrupadas (Hombre, Mujer, Pantalón...) y ordenadas por escala
   const tallas  = [...new Set(all.map(p=>String(p.talla)).filter(Boolean))]
     .sort((a,b)=> ordenTalla(a) - ordenTalla(b) || a.localeCompare(b));
@@ -1029,6 +1023,9 @@ function aplicarBazarURL() {
   document.getElementById('bzTabsWrap')?.classList.remove('hidden');
   actualizarContadoresBazar();
   setBazarTab('disponibles');
+  // La fila de "termina hoy" se pinta al cargar los datos, antes de saber
+  // en qué bazar estamos: hay que rehacerla ya con el bazar puesto.
+  pintarCierraHoy();
 }
 
 // ─── COLOR DEL BAZAR ─────────────────────────────────────────
@@ -1439,13 +1436,25 @@ function pintarCierraHoy() {
       const falta = new Date(s.fin).getTime() - ahora;
       if (falta <= 0 || falta > 24 * 3600000) return false;
       const p = db.find(x => Number(x.id) === Number(s.prendaId));
-      return p && !p.vendido && !p.oculto;
+      if (!p || p.vendido || p.oculto) return false;
+      // Dentro del apartado de un bazar solo se muestran sus subastas:
+      // en el de Papu Bazar aparecían las de Stiimpys, que no son suyas
+      // ni se pueden comprar desde ahí.
+      if (filterBazar && Number(p.bazarId || 1) !== Number(filterBazar)) return false;
+      return true;
     })
     .sort((a, b) => new Date(a.fin) - new Date(b.fin))
     .slice(0, 8);
 
   cont.hidden = urgentes.length === 0;
-  if (!urgentes.length) return;
+  if (!urgentes.length) {
+    // Vaciar de verdad: si solo se oculta, la tarjeta anterior sigue en la
+    // página (y su reloj sigue corriendo) al cambiar de bazar.
+    fila.innerHTML = '';
+    clearInterval(_relojCierraHoy);
+    _relojCierraHoy = null;
+    return;
+  }
 
   fila.innerHTML = urgentes.map(s => {
     const p = db.find(x => Number(x.id) === Number(s.prendaId));

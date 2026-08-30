@@ -43,7 +43,7 @@ function cardHTML(p, badge) {
       <div class="h-card-name">${hEsc(p.nombre)}</div>
       <div class="h-card-foot">
         <span class="h-card-price">${hMoney(p.precio_venta)}</span>
-        <span class="h-card-size">Talla ${hEsc(p.talla || '–')}</span>
+        <span class="h-card-size" title="${hEsc(p.talla || '')}">Talla ${hEsc(etiquetaTalla(p.talla) || '–')}</span>
       </div>
       ${bz ? `<div class="card-bazar-row"><span class="card-bazar" style="--bz-color:${hEsc(bz.color || '#2d6be4')}">@${hEsc(bz.slug)}</span></div>` : ''}
     </div>
