@@ -17,6 +17,9 @@
 //   GET  /api/cuenta?op=subasta&id=N                → estado en vivo
 //   POST /api/cuenta?op=ofertar    { prendaId, monto, username?,
 //                                    telefono? }    → puja en una subasta
+//   POST /api/cuenta?op=recuperar    { email }      → manda enlace de rescate
+//   POST /api/cuenta?op=restablecer  { token,
+//                                      password }   → pone la nueva
 //
 // La cuenta de un comprador NO da acceso a nada del panel: son colecciones
 // distintas y esta función nunca toca 'usuarios'.
@@ -31,9 +34,10 @@ import {
 } from './_ventas.js';
 import { leerAjustes, cerrada, mensajeDe } from './_ajustes.js';
 import { getUser } from './_auth.js';
+import { enviarCorreo, plantilla, correoConfigurado } from './_correo.js';
 import {
   leerSubasta, historial, ofertar, subastaPublica, ofertaPublica,
-  registrarInvitado, asegurarIndicesSubasta,
+  registrarInvitado, asegurarIndicesSubasta, subastasDe,
 } from './_subastas.js';
 import { esGlobal } from './_bazar.js';
 import crypto from 'crypto';
@@ -125,7 +129,113 @@ export default async function handler(req, res) {
       try { await col.createIndex({ email: 1 }, { unique: true }); } catch (_) {}
       try { await col.createIndex({ sesionToken: 1 }); } catch (_) {}
       try { await col.createIndex({ username: 1 }, { unique: true, sparse: true }); } catch (_) {}
+      // Buscar por el token de rescate al restablecer la contraseña
+      try { await col.createIndex({ rescateHash: 1 }, { sparse: true }); } catch (_) {}
       global._idxClientes = true;
+    }
+
+    // ── RECUPERAR CONTRASEÑA ─────────────────────────────────
+    // Se responde lo mismo exista o no la cuenta: si dijéramos "ese correo
+    // no está registrado" cualquiera podría averiguar quién tiene cuenta.
+    if (op === 'recuperar' && req.method === 'POST') {
+      if (!(await rateLimit(req, res, { key: 'recuperar', max: 5, windowSec: 3600 }))) return;
+
+      const email = texto(req.body?.email, 120).toLowerCase();
+      const respuestaNeutra = {
+        ok: true,
+        mensaje: 'Si ese correo tiene cuenta, en un momento te llega un enlace para cambiar la contraseña.',
+      };
+      if (!emailValido(email)) return res.status(200).json(respuestaNeutra);
+
+      if (!correoConfigurado()) {
+        return res.status(503).json({
+          error: 'Todavía no está configurado el envío de correos. Escríbele al bazar por WhatsApp y te ayudamos a entrar.',
+        });
+      }
+
+      const cliente = await col.findOne({ email });
+      if (cliente) {
+        // El token se guarda hasheado: si alguien lee la base de datos, no
+        // puede usarlo para entrar en las cuentas.
+        const token = crypto.randomBytes(32).toString('hex');
+        const hash  = crypto.createHash('sha256').update(token).digest('hex');
+
+        await col.updateOne({ id: cliente.id }, {
+          $set: {
+            rescateHash: hash,
+            rescateExpira: new Date(Date.now() + 60 * 60 * 1000),  // una hora
+            rescatePedidoEn: new Date(),
+          },
+        });
+
+        const origen = (req.headers['x-forwarded-proto'] || 'https') + '://' +
+                       (req.headers['x-forwarded-host'] || req.headers.host || 'stiimpys.store');
+        const enlace = `${origen}/cuenta.html?rescate=${token}`;
+
+        await enviarCorreo({
+          para: email,
+          asunto: 'Cambia tu contraseña de STMP MARKET',
+          texto: `Para poner una contraseña nueva entra aquí: ${enlace}\n\n` +
+                 `El enlace vence en una hora. Si no fuiste tú, ignora este correo: tu contraseña no cambia.`,
+          html: plantilla({
+            titulo: 'Cambia tu contraseña',
+            cuerpo: `Alguien pidió cambiar la contraseña de la cuenta <b>${email}</b>. ` +
+                    `Si fuiste tú, entra al enlace y pon una nueva.`,
+            boton: 'Poner contraseña nueva',
+            enlace,
+            pie: 'El enlace vence en una hora y solo sirve una vez. ' +
+                 'Si no fuiste tú, ignora este correo: tu contraseña sigue igual.',
+          }),
+        });
+      }
+
+      return res.status(200).json(respuestaNeutra);
+    }
+
+    // ── RESTABLECER CON EL TOKEN ─────────────────────────────
+    if (op === 'restablecer' && req.method === 'POST') {
+      if (!(await rateLimit(req, res, { key: 'restablecer', max: 10, windowSec: 3600 }))) return;
+
+      const token = texto(req.body?.token, 200);
+      const pass  = typeof req.body?.password === 'string' ? req.body.password : '';
+      if (!token) return res.status(400).json({ error: 'Falta el enlace de rescate' });
+
+      const flojo = passwordDebil(pass);
+      if (flojo) return res.status(400).json({ error: flojo });
+
+      const hash = crypto.createHash('sha256').update(token).digest('hex');
+      const cliente = await col.findOne({
+        rescateHash: hash,
+        rescateExpira: { $gt: new Date() },
+      });
+      if (!cliente) {
+        return res.status(410).json({
+          error: 'Ese enlace ya venció o se usó. Pide uno nuevo.',
+        });
+      }
+
+      // Cambiar la contraseña cierra las demás sesiones: si alguien había
+      // entrado, se queda fuera.
+      const nuevoToken = crypto.randomUUID();
+      await col.updateOne({ id: cliente.id }, {
+        $set: { password: await hashPassword(pass), sesionToken: nuevoToken, ultimoAcceso: new Date() },
+        $unset: { rescateHash: '', rescateExpira: '', rescatePedidoEn: '' },
+      });
+
+      await resetRateLimit(req, 'entrar-cliente');
+      res.setHeader('Set-Cookie', cookieSesion(nuevoToken));
+      return res.status(200).json({ ok: true, perfil: perfilPublico({ ...cliente }) });
+    }
+
+    // ── MIS SUBASTAS ─────────────────────────────────────────
+    // En qué he ofertado, si voy ganando y qué pasó al final.
+    if (op === 'mis-subastas' && req.method === 'GET') {
+      const yo = await clienteDeSesion(req);
+      if (!yo) return res.status(401).json({ error: 'Entra a tu cuenta' });
+      if (!yo.username) return res.status(200).json({ subastas: [] });
+
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(200).json({ subastas: await subastasDe(yo.username) });
     }
 
     // ── SUBASTA: estado en vivo ──────────────────────────────
@@ -189,6 +299,8 @@ export default async function handler(req, res) {
         subasta:   subastaPublica(r.subasta),
         historial: (await historial(prendaId)).map(ofertaPublica),
         yo: postor.username,
+        // Para poder decirle a quien ofertó que su puja empujó el cierre
+        prorrogada: !!r.prorrogada,
       });
     }
 

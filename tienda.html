@@ -229,7 +229,18 @@
   </div>
 </aside>
 
-    <div class="grid" id="productGrid"></div>
+    <div class="col-central">
+      <!-- Subastas que cierran hoy: lo más urgente del catálogo -->
+      <section class="cierra-hoy" id="cierraHoy" hidden>
+        <div class="cierra-hoy-head">
+          <h2><span class="cierra-hoy-punto"></span>Termina hoy</h2>
+          <p>Subastas que cierran en las próximas horas</p>
+        </div>
+        <div class="cierra-hoy-fila" id="cierraHoyFila"></div>
+      </section>
+
+      <div class="grid" id="productGrid"></div>
+    </div>
   </div>
   <div class="shop-paginacion" id="shopPaginacion"></div>
 

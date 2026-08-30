@@ -175,13 +175,21 @@ export default async function middleware(req) {
   if (esPuerta) {
     // Con la sesión ya abierta se entra directo al panel
     if (entra) return irA(url.origin, '/admin.html');
-    // Si no, se entrega el pase y se manda al formulario
-    return irA(url.origin, '/login.html', cookiePuerta());
+    // Si no, se entrega el pase y se manda al formulario. El ?entrada=1
+    // le dice al login que venimos por la dirección secreta SIN sesión
+    // válida en el servidor: lo que el navegador tenga guardado ya no
+    // sirve, hay que borrarlo y enseñar el formulario. Esta dirección es
+    // la única forma de entrar al panel, así que tiene que terminar
+    // siempre en un formulario usable, nunca en un rebote.
+    return irA(url.origin, '/login.html?entrada=1', cookiePuerta());
   }
 
   if (esAdmin) {
     if (entra) return;                                    // panel servido
-    if (conPase) return irA(url.origin, '/login.html');   // pase pero sin sesión
+    // Pase pero sin sesión: normalmente es que la cookie firmada venció.
+    // Se avisa en la URL para que el login no vuelva a mandarnos aquí y
+    // se arme un bucle de recargas (ver js/login.js).
+    if (conPase) return irA(url.origin, '/login.html?sesion=vencida');
     return noEncontrado();                                // para el mundo, no existe
   }
 

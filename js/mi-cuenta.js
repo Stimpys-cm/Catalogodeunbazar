@@ -21,12 +21,14 @@
     'Buen precio',
   ];
 
-  let modo    = 'entrar';        // 'entrar' | 'registro'
-  let pestana = 'compras';       // compras | favoritos | resenas | ajustes
+  let modo    = 'entrar';        // 'entrar' | 'registro' | 'olvide' | 'rescate'
+  let tokenRescate = null;       // el del enlace que llegó por correo
+  let pestana = 'compras';       // compras | subastas | favoritos | resenas | ajustes
 
   // Cachés de la sesión: se piden una vez y se refrescan al cambiar algo
   let _compras   = null;
   let _misReseñas = null;
+  let _misSubastas = null;
 
   // Precios en pesos mexicanos: el MXN va en pequeño junto al importe
   const dinero = v => '$' + Number(v || 0).toLocaleString('es-MX') + ' <span class="cur">MXN</span>';
@@ -65,6 +67,8 @@
      SIN SESIÓN
      ═════════════════════════════════════════════════════════ */
   function pintarFormulario() {
+    if (modo === 'olvide')  return pintarOlvide();
+    if (modo === 'rescate') return pintarRescate();
     const esRegistro = modo === 'registro';
     document.getElementById('ctaTitulo').innerHTML = esRegistro
       ? 'Crear <em>cuenta</em>' : 'Entrar a <em>tu cuenta</em>';
@@ -125,6 +129,11 @@
             ${esRegistro ? 'Crear mi cuenta' : 'Entrar'}
           </button>
         </form>
+
+        ${esRegistro ? '' : `
+          <button type="button" class="ct-olvide" onclick="MiCuenta.modo('olvide')">
+            Olvidé mi contraseña
+          </button>`}
 
         <p class="ct-nota">
           Tu cuenta guarda tu nombre, tu correo, tus compras y tus prendas
@@ -211,6 +220,163 @@
     btn.classList.toggle('viendo', ver);
   }
 
+  /* ── Olvidé mi contraseña ─────────────────────────────────
+     Se responde lo mismo exista o no la cuenta: decir "ese correo no
+     está registrado" le diría a cualquiera quién tiene cuenta aquí. */
+  function pintarOlvide() {
+    document.getElementById('ctaTitulo').innerHTML = 'Recuperar <em>tu cuenta</em>';
+    document.getElementById('ctaSub').textContent =
+      'Te mandamos un enlace por correo para poner una contraseña nueva.';
+
+    document.getElementById('ctContenido').innerHTML = `
+      <div class="ct-card">
+        <div class="ct-error" id="ctError"></div>
+        <div class="ct-ok" id="ctOk" hidden></div>
+
+        <form id="ctForm" autocomplete="on">
+          <label class="ct-campo">
+            <span>Tu correo</span>
+            <input type="email" id="ctEmail" autocomplete="email" maxlength="120"
+                   placeholder="el correo de tu cuenta">
+          </label>
+          <button type="submit" class="ct-btn" id="ctEnviar">Mandarme el enlace</button>
+        </form>
+
+        <button type="button" class="ct-olvide" onclick="MiCuenta.modo('entrar')">
+          Volver a entrar
+        </button>
+      </div>
+
+      <aside class="ct-lado">
+        <h3>¿Cómo funciona?</h3>
+        <ul>
+          <li>Te llega un correo con un enlace que <b>vence en una hora</b>.</li>
+          <li>Ese enlace solo sirve una vez.</li>
+          <li>Al cambiarla se cierran las sesiones abiertas en otros aparatos.</li>
+        </ul>
+        <p class="ct-lado-nota">
+          Si no te llega, revisa el correo no deseado. Y si tu cuenta la creaste
+          con otro correo, prueba con ése.
+        </p>
+      </aside>`;
+
+    document.getElementById('ctForm').addEventListener('submit', pedirRescate);
+  }
+
+  async function pedirRescate(e) {
+    e.preventDefault();
+    error('');
+    const btn   = document.getElementById('ctEnviar');
+    const email = document.getElementById('ctEmail').value.trim();
+    if (!email) return error('Escribe tu correo');
+
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Mandando…';
+
+    try {
+      const r = await Cuenta.recuperar(email);
+      const ok = document.getElementById('ctOk');
+      if (ok) {
+        ok.textContent = r.mensaje || 'Revisa tu correo.';
+        ok.hidden = false;
+      }
+      document.getElementById('ctForm').hidden = true;
+    } catch (err) {
+      error(err.message);
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  }
+
+  /* ── Poner la contraseña nueva (con el enlace del correo) ── */
+  function pintarRescate() {
+    document.getElementById('ctaTitulo').innerHTML = 'Nueva <em>contraseña</em>';
+    document.getElementById('ctaSub').textContent =
+      'Elige una que no vayas a olvidar. Al guardarla entras directo.';
+
+    document.getElementById('ctContenido').innerHTML = `
+      <div class="ct-card">
+        <div class="ct-error" id="ctError"></div>
+
+        <form id="ctForm" autocomplete="on">
+          <label class="ct-campo">
+            <span>Contraseña nueva</span>
+            <div class="ct-pw-wrap">
+              <input type="password" id="ctPass" maxlength="200" autocomplete="new-password"
+                     placeholder="Crea una contraseña segura" oninput="MiCuenta.revisarPass()">
+              <button type="button" class="ct-pw-ojo" tabindex="-1"
+                      aria-label="Mostrar contraseña" onclick="MiCuenta.verPass(this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </label>
+
+          <div class="ct-pw-guia" id="ctPwGuia">
+            <div class="ct-pw-barra"><span id="ctPwNivel"></span></div>
+            <div class="ct-pw-nivel-txt" id="ctPwTexto">Escribe una contraseña</div>
+            <ul class="ct-pw-reglas" id="ctPwReglas">
+              <li data-regla="len"><span class="ct-pw-punto"></span>8 caracteres o más</li>
+              <li data-regla="upper"><span class="ct-pw-punto"></span>Una mayúscula</li>
+              <li data-regla="lower"><span class="ct-pw-punto"></span>Una minúscula</li>
+              <li data-regla="num"><span class="ct-pw-punto"></span>Un número</li>
+              <li data-regla="sym"><span class="ct-pw-punto"></span>Un símbolo (!@#$…)</li>
+              <li data-regla="comun"><span class="ct-pw-punto"></span>Que no sea una contraseña obvia</li>
+            </ul>
+          </div>
+
+          <button type="submit" class="ct-btn" id="ctEnviar">Guardar y entrar</button>
+        </form>
+      </div>
+
+      <aside class="ct-lado">
+        <h3>Después de guardarla</h3>
+        <ul>
+          <li>Entras a tu cuenta al instante.</li>
+          <li>Se cierran las sesiones que hubiera abiertas en otros aparatos.</li>
+          <li>El enlace que usaste deja de servir.</li>
+        </ul>
+      </aside>`;
+
+    document.getElementById('ctForm').addEventListener('submit', guardarRescate);
+  }
+
+  async function guardarRescate(e) {
+    e.preventDefault();
+    error('');
+    const btn = document.getElementById('ctEnviar');
+    const pass = document.getElementById('ctPass').value;
+
+    const { reglas, cumplidas, total } = revisarPass();
+    if (cumplidas < total) {
+      const falta = {
+        len: 'al menos 8 caracteres', upper: 'una mayúscula', lower: 'una minúscula',
+        num: 'un número', sym: 'un símbolo', comun: 'que no sea una contraseña obvia',
+      };
+      return error('A tu contraseña le falta ' +
+        Object.keys(reglas).filter(k => !reglas[k]).map(k => falta[k]).join(', ') + '.');
+    }
+
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Guardando…';
+
+    try {
+      await Cuenta.restablecer({ token: tokenRescate, password: pass });
+      // Fuera de la URL: dejar el token en la barra invita a compartirlo
+      history.replaceState(null, '', 'cuenta.html');
+      tokenRescate = null;
+      modo = 'entrar';
+      aviso('¡Listo! Ya estás dentro');
+      pestana = 'compras';
+      pintarPanel();
+    } catch (err) {
+      error(err.message);
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  }
+
   async function enviar(e) {
     e.preventDefault();
     error('');
@@ -272,6 +438,7 @@
       <div class="ct-panel">
         <nav class="ct-navtabs" role="tablist">
           ${botonTab('compras',   'Mis Compras',       IC_BOLSA)}
+          ${botonTab('subastas',  'Mis Subastas',      IC_MARTILLO, avisoSubastas())}
           ${botonTab('favoritos', 'Favoritos',         IC_CORAZON)}
           ${botonTab('resenas',   'Mis Reseñas',       IC_ESTRELLA)}
           ${botonTab('ajustes',   'Ajustes de Perfil', IC_ENGRANE)}
@@ -287,19 +454,28 @@
   const IC_BOLSA    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
   const IC_CORAZON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
   const IC_ESTRELLA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+  const IC_MARTILLO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 13-7.5 7.5a2.12 2.12 0 0 1-3-3L11 10"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg>';
   const IC_ENGRANE  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 
-  function botonTab(id, texto, icono) {
+  function botonTab(id, texto, icono, aviso = '') {
     return `<button class="ct-navtab ${pestana === id ? 'active' : ''}" role="tab"
                     aria-selected="${pestana === id}" onclick="MiCuenta.tab('${id}')">
-      ${icono}<span>${texto}</span>
+      ${icono}<span>${texto}</span>${aviso}
     </button>`;
+  }
+
+  // Punto rojo en la pestaña cuando algo pide tu atención: te superaron
+  // en una subasta, o ganaste una y todavía no hablas con el bazar.
+  function avisoSubastas() {
+    if (!_misSubastas) return '';
+    const urgentes = _misSubastas.filter(s => s.estado === 'superado' || s.estado === 'gane').length;
+    return urgentes ? `<i class="ct-navtab-aviso">${urgentes}</i>` : '';
   }
 
   function cambiarPestana(id) {
     pestana = id;
     document.querySelectorAll('.ct-navtab').forEach((b, i) => {
-      const activo = ['compras', 'favoritos', 'resenas', 'ajustes'][i] === id;
+      const activo = ['compras', 'subastas', 'favoritos', 'resenas', 'ajustes'][i] === id;
       b.classList.toggle('active', activo);
       b.setAttribute('aria-selected', String(activo));
     });
@@ -310,6 +486,7 @@
 
   function pintarPestana() {
     if (pestana === 'compras')   return pintarCompras();
+    if (pestana === 'subastas')  return pintarMisSubastas();
     if (pestana === 'favoritos') return pintarFavoritos();
     if (pestana === 'resenas')   return pintarMisResenas();
     if (pestana === 'ajustes')   return pintarAjustes();
@@ -321,6 +498,117 @@
       <div class="ct-vacio-sub">${esc(sub)}</div>
       ${cta}
     </div>`;
+  }
+
+  /* ── MIS SUBASTAS ────────────────────────────────────────── */
+  const SB_ESTADOS = {
+    superado:      { txt: 'Te superaron',      clase: 'urge'  },
+    gane:          { txt: '¡Ganaste!',         clase: 'gane'  },
+    ganando:       { txt: 'Vas ganando',       clase: 'bien'  },
+    'sin-reserva': { txt: 'No llegó a la reserva', clase: 'gris' },
+    perdi:         { txt: 'No la ganaste',     clase: 'gris'  },
+  };
+
+  async function pintarMisSubastas() {
+    const cont = cuerpo();
+    if (!cont) return;
+    cont.innerHTML = `<div class="ct-cargando">Cargando tus subastas…</div>`;
+
+    try {
+      _misSubastas = (await Cuenta.misSubastas()).subastas || [];
+    } catch (err) {
+      cont.innerHTML = vacio('No se pudieron cargar', err.message);
+      return;
+    }
+    if (pestana !== 'subastas') return;
+
+    // Refrescar el punto rojo de la pestaña con lo que acaba de llegar
+    const tab = document.querySelectorAll('.ct-navtab')[1];
+    if (tab) {
+      tab.querySelector('.ct-navtab-aviso')?.remove();
+      const urgentes = _misSubastas.filter(x => x.estado === 'superado' || x.estado === 'gane').length;
+      if (urgentes) tab.insertAdjacentHTML('beforeend', `<i class="ct-navtab-aviso">${urgentes}</i>`);
+    }
+
+    if (!_misSubastas.length) {
+      cont.innerHTML = vacio(
+        'Todavía no has ofertado',
+        'Cuando ofertes en una subasta, aquí ves en cuánto va y si sigues ganando.',
+        '<a class="ct-vacio-cta" href="tienda.html">Ver el catálogo</a>');
+      return;
+    }
+
+    cont.innerHTML = `<div class="ct-sb-lista">${_misSubastas.map(filaMiSubasta).join('')}</div>`;
+    arrancarRelojSubastas();
+  }
+
+  function filaMiSubasta(s) {
+    const e = SB_ESTADOS[s.estado] || SB_ESTADOS.perdi;
+    const p = s.prenda;
+    const wa = s.bazar?.whatsapp ? String(s.bazar.whatsapp).replace(/[^0-9]/g, '') : '';
+    const msg = encodeURIComponent(
+      `¡Hola! Soy @${Cuenta.perfil()?.username || ''} y gané la subasta de "${p?.nombre || ''}" ` +
+      `con ${dinero(s.ofertaActual)} MXN. ¿Cómo la recojo?`);
+
+    return `
+      <div class="ct-sb ${e.clase}">
+        <a class="ct-sb-foto" href="prenda.html?id=${p?.id}">
+          ${p?.imagen ? `<img src="${esc(p.imagen)}" alt="" loading="lazy">` : '<span>Sin foto</span>'}
+        </a>
+
+        <div class="ct-sb-datos">
+          <div class="ct-sb-top">
+            <span class="ct-sb-estado ${e.clase}">${e.txt}</span>
+            ${!s.cerrada
+              ? `<span class="ct-sb-reloj${new Date(s.fin).getTime() - Date.now() < 3600000 ? ' urge' : ''}"
+                       data-fin="${esc(s.fin)}">${
+                    typeof tiempoRestante === 'function' ? tiempoRestante(s.fin) : ''}</span>`
+              : `<span class="ct-sb-reloj fin">Terminó</span>`}
+          </div>
+
+          ${p?.marca ? `<div class="ct-sb-marca">${esc(p.marca)}</div>` : ''}
+          <a class="ct-sb-nombre" href="prenda.html?id=${p?.id}">${esc(p?.nombre || 'Prenda')}</a>
+          ${s.bazar ? `<div class="ct-sb-bazar">en ${esc(s.bazar.nombre)}</div>` : ''}
+
+          <div class="ct-sb-cifras">
+            <div><span>Tu oferta</span><b>${dinero(s.miOferta)}</b></div>
+            <div><span>${s.cerrada ? 'Se fue en' : 'Va en'}</span><b>${dinero(s.ofertaActual)}</b></div>
+            ${!s.cerrada ? `<div><span>Para pujar</span><b>${dinero(s.minimo)}</b></div>` : ''}
+          </div>
+
+          ${s.tieneReserva && !s.reservaAlcanzada && !s.cerrada
+            ? '<div class="ct-sb-nota">Aún no llega al precio de reserva del bazar.</div>' : ''}
+
+          <div class="ct-sb-acciones">
+            ${s.estado === 'superado'
+              ? `<a class="ct-sb-btn" href="prenda.html?id=${p?.id}">Volver a ofertar</a>` : ''}
+            ${s.estado === 'gane' && wa
+              ? `<a class="ct-sb-btn wa" href="https://wa.me/${wa}?text=${msg}" target="_blank" rel="noopener">Contactar al bazar</a>` : ''}
+            ${s.estado === 'ganando'
+              ? `<a class="ct-sb-btn fantasma" href="prenda.html?id=${p?.id}">Ver la subasta</a>` : ''}
+            ${s.estado === 'sin-reserva'
+              ? `<span class="ct-sb-explica">Ibas ganando, pero la oferta no alcanzó el mínimo del bazar.</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Los contadores bajan solos mientras la pestaña esté abierta
+  let _relojSubastas = null;
+  function arrancarRelojSubastas() {
+    clearInterval(_relojSubastas);
+    _relojSubastas = setInterval(() => {
+      const relojes = document.querySelectorAll('.ct-sb-reloj[data-fin]');
+      if (!relojes.length || pestana !== 'subastas') {
+        clearInterval(_relojSubastas); _relojSubastas = null; return;
+      }
+      relojes.forEach(el => {
+        const ms = new Date(el.dataset.fin).getTime() - Date.now();
+        if (ms <= 0) { el.textContent = 'Terminó'; el.classList.add('fin'); el.removeAttribute('data-fin'); return; }
+        el.textContent = typeof tiempoRestante === 'function' ? tiempoRestante(el.dataset.fin) : '';
+        el.classList.toggle('urge', ms < 3600000);
+      });
+    }, 1000);
   }
 
   /* ── MIS COMPRAS ─────────────────────────────────────────── */
@@ -770,6 +1058,10 @@
   });
 
   document.addEventListener('DOMContentLoaded', () => {
-    if (new URLSearchParams(location.search).get('registro') === '1') modo = 'registro';
+    const q = new URLSearchParams(location.search);
+    if (q.get('registro') === '1') modo = 'registro';
+    // Llegaste desde el correo de rescate
+    const t = q.get('rescate');
+    if (t) { tokenRescate = t; modo = 'rescate'; }
   });
 })();

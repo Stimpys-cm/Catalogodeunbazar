@@ -72,7 +72,11 @@ function aviso(msg) {
 function verFoto(i) {
   fotoIdx = (i + fotos.length) % fotos.length;
   const img = document.getElementById('ppFoto');
-  if (img) img.src = imgOptimizada(fotos[fotoIdx], 900);
+  if (img) {
+    img.src = imgOptimizada(fotos[fotoIdx], 900);
+    // Sin esto el navegador se queda con el srcset de la foto anterior
+    img.srcset = imgSrcSet(fotos[fotoIdx], [500, 900, 1400]);
+  }
   document.querySelectorAll('.pp-thumb').forEach((t, n) => t.classList.toggle('active', n === fotoIdx));
   const c = document.getElementById('ppContador');
   if (c) c.textContent = fotoIdx + 1;
@@ -135,7 +139,10 @@ function tarjeta(p) {
   const talla = String(p.talla || '').split('·')[0].trim().replace(/\s*(Hombre|Mujer)\s*/i, '');
   return `<a class="h-card" href="prenda.html?id=${encodeURIComponent(p.id)}">
     <div class="h-card-img">
-      ${img ? `<img src="${imgOptimizada(img, 400)}" alt="${pEsc(p.nombre)}" loading="lazy" decoding="async">`
+      ${img ? `<img src="${imgOptimizada(img, 400)}"
+                    srcset="${imgSrcSet(img, [280, 400, 640])}"
+                    sizes="(max-width: 700px) 45vw, 220px"
+                    alt="${pEsc(p.nombre)}" loading="lazy" decoding="async">`
             : `<div class="h-card-nophoto">Sin foto</div>`}
     </div>
     <div class="h-card-body">
@@ -216,7 +223,10 @@ function pintarPrenda(p) {
       <div class="pp-foto-wrap">
         ${fotos.length ? `
           <div class="pp-zoom" id="ppZoom">
-            <img id="ppFoto" src="${imgOptimizada(fotos[0], 900)}" alt="${pEsc(p.nombre)}" onclick="abrirModal()" fetchpriority="high">
+            <img id="ppFoto" src="${imgOptimizada(fotos[0], 900)}"
+                 srcset="${imgSrcSet(fotos[0], [500, 900, 1400])}"
+                 sizes="(max-width: 900px) 100vw, 560px"
+                 alt="${pEsc(p.nombre)}" onclick="abrirModal()" fetchpriority="high">
           </div>
           ${fotos.length > 1 ? `
             <button class="pp-nav pp-prev" onclick="cambiarFoto(-1)" aria-label="Anterior">‹</button>

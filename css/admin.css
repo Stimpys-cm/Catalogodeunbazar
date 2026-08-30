@@ -2959,3 +2959,19 @@ body.vista-compacta .item-actions { gap: 4px; }
   .su-tiles { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
   .su-tile-val { font-size: 1.6rem; }
 }
+
+/* Etiquetas de aviso al calificar a un comprador. Solo salen con 3
+   estrellas o menos: "No pagó" con cinco no le sirve a nadie. */
+.vt-campo-avisos[hidden] { display: none; }
+.vt-etiqueta.mala {
+  border-color: rgba(224,92,92,.3);
+  color: var(--danger);
+}
+.vt-etiqueta.mala:hover { border-color: var(--danger); background: rgba(224,92,92,.06); }
+.vt-etiqueta.mala.on {
+  background: var(--danger); border-color: var(--danger); color: #fff;
+  box-shadow: 0 2px 10px rgba(224,92,92,.28);
+}
+.vt-aviso-nota {
+  font-size: 10.5px; color: var(--muted); margin: 9px 0 0; line-height: 1.5;
+}

@@ -181,7 +181,11 @@
     // Subastas: leer el estado en vivo y ofertar. Se expone aquí porque
     // esta es la puerta al backend de comprador (la cookie de sesión va
     // sola con credentials: 'same-origin').
+    // Recuperar la contraseña: pedir el enlace y usarlo
+    recuperar:    email => pedir('recuperar',    { method: 'POST', body: { email } }),
+    restablecer:  body  => pedir('restablecer',  { method: 'POST', body }),
     subasta:  id   => pedir(`subasta&id=${encodeURIComponent(id)}`, { method: 'GET' }),
+    misSubastas:   () => pedir('mis-subastas', { method: 'GET' }),
     ofertar:  body => pedir('ofertar', { method: 'POST', body }),
     registro, entrar, salir, cambiarNombre, guardarPerfil,
     subirWishlist, unirWishlists,

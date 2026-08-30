@@ -328,7 +328,10 @@ function renderGrid(query) {
   grid.innerHTML = itemsPagina.map(p => {
     const imgs    = Array.isArray(p.imagenes) ? p.imagenes : [];
     const imgHtml = imgs[0]
-      ? `<img src="${imgOptimizada(imgs[0], 500)}" alt="${esc(p.nombre)}" loading="lazy" decoding="async">`
+      ? `<img src="${imgOptimizada(imgs[0], 500)}"
+              srcset="${imgSrcSet(imgs[0], [300, 500, 800])}"
+              sizes="(max-width: 700px) 45vw, 280px"
+              alt="${esc(p.nombre)}" loading="lazy" decoding="async">`
       : `<div class="no-photo">Sin foto</div>`;
     const marcaTag  = p.marca ? `<div class="brand-tag">${esc(p.marca)}</div>` : '';
     const waMsg     = encodeURIComponent(`Hola! Me interesa: ${p.nombre} · Talla ${p.talla} · $${p.precio_venta} MXN`);
@@ -1126,7 +1129,10 @@ function renderBazarVendidos() {
 function tarjetaVendida(p) {
   const imgs = Array.isArray(p.imagenes) ? p.imagenes : [];
   const img  = imgs[0]
-    ? `<img src="${imgOptimizada(imgs[0], 500)}" alt="${esc(p.nombre)}" loading="lazy" decoding="async">`
+    ? `<img src="${imgOptimizada(imgs[0], 500)}"
+            srcset="${imgSrcSet(imgs[0], [300, 500, 800])}"
+            sizes="(max-width: 700px) 45vw, 280px"
+            alt="${esc(p.nombre)}" loading="lazy" decoding="async">`
     : `<div class="no-photo">Sin foto</div>`;
   const fecha = p.vendidoEn
     ? new Date(p.vendidoEn).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -1325,3 +1331,76 @@ function abrirSubasta(prendaId) {
 window.addEventListener('subasta:oferta', () => {
   if (typeof pollAhora === 'function') pollAhora(400);
 });
+
+// ── SUBASTAS QUE CIERRAN HOY ────────────────────────────────
+// Van arriba del catálogo porque es lo único que caduca: una prenda a
+// precio fijo sigue ahí mañana, una subasta no.
+function pintarCierraHoy() {
+  const cont = document.getElementById('cierraHoy');
+  const fila = document.getElementById('cierraHoyFila');
+  if (!cont || !fila || typeof getSubastas !== 'function') return;
+
+  const ahora = Date.now();
+  const db = getDB();
+
+  const urgentes = getSubastas()
+    .filter(s => {
+      if (s.cerrada) return false;
+      const falta = new Date(s.fin).getTime() - ahora;
+      if (falta <= 0 || falta > 24 * 3600000) return false;
+      const p = db.find(x => Number(x.id) === Number(s.prendaId));
+      return p && !p.vendido && !p.oculto;
+    })
+    .sort((a, b) => new Date(a.fin) - new Date(b.fin))
+    .slice(0, 8);
+
+  cont.hidden = urgentes.length === 0;
+  if (!urgentes.length) return;
+
+  fila.innerHTML = urgentes.map(s => {
+    const p = db.find(x => Number(x.id) === Number(s.prendaId));
+    const img = (Array.isArray(p.imagenes) ? p.imagenes : []).filter(Boolean)[0];
+    const bz = bazarDe(p);
+    return `
+      <article class="ch-card" onclick="abrirSubasta(${p.id})" role="button" tabindex="0"
+               onkeydown="if(event.key==='Enter')abrirSubasta(${p.id})">
+        <div class="ch-foto">
+          ${img ? `<img src="${imgOptimizada(img, 300)}"
+                        srcset="${imgSrcSet(img, [200, 300, 450])}" sizes="160px"
+                        alt="${esc(p.nombre)}" loading="lazy" decoding="async">`
+                : '<span class="ch-sin-foto">Sin foto</span>'}
+          <span class="ch-reloj${new Date(s.fin).getTime() - ahora < 3600000 ? ' urge' : ''}"
+                data-fin="${esc(s.fin)}">${tiempoRestante(s.fin)}</span>
+        </div>
+        <div class="ch-datos">
+          <div class="ch-nombre">${esc(p.nombre)}</div>
+          ${bz ? `<div class="ch-bazar">@${esc(bz.slug)}</div>` : ''}
+          <div class="ch-monto">
+            <span>${s.totalOfertas ? 'Van' : 'Desde'}</span>
+            $${Number(s.totalOfertas ? s.ofertaActual : s.precioInicial).toLocaleString('es-MX')}
+          </div>
+        </div>
+      </article>`;
+  }).join('');
+
+  arrancarRelojCierraHoy();
+}
+
+let _relojCierraHoy = null;
+function arrancarRelojCierraHoy() {
+  clearInterval(_relojCierraHoy);
+  _relojCierraHoy = setInterval(() => {
+    const relojes = document.querySelectorAll('#cierraHoyFila .ch-reloj[data-fin]');
+    if (!relojes.length) { clearInterval(_relojCierraHoy); _relojCierraHoy = null; return; }
+    relojes.forEach(el => {
+      const ms = new Date(el.dataset.fin).getTime() - Date.now();
+      if (ms <= 0) { pintarCierraHoy(); return; }   // ya cerró: se recalcula la fila
+      el.textContent = tiempoRestante(el.dataset.fin);
+      el.classList.toggle('urge', ms < 3600000);
+    });
+  }, 1000);
+}
+
+window.addEventListener('db:subastas', pintarCierraHoy);
+window.addEventListener('db:ready', pintarCierraHoy);
+window.addEventListener('subasta:oferta', pintarCierraHoy);

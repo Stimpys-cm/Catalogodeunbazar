@@ -258,6 +258,47 @@ function saveDB(list) {
   return api('/api/inventario', { method: 'PUT', body: { list: payload, allowEmpty: true } })
     .catch(e => { console.error('[saveDB]', e); throw e; });
 }
+// ── Guardado por prenda ──────────────────────────────────────
+// saveDB() manda el inventario ENTERO. Con muchas prendas eso choca con
+// el límite de tamaño de Vercel, y si dos personas del mismo bazar
+// guardan a la vez la última pisa lo que hizo la otra. Estas tres
+// funciones mandan solo la prenda que cambió, así que ninguna de las dos
+// cosas pasa. saveDB se queda para los casos raros de verdad.
+
+// El servidor asigna el id: si lo eligiera el navegador, dos vendedores
+// publicando a la vez se pisarían el número.
+async function crearPrenda(datos) {
+  const prenda = await api('/api/inventario-item', { method: 'POST', body: datos });
+  const nueva = prenda.prenda || prenda;
+  _marcarEscritura('inventario');
+  _db = [nueva, ..._db];
+  _hInv = _h(_db);
+  _confirmarEscritura('inventario');
+  window.dispatchEvent(new CustomEvent('db:inventario', { detail: _db }));
+  return nueva;
+}
+
+async function guardarPrenda(id, cambios) {
+  await api(`/api/inventario-item?id=${encodeURIComponent(id)}`, {
+    method: 'PATCH', body: cambios,
+  });
+  _marcarEscritura('inventario');
+  const i = _db.findIndex(p => Number(p.id) === Number(id));
+  if (i >= 0) _db[i] = { ..._db[i], ...cambios };
+  _hInv = _h(_db);
+  _confirmarEscritura('inventario');
+  window.dispatchEvent(new CustomEvent('db:inventario', { detail: _db }));
+}
+
+async function borrarPrendaServidor(id) {
+  await api(`/api/inventario-item?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+  _marcarEscritura('inventario');
+  _db = _db.filter(p => Number(p.id) !== Number(id));
+  _hInv = _h(_db);
+  _confirmarEscritura('inventario');
+  window.dispatchEvent(new CustomEvent('db:inventario', { detail: _db }));
+}
+
 function nextId() {
   return _db.length ? Math.max(..._db.map(x => x.id)) + 1 : 1;
 }
@@ -318,6 +359,18 @@ function saveDrops(list) {
 // y en el formato que soporte el navegador. Pedir la miniatura de 400 px en
 // vez de la foto original de 3 MB es la diferencia entre que la tienda
 // cargue al instante o se arrastre en datos móviles.
+// Cada teléfono pide el tamaño que le sirve. Sin esto, una pantalla de
+// 400 px con densidad 3 recibe la misma imagen que un monitor: o se ve
+// borrosa, o se gastan datos (y cuota de Cloudinary) de más.
+//
+// Se usa junto a src: <img src="..." srcset="${imgSrcSet(u, [400,600,900])}"
+//                          sizes="(max-width: 700px) 50vw, 300px">
+function imgSrcSet(url, anchos = [400, 600, 900]) {
+  const u = String(url || '');
+  if (!u.includes('/image/upload/')) return '';
+  return anchos.map(a => `${imgOptimizada(u, a)} ${a}w`).join(', ');
+}
+
 function imgOptimizada(url, ancho = 600) {
   const u = String(url || '');
   if (!u.includes('/image/upload/')) return u;          // no es de Cloudinary

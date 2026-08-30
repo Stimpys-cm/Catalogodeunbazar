@@ -27,6 +27,10 @@ function salirDelPanel(destino) {
 }
 
 if (!isLoggedIn()) salirDelPanel(rutaDeAcceso());
+// El panel abrió de verdad, así que el freno anti-bucle del login ya no
+// hace falta en esta pestaña (js/login.js).
+try { sessionStorage.removeItem('stmp_login_intento'); } catch (_) {}
+
 const session = getSession();
 
 function logout() {
@@ -729,6 +733,11 @@ let _calEtiquetas = new Set();
 const ETIQUETAS_COMPRADOR = [
   'Pago puntual', 'Buena comunicación', 'Sin complicaciones', 'Volvería a venderle',
 ];
+// Dejar constancia de que algo salió mal. Con 4 o 5 estrellas se ocultan:
+// el servidor también las descarta, así que no vale marcarlas y subir.
+const ETIQUETAS_COMPRADOR_MALAS = [
+  'Tardó en responder', 'No se presentó', 'No pagó',
+];
 
 function tituloModalVenta(titulo, sub, boton) {
   const t = document.getElementById('ventaTitulo');
@@ -827,6 +836,16 @@ function abrirModalComprador(id) {
       </div>
     </div>
 
+    <div class="vt-campo vt-campo-avisos" id="calAvisos" hidden>
+      <span>¿Algo salió mal?</span>
+      <div class="vt-etiquetas">
+        ${ETIQUETAS_COMPRADOR_MALAS.map(e => `
+          <button type="button" class="vt-etiqueta mala" data-e="${escAdmin(e)}"
+                  onclick="alternarEtiquetaComprador(this)">${escAdmin(e)}</button>`).join('')}
+      </div>
+      <p class="vt-aviso-nota">Esto queda en el perfil del comprador para que otros bazares lo vean.</p>
+    </div>
+
     <label class="vt-campo">
       <span>Tu comentario</span>
       <textarea id="calComentario" maxlength="500" rows="3"
@@ -848,6 +867,16 @@ function elegirEstrellasComprador(n) {
   });
   const el = document.getElementById('calEstrellasTxt');
   if (el) el.textContent = ['', 'Mala', 'Regular', 'Bien', 'Muy bien', 'Excelente'][n] || '';
+
+  // Las etiquetas de aviso solo aparecen con 3 estrellas o menos, y si
+  // subes la calificación se sueltan las que ya habías marcado.
+  const avisos = document.getElementById('calAvisos');
+  const mostrar = n > 0 && n <= 3;
+  if (avisos) avisos.hidden = !mostrar;
+  if (!mostrar) {
+    ETIQUETAS_COMPRADOR_MALAS.forEach(e => _calEtiquetas.delete(e));
+    document.querySelectorAll('#calAvisos .vt-etiqueta').forEach(b => b.classList.remove('on'));
+  }
 }
 
 function alternarEtiquetaComprador(btn) {
@@ -1189,7 +1218,7 @@ function reRemovePreview(i) {
   reRenderPreviews();
 }
 
-function guardarReEdicion() {
+async function guardarReEdicion() {
   const id     = parseInt(document.getElementById('re_editId').value) || 0;
   const nombre = document.getElementById('re_nombre').value.trim();
   const precio = parseFloat(document.getElementById('re_precio').value);
@@ -1222,7 +1251,16 @@ function guardarReEdicion() {
   p.descripcion  = document.getElementById('re_descripcion').value.trim();
   p.imagenes     = [...reEditImgs];
 
-  saveDB(db);
+  try {
+    await guardarPrenda(p.id, {
+      nombre: p.nombre, marca: p.marca, categorias: p.categorias,
+      talla: p.talla, precio_venta: p.precio_venta, costo: p.costo,
+      estado: p.estado, descripcion: p.descripcion, imagenes: p.imagenes,
+    });
+  } catch (err) {
+    toast(err.message || 'No se pudieron guardar los cambios');
+    return;
+  }
   registrarLog('editar', nombre, diffPrenda(antes, p));
   playActionSound('ok');
   cerrarReEdicion();
@@ -1396,7 +1434,7 @@ function clearForm() {
   const useDrop = document.getElementById('f_useDrop');
   if (useDrop) useDrop.checked = false;
   toggleDropField();
-  ['f_sbInicial','f_sbFin'].forEach(id => {
+  ['f_sbInicial','f_sbFin','f_sbReserva'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const useSb = document.getElementById('f_useSubasta');
@@ -1475,13 +1513,21 @@ async function submitForm() {
     let cambios = 'Sin cambios de datos';
     if (p) {
       const antes = { nombre:p.nombre, precio_venta:p.precio_venta, costo:p.costo, talla:p.talla, marca:p.marca, estado:p.estado, categorias:p.categorias, imagenes:p.imagenes };
-      p.nombre = nombre; p.marca = marca; p.categorias = categorias;
-      p.talla  = leerTalla('f');
-      p.precio_venta = precio; p.costo = costo;
-      p.estado = document.getElementById('f_estado').value.trim();
-      p.descripcion = (document.getElementById('f_descripcion')?.value||'').trim();
-      if (combined.length) p.imagenes = combined;
-      cambios = diffPrenda(antes, p);
+      const nuevos = {
+        nombre, marca, categorias,
+        talla: leerTalla('f'),
+        precio_venta: precio, costo,
+        estado: document.getElementById('f_estado').value.trim(),
+        descripcion: (document.getElementById('f_descripcion')?.value || '').trim(),
+      };
+      if (combined.length) nuevos.imagenes = combined;
+      cambios = diffPrenda(antes, { ...p, ...nuevos });
+      try {
+        await guardarPrenda(editId, nuevos);
+      } catch (err) {
+        toast(err.message || 'No se pudo guardar');
+        return;
+      }
     }
     registrarLog('editar', nombre, cambios);
     playActionSound('ok');
@@ -1513,18 +1559,24 @@ async function submitForm() {
       }
     }
 
-    const nuevaPrenda = {
-      id: nextId(), nombre, marca, categorias,
-      talla: leerTalla('f'),
-      precio_venta: precio, costo,
-      estado: document.getElementById('f_estado').value.trim(),
-      descripcion: (document.getElementById('f_descripcion')?.value||'').trim(),
-      imagenes: combined, vendido: false,
-      creadoEn: new Date().toISOString(),
-      oculto: !!dropIdFinal,
-      bazarId: bazarParaNuevas()
-    };
-    db.unshift(nuevaPrenda);
+    // El id lo pone el servidor: dos vendedores publicando a la vez ya no
+    // se pisan el número.
+    let nuevaPrenda;
+    try {
+      nuevaPrenda = await crearPrenda({
+        nombre, marca, categorias,
+        talla: leerTalla('f'),
+        precio_venta: precio, costo,
+        estado: document.getElementById('f_estado').value.trim(),
+        descripcion: (document.getElementById('f_descripcion')?.value||'').trim(),
+        imagenes: combined, vendido: false,
+        oculto: !!dropIdFinal,
+        bazarId: bazarParaNuevas(),
+      });
+    } catch (err) {
+      toast(err.message || 'No se pudo publicar la prenda');
+      return;
+    }
     nuevoIdParaSubasta = nuevaPrenda.id;
 
     const talla = leerTalla('f');
@@ -1541,15 +1593,12 @@ async function submitForm() {
       toast('Prenda publicada');
     }
   }
-  const guardado = saveDB(db);
-
-  // La subasta se cuelga cuando el servidor ya tiene la prenda: antes de
-  // eso no existe el id contra el que colgarla.
+  // La prenda ya está en el servidor (crearPrenda / guardarPrenda), así
+  // que la subasta se le puede colgar directamente.
   if (cfgSubasta && nuevoIdParaSubasta != null) {
     const btn = document.getElementById('submitBtn');
     if (btn) { btn.disabled = true; btn.textContent = 'ABRIENDO SUBASTA…'; }
-    try { await guardado; await aplicarSubasta(nuevoIdParaSubasta, cfgSubasta); }
-    catch (_) { toast('La prenda se guardó, pero la subasta no'); }
+    await aplicarSubasta(nuevoIdParaSubasta, cfgSubasta);
     if (btn) { btn.disabled = false; btn.textContent = 'PUBLICAR EN BAZAR'; }
   }
 
@@ -2818,6 +2867,7 @@ function pistaSubasta() {
   if (!pista) return;
   const inicial = parseFloat(document.getElementById('f_sbInicial')?.value);
   const fin     = document.getElementById('f_sbFin')?.value;
+  const reserva = parseFloat(document.getElementById('f_sbReserva')?.value) || 0;
 
   if (!inicial || !fin) {
     pista.textContent = 'Cada oferta tiene que subir al menos $50. Al cerrarse verás aquí quién ganó y cómo contactarlo.';
@@ -2840,9 +2890,16 @@ function pistaSubasta() {
   const dur = horas >= 48 ? `${Math.round(horas / 24)} días`
             : horas >= 1  ? `${horas} h`
             : `${Math.round(minutos)} min`;
+  if (reserva && reserva < inicial) {
+    pista.textContent = 'La reserva no puede ser menor que el precio de salida.';
+    pista.className = 'sb-pista mal';
+    return;
+  }
   pista.textContent =
     `Empieza en ${sbDinero(inicial)} y dura ${dur}. La primera oferta será de ${sbDinero(inicial)} ` +
-    `y de ahí sube de ${sbDinero(SB_INCREMENTO)} en ${sbDinero(SB_INCREMENTO)} como mínimo.`;
+    `y de ahí sube de ${sbDinero(SB_INCREMENTO)} en ${sbDinero(SB_INCREMENTO)} como mínimo.` +
+    (reserva ? ` Si no llega a ${sbDinero(reserva)}, no estás obligado a vender.` : '') +
+    ' Una oferta en los últimos 3 minutos alarga el cierre otros 3.';
   pista.className = 'sb-pista bien';
 }
 
@@ -2851,6 +2908,7 @@ function leerSubastaForm() {
   if (!document.getElementById('f_useSubasta')?.checked) return null;
   const inicial = parseFloat(document.getElementById('f_sbInicial')?.value);
   const fin     = document.getElementById('f_sbFin')?.value;
+  const reserva = parseFloat(document.getElementById('f_sbReserva')?.value) || 0;
   if (!inicial || inicial <= 0) return { error: 'Escribe el precio de salida de la subasta' };
   if (!fin)                     return { error: 'Elige cuándo cierra la subasta' };
   const cierre = new Date(fin);
@@ -2858,7 +2916,10 @@ function leerSubastaForm() {
   if ((cierre.getTime() - Date.now()) / 60000 < 10) {
     return { error: 'La subasta tiene que durar al menos 10 minutos' };
   }
-  return { precioInicial: Math.round(inicial), fin: cierre.toISOString() };
+  if (reserva && reserva < inicial) {
+    return { error: 'La reserva no puede ser menor que el precio de salida' };
+  }
+  return { precioInicial: Math.round(inicial), fin: cierre.toISOString(), reserva: Math.round(reserva) };
 }
 
 // Se llama después de guardar la prenda: para entonces el servidor ya
@@ -2868,7 +2929,7 @@ async function aplicarSubasta(prendaId, cfg) {
   try {
     await api('/api/acciones?op=configurar-subasta', {
       method: 'POST',
-      body: { prendaId, precioInicial: cfg.precioInicial, fin: cfg.fin },
+      body: { prendaId, precioInicial: cfg.precioInicial, fin: cfg.fin, reserva: cfg.reserva },
     });
     if (typeof pollAhora === 'function') pollAhora(600);
     toast('Subasta abierta');
@@ -3103,6 +3164,8 @@ async function alargarSubasta(prendaId, horas) {
   try {
     await api('/api/acciones?op=configurar-subasta', {
       method: 'POST',
+      // Sin 'reserva' a propósito: el panel no conoce el monto (no se
+      // publica) y el servidor conserva el que ya estaba guardado.
       body: { prendaId, precioInicial: s.precioInicial, fin: nuevoFin.toISOString() },
     });
     playActionSound('ok');
@@ -4555,14 +4618,12 @@ async function publicarDrop(dropId) {
   const drop  = drops.find(d => d.id === dropId);
   if (!drop) return;
 
-  const db = getDB();
-  drop.prendas.forEach(pId => {
-    const p = db.find(x => x.id === pId);
-    if (p) p.oculto = false;
-  });
+  // Una petición por prenda: un drop tiene unas cuantas, no el catálogo
+  // entero, así que sale más barato que remandar todo el inventario.
+  await Promise.all(drop.prendas.map(pId =>
+    guardarPrenda(pId, { oculto: false }).catch(() => {})));
   drop.publicado = true;
   drop.publicadoEn = new Date().toISOString();
-  saveDB(db);
   saveDrops(drops);
   registrarLog('drop_publicar', drop.nombre, `${drop.prendas.length} prendas`);
   playActionSound('sell');
@@ -4578,14 +4639,9 @@ function checkDropsAutoPublish() {
 
   drops.forEach(drop => {
     if (!drop.publicado && new Date(drop.fecha) <= ahora) {
-      const db = getDB();
-      drop.prendas.forEach(pId => {
-        const p = db.find(x => x.id === pId);
-        if (p) p.oculto = false;
-      });
+      drop.prendas.forEach(pId => { guardarPrenda(pId, { oculto: false }).catch(() => {}); });
       drop.publicado = true;
       drop.publicadoEn = ahora.toISOString();
-      saveDB(db);
       huboPublicacion = true;
       registrarLog('drop_publicar', drop.nombre, 'Automático');
       toast(`Drop "${drop.nombre}" publicado automáticamente`);
@@ -4602,9 +4658,8 @@ function quitarPrendaDeDrop(dropId, prendaId) {
   const drop  = drops.find(d => d.id === dropId);
   if (!drop) return;
   drop.prendas = drop.prendas.filter(id => id !== prendaId);
-  const db = getDB();
-  const p  = db.find(x => x.id === prendaId);
-  if (p) { p.oculto = false; saveDB(db); }
+  const p = getDB().find(x => x.id === prendaId);
+  if (p) guardarPrenda(prendaId, { oculto: false }).catch(() => {});
   saveDrops(drops);
   registrarLog('drop_quitar_prenda', p?.nombre || ('#'+prendaId), `Drop: ${drop.nombre}`);
   playActionSound('del');

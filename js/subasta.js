@@ -62,11 +62,24 @@
       sondeo = setInterval(async () => {
         if (!vivo) return;
         try {
-          const antes = estado?.subasta?.totalOfertas ?? 0;
+          const antes   = estado?.subasta?.totalOfertas ?? 0;
+          const cerrada = estado?.subasta?.cerrada;
+          const ganaba  = vasGanando();
+
           const nuevo = await Cuenta.subasta(prenda.id);
           if (!vivo) return;
           estado = nuevo;
-          pintar();
+
+          // Repintar reemplaza todo el HTML, y eso borra el campo que la
+          // persona está llenando (en el celular además le cierra el
+          // teclado). Solo se repinta cuando el panel tiene que cambiar
+          // de forma: la subasta cerró, o el formulario tiene que
+          // aparecer o desaparecer. El resto son números, y esos se
+          // cambian en su sitio.
+          const cambiaLaForma = nuevo.subasta.cerrada !== cerrada || vasGanando() !== ganaba;
+          if (cambiaLaForma || !estaLlenando()) pintar();
+          else actualizarNumeros();
+
           if (estado.subasta.totalOfertas > antes && antes > 0) {
             const lider = estado.subasta.lider?.username;
             const mio = yo();
@@ -77,6 +90,73 @@
           if (estado.subasta.cerrada) { clearInterval(sondeo); clearInterval(reloj); }
         } catch (_) {}
       }, 8000);
+    }
+
+    const vasGanando = () => {
+      const mio = yo();
+      return !!(mio && estado?.subasta?.lider &&
+                estado.subasta.lider.username === mio.username);
+    };
+
+    // ¿Hay alguien a media captura? Si el foco está en un campo, o ya
+    // escribió su usuario o su teléfono, repintar le borraría el trabajo.
+    function estaLlenando() {
+      const act = document.activeElement;
+      if (act && contenedor.contains(act) && /^(INPUT|TEXTAREA)$/.test(act.tagName)) return true;
+      const u = contenedor.querySelector('.sb-user');
+      const t = contenedor.querySelector('.sb-tel');
+      return !!((u && u.value.trim()) || (t && t.value.trim()));
+    }
+
+    // Cambia las cifras sin tocar el formulario: así el teclado del
+    // celular no se cierra y no se pierde lo que ya estaba escrito.
+    function actualizarNumeros() {
+      const s = estado?.subasta;
+      if (!s || !contenedor) return;
+
+      const monto = contenedor.querySelector('.sb-cifra-monto');
+      if (monto) {
+        monto.innerHTML = `${money(s.totalOfertas ? s.ofertaActual : s.precioInicial)}
+          <span class="sb-cur">MXN</span>`;
+      }
+
+      const label = contenedor.querySelector('.sb-cifra-label');
+      if (label) label.textContent = s.totalOfertas ? 'Última oferta' : 'Precio de salida';
+
+      const pie = contenedor.querySelector('.sb-cifra-pie');
+      if (pie) {
+        pie.innerHTML = s.totalOfertas
+          ? `${s.totalOfertas} oferta${s.totalOfertas === 1 ? '' : 's'} · va ganando <b>@${esc(s.lider?.username || '')}</b>`
+          : 'Todavía nadie oferta. Puedes ser el primero.';
+      }
+
+      const minimoTxt = contenedor.querySelector('.sb-campo-monto > span');
+      if (minimoTxt) minimoTxt.textContent = `Tu oferta (mínimo ${money(s.minimo)})`;
+
+      // El importe solo se corrige si la persona no lo ha tocado: si ya
+      // escribió una cifra, es suya.
+      const campo = contenedor.querySelector('.sb-monto');
+      if (campo) {
+        campo.min = s.minimo;
+        if (!campo.dataset.tocado) {
+          campo.value = s.minimo;
+          const btn = contenedor.querySelector('.sb-btn');
+          if (btn && !btn.disabled) btn.textContent = `Ofertar ${money(s.minimo)}`;
+        }
+      }
+
+      contenedor.querySelectorAll('.sb-saltos button').forEach(b => {
+        const extra = Number(b.dataset.extra || 0);
+        b.textContent = extra ? `+${extra}` : money(s.minimo);
+      });
+
+      const reservaEl = contenedor.querySelector('.sb-reserva');
+      if (reservaEl && s.tieneReserva) {
+        reservaEl.classList.toggle('ok', !!s.reservaAlcanzada);
+        reservaEl.textContent = s.reservaAlcanzada
+          ? 'Reserva alcanzada: se vende a quien vaya ganando'
+          : 'Todavía no llega al precio de reserva del bazar';
+      }
     }
 
     // Solo el contador, cada segundo, sin repintar todo el panel
@@ -144,10 +224,20 @@
                 ? `${s.totalOfertas} oferta${s.totalOfertas === 1 ? '' : 's'} · va ganando <b>@${esc(s.lider?.username || '')}</b>`
                 : 'Todavía nadie oferta. Puedes ser el primero.'}
             </div>
+            ${s.tieneReserva ? `
+              <div class="sb-reserva ${s.reservaAlcanzada ? 'ok' : ''}">
+                ${s.reservaAlcanzada
+                  ? 'Reserva alcanzada: se vende a quien vaya ganando'
+                  : 'Todavía no llega al precio de reserva del bazar'}
+              </div>` : ''}
           </div>
 
-          ${voyGanando ? `<div class="sb-vas-ganando">Vas ganando con ${money(s.ofertaActual)}</div>` : ''}
-
+          ${voyGanando ? `
+            <div class="sb-vas-ganando">
+              <b>Vas ganando con ${money(s.ofertaActual)}</b>
+              <span>No hace falta que hagas nada. Si alguien te supera, esta
+              página te avisa y podrás volver a ofertar.</span>
+            </div>` : `
           <form class="sb-form">
             <label class="sb-campo-monto">
               <span>Tu oferta (mínimo ${money(s.minimo)})</span>
@@ -193,14 +283,15 @@
 
             <div class="sb-error"></div>
             <button type="submit" class="sb-btn">Ofertar ${money(s.minimo)}</button>
-          </form>
+          </form>`}
 
           ${historialHTML()}
 
           <p class="sb-reglas">
-            Cada oferta sube al menos ${money(INC)}. Al terminar el tiempo,
-            gana la más alta y el bazar contacta al ganador. Ofertar es un
-            compromiso de compra.
+            Cada oferta sube al menos ${money(INC)}. Una oferta en los últimos
+            3 minutos alarga el cierre otros 3, así que nadie puede ganar
+            pujando en el último segundo. Al terminar, gana la más alta y el
+            bazar contacta al ganador. Ofertar es un compromiso de compra.
           </p>
         </div>`;
     }
@@ -218,13 +309,19 @@
         `con ${money(s.ofertaActual)} MXN. ¿Cómo la recojo?\n${ficha}`);
 
       if (!s.ganador) {
+        // Dos motivos distintos para no tener ganador, y a quien ofertó le
+        // importa cuál de los dos fue.
+        const porReserva = s.totalOfertas > 0 && s.tieneReserva && !s.reservaAlcanzada;
         return `
           <div class="sb-caja cerrada">
             ${encabezadoPrenda()}
             <div class="sb-cabecera"><span class="sb-etiqueta gris">Subasta terminada</span></div>
             <div class="sb-cifra">
-              <div class="sb-cifra-label">Nadie ofertó</div>
-              <div class="sb-cifra-pie">Se quedó sin ofertas. Pregúntale al bazar si la vuelve a subastar.</div>
+              <div class="sb-cifra-label">${porReserva ? 'No llegó a la reserva' : 'Nadie ofertó'}</div>
+              ${porReserva ? `<div class="sb-cifra-monto">${money(s.ofertaActual)} <span class="sb-cur">MXN</span></div>` : ''}
+              <div class="sb-cifra-pie">${porReserva
+                ? 'La oferta más alta se quedó por debajo del mínimo del bazar, así que no se vendió. Escríbele por si aún se pone de acuerdo.'
+                : 'Se quedó sin ofertas. Pregúntale al bazar si la vuelve a subastar.'}</div>
             </div>
           </div>`;
       }
@@ -263,7 +360,7 @@
       const mio = yo();
       return `
         <details class="sb-historial">
-          <summary>Ver las ${h.length} oferta${h.length === 1 ? '' : 's'}</summary>
+          <summary>${h.length === 1 ? 'Ver la oferta' : `Ver las ${h.length} ofertas`}</summary>
           <div class="sb-historial-lista">
             ${h.map((o, i) => `
               <div class="sb-fila${i === 0 ? ' top' : ''}${mio && o.username === mio.username ? ' mia' : ''}">
@@ -288,12 +385,14 @@
           const btn = contenedor.querySelector('.sb-btn');
           if (!campo || !estado) return;
           campo.value = estado.subasta.minimo + Number(b.dataset.extra || 0);
+          campo.dataset.tocado = '1';
           if (btn) btn.textContent = `Ofertar ${money(campo.value)}`;
         });
       });
 
       const campo = contenedor.querySelector('.sb-monto');
       if (campo) campo.addEventListener('input', () => {
+        campo.dataset.tocado = '1';   // ya es suyo: no se lo volvemos a escribir
         const btn = contenedor.querySelector('.sb-btn');
         if (btn && campo.value) btn.textContent = `Ofertar ${money(campo.value)}`;
       });
@@ -335,7 +434,9 @@
         if (cuerpo.username) guardarInvitado(cuerpo.username, cuerpo.telefono);
         estado = { subasta: r.subasta, historial: r.historial, yo: r.yo };
         pintar();
-        decir(`¡Vas ganando con ${money(r.subasta.ofertaActual)}!`);
+        decir(r.prorrogada
+          ? `¡Vas ganando con ${money(r.subasta.ofertaActual)}! La subasta se alargó 3 minutos.`
+          : `¡Vas ganando con ${money(r.subasta.ofertaActual)}!`);
         // El catálogo de atrás también tiene que enterarse
         window.dispatchEvent(new CustomEvent('subasta:oferta', {
           detail: { prendaId: prenda.id, subasta: r.subasta },

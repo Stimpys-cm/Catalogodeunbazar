@@ -22,6 +22,12 @@ import { normalizarUsername, usernameValido, siguienteId } from './_ventas.js';
 // El salto mínimo entre una oferta y la siguiente.
 export const INCREMENTO_MIN = 50;
 
+// Anti-sniping: una oferta en los últimos minutos empuja el cierre.
+// Sin esto, quien puja en el último segundo gana sin que nadie pueda
+// responderle, y la subasta deja de ser una subasta.
+export const VENTANA_PRORROGA_MIN = 3;   // si entra oferta faltando menos de esto…
+export const PRORROGA_MIN         = 3;   // …se alarga otros tantos minutos
+
 // Ni una subasta de dos minutos ni una de un año.
 export const DURACION_MIN_MIN =  10;          // 10 minutos
 export const DURACION_MAX_MIN =  60 * 24 * 30; // 30 días
@@ -33,7 +39,11 @@ export async function asegurarIndicesSubasta() {
   try {
     const db = await getDB();
     await db.collection('subastas').createIndex({ prendaId: 1 }, { unique: true });
+    // La pestaña del panel consulta por bazar, no por prenda
+    await db.collection('subastas').createIndex({ bazarId: 1, fin: -1 });
     await db.collection('ofertas').createIndex({ prendaId: 1, monto: -1 });
+    // "¿En qué he ofertado yo?" ordenado por lo más reciente
+    await db.collection('ofertas').createIndex({ username: 1, fecha: -1 });
     await db.collection('invitados').createIndex({ username: 1 }, { unique: true });
     global._idxSubastas = true;
   } catch (_) { /* si falla, se sigue: los índices son una optimización */ }
@@ -62,10 +72,17 @@ export function subastaPublica(s) {
     fin:           s.fin,
     ofertaActual:  num(s.ofertaActual),
     totalOfertas:  Number(s.totalOfertas || 0),
+    // El monto de la reserva no se publica —saberlo sería saber hasta
+    // dónde hay que pujar— pero sí si ya se alcanzó, que es lo que le
+    // importa a quien está ofertando.
+    tieneReserva:  num(s.reserva) > 0,
+    reservaAlcanzada: num(s.reserva) > 0 ? num(s.ofertaActual) >= num(s.reserva) : true,
     lider:         s.lider ? { username: s.lider.username } : null,
     minimo:        minimoSiguiente(s),
     cerrada,
-    ganador:       cerrada && s.lider ? { username: s.lider.username, monto: num(s.ofertaActual) } : null,
+    ganador: cerrada && s.lider && (!num(s.reserva) || num(s.ofertaActual) >= num(s.reserva))
+      ? { username: s.lider.username, monto: num(s.ofertaActual) }
+      : null,
     ultimaOferta:  s.ultimaOferta || null,
   };
 }
@@ -141,16 +158,25 @@ export async function registrarInvitado(usernameCrudo, telefonoCrudo) {
 }
 
 // ── Configurar (la crea o la actualiza el vendedor) ──────────
-export async function guardarSubasta({ prendaId, bazarId, precioInicial, fin }) {
+export async function guardarSubasta({ prendaId, bazarId, precioInicial, fin, reserva }) {
   const db  = await getDB();
   const col = db.collection('subastas');
   await asegurarIndicesSubasta();
 
   const inicial = Math.round(num(precioInicial));
   const cierre  = new Date(fin);
+  // Precio de reserva: por debajo de esto el vendedor no está obligado a
+  // vender. 0 = sin reserva. Si no viene en la petición se deja la que
+  // ya había: el monto no se publica, así que quien alarga la subasta
+  // desde el panel no lo conoce y no debe poder borrarlo sin querer.
+  const tocaReserva = reserva !== undefined && reserva !== null && reserva !== '';
+  const minimo = tocaReserva ? Math.max(0, Math.round(num(reserva))) : null;
 
   if (!(inicial > 0))         return { ok: false, error: 'El precio de salida tiene que ser mayor que cero' };
   if (isNaN(cierre.getTime())) return { ok: false, error: 'La fecha de cierre no es válida' };
+  if (minimo && minimo < inicial) {
+    return { ok: false, error: 'El precio de reserva no puede ser menor que el de salida' };
+  }
 
   const minutos = (cierre.getTime() - Date.now()) / 60000;
   if (minutos < DURACION_MIN_MIN) {
@@ -179,6 +205,7 @@ export async function guardarSubasta({ prendaId, bazarId, precioInicial, fin }) 
       $set: {
         bazarId: Number(bazarId || 1),
         precioInicial: inicial,
+        ...(tocaReserva ? { reserva: minimo } : {}),
         incrementoMin: INCREMENTO_MIN,
         fin: cierre.toISOString(),
         cerrada: false,
@@ -186,6 +213,7 @@ export async function guardarSubasta({ prendaId, bazarId, precioInicial, fin }) 
       },
       $setOnInsert: {
         prendaId: Number(prendaId),
+        ...(tocaReserva ? {} : { reserva: 0 }),
         ofertaActual: 0,
         totalOfertas: 0,
         lider: null,
@@ -234,16 +262,24 @@ export async function ofertar({ prendaId, monto, postor }) {
 
   // La condición del update es la que decide quién gana si dos personas
   // ofertan a la vez: solo pasa si el precio sigue siendo el que leímos.
+  // Si entra faltando poco, el cierre se empuja para que los demás puedan
+  // responder. Se recalcula desde ahora, no desde el fin anterior, para
+  // que diez ofertas seguidas no la alarguen media hora.
+  const faltan = (new Date(s.fin).getTime() - Date.now()) / 60000;
+  const cambios = {
+    ofertaActual: cantidad,
+    lider: { username: postor.username, tipo: postor.tipo },
+    ultimaOferta: new Date().toISOString(),
+  };
+  let prorrogada = false;
+  if (faltan < VENTANA_PRORROGA_MIN) {
+    cambios.fin = new Date(Date.now() + PRORROGA_MIN * 60000).toISOString();
+    prorrogada = true;
+  }
+
   const r = await col.updateOne(
     { prendaId: id, ofertaActual: num(s.ofertaActual), totalOfertas: Number(s.totalOfertas || 0) },
-    {
-      $set: {
-        ofertaActual: cantidad,
-        lider: { username: postor.username, tipo: postor.tipo },
-        ultimaOferta: new Date().toISOString(),
-      },
-      $inc: { totalOfertas: 1 },
-    }
+    { $set: cambios, $inc: { totalOfertas: 1 } }
   );
   if (r.modifiedCount !== 1) {
     return { ok: false, codigo: 409, error: 'Alguien ofertó justo antes que tú. Vuelve a intentar.' };
@@ -261,7 +297,7 @@ export async function ofertar({ prendaId, monto, postor }) {
     fecha: new Date().toISOString(),
   });
 
-  return { ok: true, subasta: await col.findOne({ prendaId: id }) };
+  return { ok: true, prorrogada, subasta: await col.findOne({ prendaId: id }) };
 }
 
 // ── Cierre ───────────────────────────────────────────────────
@@ -442,5 +478,84 @@ export async function subastasDeBazares(bazarIds) {
       ganador: s.cerrada && s.lider ? (contactos.get(s.lider.username) || null) : null,
       puestosConContacto: s.cerrada ? PUESTOS_CON_CONTACTO : 0,
     };
+  });
+}
+
+// ── Las subastas en las que participó una persona ────────────
+// Para la pestaña "Mis subastas" del comprador: en qué ofertó, si va
+// ganando y qué pasó al final.
+export async function subastasDe(username) {
+  const db = await getDB();
+
+  const mias = await db.collection('ofertas')
+    .find({ username })
+    .sort({ fecha: -1 })
+    .limit(200)
+    .toArray();
+  if (!mias.length) return [];
+
+  const prendaIds = [...new Set(mias.map(o => Number(o.prendaId)))];
+
+  const [subastas, prendas, bazares] = await Promise.all([
+    db.collection('subastas').find({ prendaId: { $in: prendaIds } }).toArray(),
+    db.collection('inventario').find({ id: { $in: prendaIds } },
+      { projection: { id: 1, nombre: 1, marca: 1, imagenes: 1, bazarId: 1, vendido: 1 } }).toArray(),
+    db.collection('bazares').find({}, { projection: { id: 1, nombre: 1, slug: 1, whatsapp: 1 } }).toArray(),
+  ]);
+
+  const porPrenda = new Map(prendas.map(p => [Number(p.id), p]));
+  const porBazar  = new Map(bazares.map(b => [Number(b.id), b]));
+
+  // Cerrar de paso las que ya pasaron de hora
+  const vencidas = subastas.filter(s => !s.cerrada && yaTermino(s)).map(s => Number(s.prendaId));
+  if (vencidas.length) {
+    await db.collection('subastas').updateMany(
+      { prendaId: { $in: vencidas } },
+      { $set: { cerrada: true, cerradaEn: new Date().toISOString() } }
+    );
+    subastas.forEach(s => { if (vencidas.includes(Number(s.prendaId))) s.cerrada = true; });
+  }
+
+  // Mi oferta más alta en cada subasta
+  const miTope = new Map();
+  for (const o of mias) {
+    const id = Number(o.prendaId);
+    const previo = miTope.get(id);
+    if (!previo || num(o.monto) > previo.monto) {
+      miTope.set(id, { monto: num(o.monto), fecha: o.fecha });
+    }
+  }
+
+  return subastas.map(s => {
+    const id = Number(s.prendaId);
+    const p  = porPrenda.get(id) || null;
+    const bz = p ? porBazar.get(Number(p.bazarId || 1)) : null;
+    const pub = subastaPublica(s);
+    const voyGanando = s.lider?.username === username;
+
+    // Cuatro finales posibles, y a quien ofertó le importa cuál le tocó
+    const estado = !pub.cerrada
+      ? (voyGanando ? 'ganando' : 'superado')
+      : (pub.ganador?.username === username ? 'gane'
+         : voyGanando ? 'sin-reserva'      // ibas ganando pero no llegó a la reserva
+         : 'perdi');
+
+    return {
+      ...pub,
+      estado,
+      miOferta: miTope.get(id)?.monto || 0,
+      miUltima: miTope.get(id)?.fecha || null,
+      prenda: p ? {
+        id: p.id, nombre: p.nombre, marca: p.marca || '',
+        imagen: (Array.isArray(p.imagenes) ? p.imagenes : []).filter(Boolean)[0] || '',
+        vendido: !!p.vendido,
+      } : null,
+      bazar: bz ? { id: bz.id, nombre: bz.nombre, slug: bz.slug, whatsapp: bz.whatsapp || '' } : null,
+    };
+  }).sort((a, b) => {
+    // Primero lo que pide acción: te superaron, o ganaste y hay que hablar
+    const peso = e => ({ superado: 0, gane: 1, ganando: 2, 'sin-reserva': 3, perdi: 4 }[e] ?? 5);
+    if (peso(a.estado) !== peso(b.estado)) return peso(a.estado) - peso(b.estado);
+    return new Date(b.fin) - new Date(a.fin);
   });
 }

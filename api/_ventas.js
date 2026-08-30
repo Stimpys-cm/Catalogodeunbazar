@@ -26,11 +26,25 @@ export const ETIQUETAS_BAZAR = [
   'Buen precio',
 ];
 
+// Lo que un bazar puede decir de un comprador. Las últimas son las que
+// permiten dejar constancia de que algo salió mal: sin ellas la
+// reputación solo sabe hablar bien y no sirve para decidir nada.
 export const ETIQUETAS_COMPRADOR = [
   'Pago puntual',
   'Buena comunicación',
   'Sin complicaciones',
   'Volvería a venderle',
+  'Tardó en responder',
+  'No se presentó',
+  'No pagó',
+];
+
+// Las que cuentan como aviso. Se marcan distinto y solo se pueden poner
+// con una calificación baja: no tiene sentido dar 5 estrellas y "No pagó".
+export const ETIQUETAS_COMPRADOR_MALAS = [
+  'Tardó en responder',
+  'No se presentó',
+  'No pagó',
 ];
 
 // Un @username es minúsculas, sin arroba, sin espacios: así se puede

@@ -26,7 +26,10 @@ function cardHTML(p, badge) {
   const bz  = bazarDe(p);
   const img = primeraImg(p);
   const imgHTML = img
-    ? `<img src="${imgOptimizada(img, 400)}" alt="${hEsc(p.nombre)}" loading="lazy" decoding="async">`
+    ? `<img src="${imgOptimizada(img, 400)}"
+            srcset="${imgSrcSet(img, [280, 400, 640])}"
+            sizes="(max-width: 700px) 45vw, 220px"
+            alt="${hEsc(p.nombre)}" loading="lazy" decoding="async">`
     : `<div class="h-card-nophoto">Sin foto</div>`;
   return `<a class="h-card" href="${linkPrenda(p)}">
     <div class="h-card-img">

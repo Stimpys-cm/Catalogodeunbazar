@@ -22,7 +22,7 @@ import { hashPassword } from './_password.js';
 import { puede, esGlobal, mismoBazar } from './_bazar.js';
 import {
   normalizarUsername, usernameValido, siguienteId,
-  instantaneaPrenda, asegurarIndices, ETIQUETAS_COMPRADOR,
+  instantaneaPrenda, asegurarIndices, ETIQUETAS_COMPRADOR, ETIQUETAS_COMPRADOR_MALAS,
 } from './_ventas.js';
 import { calcularEstadisticas } from './_estadisticas.js';
 import { leerAjustes, guardarAjustes, SECCIONES } from './_ajustes.js';
@@ -89,7 +89,7 @@ async function prendaDelVendedor(req, res, id) {
 async function handleConfigurarSubasta(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
 
-  const { prendaId, precioInicial, fin } = req.body || {};
+  const { prendaId, precioInicial, fin, reserva } = req.body || {};
   if (prendaId == null) return res.status(400).json({ error: 'Falta la prenda' });
 
   const ctx = await prendaDelVendedor(req, res, prendaId);
@@ -102,7 +102,7 @@ async function handleConfigurarSubasta(req, res) {
   const r = await guardarSubasta({
     prendaId: Number(prendaId),
     bazarId:  Number(ctx.prenda.bazarId || 1),
-    precioInicial, fin,
+    precioInicial, fin, reserva,
   });
   if (!r.ok) return res.status(400).json({ error: r.error });
 
@@ -649,10 +649,17 @@ async function handleResenaComprador(req, res) {
   if (yaHay) return res.status(409).json({ error: 'Ya calificaste a este comprador' });
 
   const texto = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
-  const etiquetas = (Array.isArray(req.body?.etiquetas) ? req.body.etiquetas : [])
+  const estrellasPuestas = Number(req.body?.estrellas) || 0;
+  let etiquetas = (Array.isArray(req.body?.etiquetas) ? req.body.etiquetas : [])
     .map(e => texto(e, 40))
     .filter(e => ETIQUETAS_COMPRADOR.includes(e))
     .slice(0, ETIQUETAS_COMPRADOR.length);
+
+  // "No pagó" con cinco estrellas no le sirve a nadie: si la calificación
+  // es buena, las etiquetas de aviso se caen.
+  if (estrellasPuestas >= 4) {
+    etiquetas = etiquetas.filter(e => !ETIQUETAS_COMPRADOR_MALAS.includes(e));
+  }
 
   const resena = {
     id: await siguienteId('resenas'),

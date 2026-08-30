@@ -2057,3 +2057,113 @@ a.sin-marca, .pp-marca.sin-marca {
 @media (max-width: 520px) {
   .ct-pw-reglas { grid-template-columns: 1fr; }
 }
+
+/* Enlace de "olvidé mi contraseña" y avisos de la recuperación */
+.ct-olvide {
+  display: block; width: 100%; margin-top: 14px;
+  background: none; border: none; cursor: pointer;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12.5px; font-weight: 600; color: var(--accent, #2d6be4);
+  padding: 8px; border-radius: 8px;
+  transition: background .18s;
+}
+.ct-olvide:hover { background: rgba(45,107,228,.07); }
+
+.ct-ok {
+  background: rgba(46,139,87,.09); border: 1px solid rgba(46,139,87,.25);
+  color: #2e8b57; border-radius: 10px; padding: 14px 16px;
+  font-size: 13px; line-height: 1.55; margin-bottom: 16px; font-weight: 600;
+}
+.ct-ok[hidden] { display: none; }
+
+/* ── MIS SUBASTAS (pestaña del comprador) ──────────────────── */
+.ct-navtab-aviso {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px;
+  border-radius: 20px; background: #e05c5c; color: #fff;
+  font-style: normal; font-size: 10px; font-weight: 800; line-height: 1;
+}
+
+.ct-sb-lista { display: flex; flex-direction: column; gap: 12px; }
+.ct-sb {
+  display: flex; gap: 14px; padding: 14px;
+  background: #fff; border: 1px solid rgba(26,31,46,.09);
+  border-radius: 14px;
+}
+.ct-sb.urge { border-color: rgba(224,92,92,.4); background: rgba(224,92,92,.03); }
+.ct-sb.gane { border-color: rgba(46,139,87,.4); background: rgba(46,139,87,.04); }
+.ct-sb.bien { border-color: rgba(45,107,228,.3); }
+
+.ct-sb-foto {
+  width: 76px; height: 95px; flex-shrink: 0; border-radius: 11px;
+  overflow: hidden; background: #eceef4; display: flex;
+  align-items: center; justify-content: center;
+  font-size: 9px; color: #8b8578; text-transform: uppercase; letter-spacing: .1em;
+}
+.ct-sb-foto img { width: 100%; height: 100%; object-fit: cover; }
+
+.ct-sb-datos { flex: 1; min-width: 0; }
+.ct-sb-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 6px;
+}
+.ct-sb-estado {
+  font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  padding: 4px 11px; border-radius: 20px;
+}
+.ct-sb-estado.urge { background: rgba(224,92,92,.12); color: #d14545; }
+.ct-sb-estado.gane { background: rgba(46,139,87,.12); color: #2e8b57; }
+.ct-sb-estado.bien { background: rgba(45,107,228,.1);  color: #2d6be4; }
+.ct-sb-estado.gris { background: rgba(176,168,152,.18); color: #8b8578; }
+.ct-sb-reloj {
+  font-size: 11.5px; font-weight: 700; color: #4a4640;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.ct-sb-reloj.urge { color: #e05c5c; }
+.ct-sb-reloj.fin  { color: #8b8578; }
+
+.ct-sb-marca {
+  font-size: 9px; font-weight: 800; letter-spacing: .13em;
+  text-transform: uppercase; color: #8b8578;
+}
+.ct-sb-nombre {
+  display: block; font-size: 14px; font-weight: 700; color: #1a1f2e;
+  text-decoration: none; line-height: 1.3; margin-top: 1px;
+}
+.ct-sb-nombre:hover { color: #2d6be4; }
+.ct-sb-bazar { font-size: 11.5px; color: #8b8578; margin-top: 2px; }
+
+.ct-sb-cifras { display: flex; gap: 18px; flex-wrap: wrap; margin: 10px 0 0; }
+.ct-sb-cifras > div { display: flex; flex-direction: column; gap: 1px; }
+.ct-sb-cifras span {
+  font-size: 9px; letter-spacing: .13em; text-transform: uppercase;
+  color: #8b8578; font-weight: 700;
+}
+.ct-sb-cifras b { font-size: 15px; color: #1a1f2e; }
+.ct-sb-cifras .cur { font-size: .62em; color: #8b8578; font-weight: 400; }
+
+.ct-sb-nota {
+  font-size: 11px; color: #a35f14; background: rgba(200,118,31,.08);
+  border-radius: 8px; padding: 7px 11px; margin-top: 9px;
+}
+
+.ct-sb-acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 11px; }
+.ct-sb-btn {
+  display: inline-block; background: #2d6be4; color: #fff; text-decoration: none;
+  padding: 9px 16px; border-radius: 9px;
+  font-size: 12px; font-weight: 700; letter-spacing: .03em;
+  transition: filter .18s;
+}
+.ct-sb-btn:hover { filter: brightness(1.08); }
+.ct-sb-btn.wa { background: #25d366; }
+.ct-sb-btn.fantasma {
+  background: none; color: #4a4640; border: 1.5px solid rgba(26,31,46,.14);
+}
+.ct-sb-btn.fantasma:hover { border-color: #2d6be4; color: #2d6be4; }
+.ct-sb-explica { font-size: 11.5px; color: #8b8578; line-height: 1.5; }
+
+@media (max-width: 560px) {
+  .ct-sb { flex-direction: column; }
+  .ct-sb-foto { width: 100%; height: 140px; }
+  .ct-sb-cifras { gap: 14px; }
+}
