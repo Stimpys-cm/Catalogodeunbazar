@@ -156,15 +156,27 @@ export default async function middleware(req) {
   const rutaPanel = (process.env.RUTA_PANEL || RUTA_POR_DEFECTO).replace(/^\/+|\/+$/g, '');
   const secreto   = process.env.SESSION_SECRET || process.env.MASTER_KEY || '';
 
-  const esPuerta = !!rutaPanel && (ruta === `/${rutaPanel}` || ruta === `/${rutaPanel}/`);
-  const esAdmin  = ruta === '/admin.html' || ruta === '/admin' || ruta.startsWith('/admin/');
-  const esLogin  = ruta === '/login.html';
+  // Vercel sirve /login exactamente igual que /login.html, así que hay que
+  // reconocer las dos formas. Comparar solo contra "/login.html" dejaba la
+  // puerta abierta por detrás: el formulario del panel quedaba público y
+  // Google llegó a indexarlo. Se normaliza la ruta una vez —sin barra final
+  // y sin extensión— y a partir de ahí se compara con un solo nombre.
+  const sinBarra  = ruta.replace(/\/+$/, '') || '/';
+  const pagina    = sinBarra.replace(/\.html$/i, '');
+  // En minúsculas para comparar: /LOGIN.HTML no puede ser una rendija.
+  const nombre    = pagina.toLowerCase();
+
+  // La dirección secreta sí distingue mayúsculas: es una contraseña, y
+  // cuantas más formas de escribirla valgan, más fácil es acertarla.
+  const esPuerta = !!rutaPanel && (pagina === `/${rutaPanel}`);
+  const esAdmin  = nombre === '/admin' || sinBarra.toLowerCase().startsWith('/admin/');
+  const esLogin  = nombre === '/login';
 
   // Las apps de mensajería y los buscadores piden la ficha para armar el
   // preview, pero /prenda.html es una página vacía hasta que corre el JS:
   // el enlace saldría sin foto ni precio. A ellos se les manda al endpoint
   // que sí escribe las etiquetas (api/prenda.js). A las personas, no.
-  if (ruta === '/prenda.html' && esRobot(req)) {
+  if (nombre === '/prenda' && esRobot(req)) {
     const id = url.searchParams.get('id');
     if (id) return irA(url.origin, `/api/prenda?id=${encodeURIComponent(id)}`);
   }

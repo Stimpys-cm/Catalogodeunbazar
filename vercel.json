@@ -15,7 +15,7 @@
   ],
   "headers": [
     {
-      "source": "/(admin|login)\\.html",
+      "source": "/(admin|login)(\\.html)?",
       "headers": [
         {
           "key": "X-Robots-Tag",
