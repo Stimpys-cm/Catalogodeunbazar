@@ -220,7 +220,7 @@ function pintarTextosBazares(bazares) {
     // Se nombran los bazares que existan: "como @uno y @dos"
     const ejemplos = listaSlugs(bazares.slice(0, 3), true);
     aTxt.innerHTML =
-      `Bazar En Línea es una plataforma que reúne el catálogo digital de diferentes ` +
+      `STMP MARKET es una plataforma que reúne el catálogo digital de diferentes ` +
       `bazares independientes de México, como ${ejemplos}${n > 3 ? ' y más' : ''}. ` +
       `Aquí encontrarás prendas streetwear, vintage y piezas únicas de segunda mano. ` +
       `Nada de stock repetido: casi todas son piezas únicas en talla exclusiva.`;

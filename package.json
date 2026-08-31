@@ -1,7 +1,7 @@
 {
   "name": "bazar-en-linea",
   "version": "1.0.0",
-  "description": "Bazar En Linea - Reynosa Tamaulipas",
+  "description": "STMP MARKET - Reynosa, Tamaulipas",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "mongodb": "^6.21.0"
