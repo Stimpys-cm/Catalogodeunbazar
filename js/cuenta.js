@@ -43,11 +43,34 @@
   const perfil    = () => _perfil;
   const haySesion = () => !!_perfil;
 
-  async function registro(nombre, email, password) {
-    const r = await pedir('registro', { method: 'POST', body: { nombre, email, password } });
+  async function registro(nombre, email, password, username) {
+    const cuerpo = { nombre, email, password };
+    // Solo se manda si la persona escribió uno: en blanco, el servidor
+    // se lo genera a partir del nombre.
+    if (username) cuerpo.username = username;
+    const r = await pedir('registro', { method: 'POST', body: cuerpo });
     _perfil = r.perfil; _listo = true;
     await subirWishlist();
     return r.perfil;
+  }
+
+  // ── Entrar con Google ──────────────────────────────────────
+  // El navegador ya tiene el token firmado por Google; aquí solo se
+  // manda al servidor, que es quien comprueba que sea legítimo.
+  async function conGoogle(credential) {
+    const r = await pedir('google', { method: 'POST', body: { credential } });
+    _perfil = r.perfil; _listo = true;
+    await unirWishlists();
+    return r.perfil;
+  }
+
+  // Qué está configurado en el servidor (por ahora, si hay Google).
+  let _config = null;
+  async function config() {
+    if (_config) return _config;
+    try { _config = await pedir('config', { method: 'GET' }); }
+    catch (_) { _config = { googleClientId: '' }; }
+    return _config;
   }
 
   async function entrar(email, password) {
@@ -188,7 +211,7 @@
     misSubastas:   () => pedir('mis-subastas', { method: 'GET' }),
     ofertar:  body => pedir('ofertar', { method: 'POST', body }),
     registro, entrar, salir, cambiarNombre, guardarPerfil,
-    subirWishlist, unirWishlists,
+    subirWishlist, unirWishlists, conGoogle, config,
     compras, misResenas, calificar, subirFoto,
   };
 })();

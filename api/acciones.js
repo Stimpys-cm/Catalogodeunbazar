@@ -18,6 +18,7 @@
 
 import { getDB, invalidarSyncCache } from './_db.js';
 import { requireAuth } from './_auth.js';
+import { rateLimit } from './_rateLimit.js';
 import { hashPassword } from './_password.js';
 import { puede, esGlobal, mismoBazar } from './_bazar.js';
 import {
@@ -49,6 +50,7 @@ export default async function handler(req, res) {
     if (op === 'quitar-subasta')     return await handleQuitarSubasta(req, res);
     if (op === 'subasta-vendedor')   return await handleSubastaVendedor(req, res);
     if (op === 'mis-subastas')       return await handleMisSubastas(req, res);
+    if (op === 'solicitud-bazar')    return await handleSolicitudBazar(req, res);
     return res.status(400).json({ error: 'op no reconocida' });
   } catch (err) {
     console.error('[acciones:' + op + ']', err);
@@ -751,4 +753,75 @@ async function handleMantenimiento(req, res) {
   const guardado = await guardarAjustes(entrada, user.username);
   invalidarSyncCache();
   return res.status(200).json(guardado);
+}
+
+// ── SOLICITUDES DE NUEVO BAZAR ───────────────────────────────
+// El formulario de "vende con nosotros" (vender.html) manda aquí. La
+// solicitud se guarda y, además, se deja una entrada en el registro de
+// actividad para que le salte al admin en su panel sin abrir otra
+// pantalla. El listado completo lo lee el admin con GET.
+async function handleSolicitudBazar(req, res) {
+  const db  = await getDB();
+  const col = db.collection('solicitudes');
+
+  // El admin revisa las solicitudes recibidas
+  if (req.method === 'GET') {
+    const admin = await requireAuth(req, res);
+    if (!admin) return;
+    if (admin.role !== 'admin') return res.status(403).json({ error: 'Solo el administrador.' });
+    const items = await col.find({}).sort({ creadoEn: -1 }).limit(200).toArray();
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json(items.map(({ _id, ...r }) => r));
+  }
+
+  // El admin marca una solicitud como atendida (o la reabre)
+  if (req.method === 'PATCH') {
+    const admin = await requireAuth(req, res);
+    if (!admin) return;
+    if (admin.role !== 'admin') return res.status(403).json({ error: 'Solo el administrador.' });
+    const id = Number(req.body?.id);
+    const estado = req.body?.estado === 'atendida' ? 'atendida' : 'nueva';
+    if (!id) return res.status(400).json({ error: 'Falta id' });
+    await col.updateOne({ id }, { $set: { estado } });
+    return res.status(200).json({ ok: true });
+  }
+
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+
+  // Público, así que con freno: 5 envíos por IP cada hora.
+  if (!(await rateLimit(req, res, { key: 'solicitud-bazar', max: 5, windowSec: 3600 }))) return;
+
+  const t = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
+  const nombre    = t(req.body?.nombre, 60);
+  const bazar     = t(req.body?.bazar, 60);
+  const whatsapp  = t(req.body?.whatsapp, 25).replace(/[^0-9+()\s-]/g, '');
+  const instagram = t(req.body?.instagram, 40).replace(/^@+/, '');
+  const mensaje   = t(req.body?.mensaje, 800);
+
+  if (nombre.length < 2)   return res.status(400).json({ error: 'Escribe tu nombre' });
+  if (bazar.length < 2)    return res.status(400).json({ error: 'Escribe el nombre de tu bazar' });
+  const soloDigitos = whatsapp.replace(/[^0-9]/g, '');
+  if (soloDigitos.length < 10) return res.status(400).json({ error: 'Escribe un WhatsApp válido (10 dígitos)' });
+
+  const doc = {
+    id: Date.now(),
+    nombre, bazar, whatsapp, instagram, mensaje,
+    estado: 'nueva',
+    creadoEn: new Date(),
+  };
+  await col.insertOne(doc);
+
+  // Entrada en el registro: le aparece al admin en su panel al instante.
+  try {
+    await db.collection('logs').insertOne({
+      ts: new Date(),
+      usuario: 'sistema',
+      rol: 'sistema',
+      accion: 'solicitud-bazar',
+      objeto: bazar + (instagram ? ' · @' + instagram : ''),
+      detalle: `${nombre} · WhatsApp ${whatsapp}` + (mensaje ? ` · "${mensaje.slice(0, 140)}"` : ''),
+    });
+  } catch (_) { /* si el registro falla, la solicitud ya quedó guardada */ }
+
+  return res.status(201).json({ ok: true });
 }

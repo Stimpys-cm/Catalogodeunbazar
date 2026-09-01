@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Vende con nosotros | STMP MARKET</title>
+
+  <meta name="description" content="¿Tienes un bazar? Publica tus prendas en STMP MARKET y llega a más clientes. Solicítalo desde aquí y el equipo te contacta.">
+  <meta name="theme-color" content="#2d6be4">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://stiimpys.store/vender.html">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="STMP MARKET">
+  <meta property="og:title" content="Vende con nosotros | STMP MARKET">
+  <meta property="og:description" content="¿Tienes un bazar? Publica tus prendas en STMP MARKET y llega a más clientes.">
+  <meta property="og:url" content="https://stiimpys.store/vender.html">
+  <meta property="og:image" content="https://res.cloudinary.com/dendyzqsn/image/upload/v1788229817/STMP_MARKET_x7qnat.png">
+  <meta property="og:locale" content="es_MX">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/tienda.css">
+  <link rel="stylesheet" href="css/inicio.css">
+  <link rel="stylesheet" href="css/dispositivos.css">
+  <link rel="stylesheet" href="css/estetica.css">
+  <style>
+    html, body { overflow-x: hidden; max-width: 100%; }
+    .logo-short { display: none; }
+    @media (max-width: 480px) {
+      .logo-full  { display: none; }
+      .logo-short { display: inline; }
+    }
+
+    /* ── Página "vende con nosotros" ──────────────────────────────
+       Reusa el lenguaje del sitio: mismas cajas, radios, sombras y el
+       gesto de dos tonos del título. Solo lo propio de esta página. */
+    .vd-hero { text-align: center; }
+    .vd-hero .h-crumb { margin: 0 auto 0 0; }
+    .vd-grid {
+      max-width: 1080px; margin: 0 auto; padding: 3.5rem 1.5rem 5rem;
+      display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: start;
+    }
+    .vd-benef { display: grid; gap: 22px; }
+    .vd-benef-item {
+      display: flex; gap: 16px; align-items: flex-start;
+      background: #fff; border: 1.5px solid var(--border);
+      border-radius: var(--radio, 16px); padding: 22px 24px;
+      box-shadow: var(--sombra-suave, 0 3px 16px rgba(45,107,228,.07));
+    }
+    .vd-benef-ico {
+      flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--accent-gradient, linear-gradient(135deg,#2d6be4,#4a90d9));
+      color: #fff;
+    }
+    .vd-benef-ico svg { width: 20px; height: 20px; }
+    .vd-benef-item h3 { font-size: 15px; margin: 0 0 3px; color: var(--black, #12161f); }
+    .vd-benef-item p  { font-size: 13.5px; line-height: 1.55; color: var(--text2, #5c5750); margin: 0; }
+    .vd-pasos { font-size: 13.5px; color: var(--text2, #5c5750); line-height: 1.7; margin: 20px 2px 0; }
+    .vd-pasos b { color: var(--accent, #2d6be4); }
+
+    .vd-card {
+      background: #fff; border: 1.5px solid var(--border);
+      border-radius: var(--radio-grande, 22px); padding: 28px;
+      box-shadow: var(--sombra, 0 10px 30px rgba(45,107,228,.12));
+      position: sticky; top: 90px;
+    }
+    .vd-card h2 { font-size: 1.9rem; margin: 0 0 4px; }
+    .vd-card > p { font-size: 13.5px; color: var(--text2, #5c5750); margin: 0 0 20px; }
+    .vd-campo { display: block; margin-bottom: 15px; }
+    .vd-campo span {
+      display: block; font-size: 10px; font-weight: 700; letter-spacing: .16em;
+      text-transform: uppercase; color: var(--text2, #5c5750); margin-bottom: 7px;
+    }
+    .vd-campo input, .vd-campo textarea {
+      width: 100%; font-family: 'DM Sans', sans-serif; font-size: 15px;
+      color: var(--text-dark, #1a1f2e); background: #fff;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 13px 15px; outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .vd-campo textarea { resize: vertical; min-height: 84px; }
+    .vd-campo input:focus, .vd-campo textarea:focus {
+      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,107,228,.13);
+    }
+    .vd-arroba { display: flex; align-items: center; border: 1.5px solid var(--border); border-radius: 12px; padding: 0 14px; transition: border-color .2s, box-shadow .2s; }
+    .vd-arroba:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,107,228,.13); }
+    .vd-arroba span { font-size: 15px; font-weight: 700; color: var(--muted, #8b8578); }
+    .vd-arroba input { border: none !important; box-shadow: none !important; padding-left: 6px; }
+    .vd-btn {
+      width: 100%; margin-top: 6px; padding: 15px; border: none; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase; color: #fff;
+      background: var(--accent-gradient, linear-gradient(135deg,#2d6be4,#4a90d9));
+      border-radius: 12px; box-shadow: 0 6px 20px rgba(45,107,228,.26);
+      transition: transform .12s var(--curva-salida, ease), box-shadow .2s, opacity .2s;
+    }
+    @media (hover: hover) { .vd-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(45,107,228,.34); } }
+    .vd-btn:not(:disabled):active { transform: translateY(0) scale(.985); }
+    .vd-btn:disabled { opacity: .6; cursor: default; }
+    .vd-error { color: var(--danger, #c0392b); font-size: 13px; font-weight: 600; margin: 4px 0 12px; min-height: 0; }
+    .vd-nota { font-size: 12px; color: var(--muted, #8b8578); line-height: 1.6; margin-top: 14px; }
+
+    /* Confirmación tras enviar */
+    .vd-ok { text-align: center; padding: 20px 4px; }
+    .vd-ok-ico {
+      width: 62px; height: 62px; margin: 0 auto 16px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(39,174,96,.12); color: #27ae60;
+    }
+    .vd-ok-ico svg { width: 30px; height: 30px; }
+    .vd-ok h2 { font-size: 1.7rem; margin: 0 0 8px; }
+    .vd-ok p { font-size: 14px; color: var(--text2, #5c5750); line-height: 1.6; margin: 0 auto; max-width: 34ch; }
+
+    @media (max-width: 860px) {
+      .vd-grid { grid-template-columns: 1fr; gap: 28px; }
+      .vd-card { position: static; }
+    }
+  </style>
+  <script src="js/db.js" defer></script>
+  <script src="js/legal.js" defer></script>
+  <script src="js/mantenimiento.js" defer></script>
+  <script src="js/movimiento.js" defer></script>
+</head>
+<body data-seccion="">
+
+<header>
+  <div class="header-row">
+    <a href="inicio.html" class="logo">
+      <span class="logo-full">STMP MARKET</span>
+      <span class="logo-short">STMP</span><span>.</span>
+    </a>
+    <div class="header-actions">
+      <a href="inicio.html" class="h-nav-cta h-nav-cta-ghost">Inicio</a>
+      <a href="tienda.html" class="h-nav-cta"><span class="cta-largo">Ver&nbsp;</span>catálogo</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero h-shop-hero vd-hero">
+    <div class="h-wrap">
+      <a href="inicio.html" class="h-crumb">
+        <svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+        Volver al inicio
+      </a>
+      <h1 class="h-shop-title">Vende con <em>nosotros</em></h1>
+      <p class="h-shop-sub">
+        STMP MARKET reúne el catálogo de varios bazares en un solo lugar. Publica
+        tus prendas, llega a más clientes y cierra la venta por tu propio WhatsApp
+        &mdash; nosotros ponemos el escaparate.
+      </p>
+    </div>
+  </section>
+
+  <div class="vd-grid">
+    <!-- Beneficios + cómo funciona -->
+    <div>
+      <div class="vd-benef">
+        <div class="vd-benef-item">
+          <div class="vd-benef-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18M3 9l1.5-5h15L21 9M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9M9 21v-7h6v7"/></svg></div>
+          <div><h3>Tu propio apartado</h3><p>Cada bazar tiene su portada, su logo, su color y solo sus prendas. Tu marca no se mezcla con las demás.</p></div>
+        </div>
+        <div class="vd-benef-item">
+          <div class="vd-benef-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+          <div><h3>La venta es tuya</h3><p>El cliente te escribe directo a tu WhatsApp. Tú acuerdas pago y envío. STMP MARKET es el escaparate, no un intermediario.</p></div>
+        </div>
+        <div class="vd-benef-item">
+          <div class="vd-benef-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+          <div><h3>Publicar es sencillo</h3><p>Un panel para subir prendas, editar precios y marcar lo vendido. Sin complicaciones y desde el celular.</p></div>
+        </div>
+        <div class="vd-benef-item">
+          <div class="vd-benef-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg></div>
+          <div><h3>Más gente te ve</h3><p>Compartes un mismo catálogo con otros bazares: quien entra a ver a uno, descubre el tuyo.</p></div>
+        </div>
+      </div>
+
+      <p class="vd-pasos">
+        <b>¿Cómo empiezo?</b> Llena el formulario &rarr; el equipo revisa tu solicitud
+        &rarr; te contactamos por WhatsApp para crear tu bazar y darte acceso al panel.
+        Es gratis para empezar.
+      </p>
+    </div>
+
+    <!-- Formulario -->
+    <div class="vd-card" id="vdCard">
+      <form id="vdForm" novalidate>
+        <h2>Solicita tu <em>bazar</em></h2>
+        <p>Cuéntanos de ti. Te respondemos por WhatsApp.</p>
+
+        <div class="vd-error" id="vdError"></div>
+
+        <label class="vd-campo">
+          <span>Tu nombre</span>
+          <input type="text" id="vdNombre" maxlength="60" autocomplete="name" placeholder="Cómo te llamas">
+        </label>
+        <label class="vd-campo">
+          <span>Nombre de tu bazar</span>
+          <input type="text" id="vdBazar" maxlength="60" placeholder="Cómo se llama tu bazar">
+        </label>
+        <label class="vd-campo">
+          <span>WhatsApp</span>
+          <input type="tel" id="vdWhatsapp" maxlength="25" autocomplete="tel" placeholder="10 dígitos">
+        </label>
+        <label class="vd-campo">
+          <span>Instagram (opcional)</span>
+          <div class="vd-arroba">
+            <span>@</span>
+            <input type="text" id="vdInstagram" maxlength="40" placeholder="tubazar">
+          </div>
+        </label>
+        <label class="vd-campo">
+          <span>Cuéntanos de tu bazar (opcional)</span>
+          <textarea id="vdMensaje" maxlength="800" placeholder="Qué vendes, cuántas prendas tienes, desde cuándo..."></textarea>
+        </label>
+
+        <button type="submit" class="vd-btn" id="vdEnviar">Enviar solicitud</button>
+
+        <p class="vd-nota">
+          Al enviar, tus datos llegan al equipo de STMP MARKET solo para contactarte.
+          <a href="terminos.html#privacidad">Aviso de privacidad</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="sf-inner">
+    <div class="sf-col sf-brand">
+      <a href="inicio.html" class="sf-logo">STMP MARKET<span>.</span></a>
+      <p class="sf-desc">
+        Catálogo digital de bazares independientes. Streetwear, vintage y prendas
+        únicas de segunda mano. Cada prenda pertenece al bazar que la publica.
+      </p>
+      <div class="sf-ubi">Reynosa, Tamaulipas · México</div>
+    </div>
+    <div class="sf-col">
+      <h3>Comprar</h3>
+      <a href="tienda.html">Ver catálogo</a>
+      <a href="redes.html">Los bazares</a>
+      <a href="inicio.html#comofunciona">Cómo comprar</a>
+      <a href="vender.html">Vende con nosotros</a>
+    </div>
+    <div class="sf-col sf-bazares">
+      <h3>Bazares</h3>
+      <div id="footerBazares"><a href="redes.html">Ver todos</a></div>
+    </div>
+    <div class="sf-col">
+      <h3>Legal</h3>
+      <a href="terminos.html">Términos y condiciones</a>
+      <a href="terminos.html#garantias">Garantías</a>
+      <a href="terminos.html#privacidad">Aviso de privacidad</a>
+    </div>
+  </div>
+  <div class="sf-base">
+    <span>STMP MARKET &copy; <span id="anioActual">2026</span> · Todos los derechos reservados</span>
+    <span class="sf-base-links">
+      <a href="terminos.html">Términos</a>
+      <a href="terminos.html#privacidad">Privacidad</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    'use strict';
+    var form = document.getElementById('vdForm');
+    if (!form) return;
+    var errEl = document.getElementById('vdError');
+    var btn   = document.getElementById('vdEnviar');
+    var val = function (id) { return (document.getElementById(id).value || '').trim(); };
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errEl.textContent = '';
+
+      var nombre = val('vdNombre'), bazar = val('vdBazar');
+      var whatsapp = val('vdWhatsapp'), instagram = val('vdInstagram').replace(/^@+/, '');
+      var mensaje = val('vdMensaje');
+      var digitos = whatsapp.replace(/[^0-9]/g, '');
+
+      if (nombre.length < 2)  return fail('Escribe tu nombre');
+      if (bazar.length < 2)   return fail('Escribe el nombre de tu bazar');
+      if (digitos.length < 10) return fail('Escribe un WhatsApp válido (10 dígitos)');
+
+      btn.disabled = true;
+      var textoOriginal = btn.textContent;
+      btn.textContent = 'Enviando…';
+
+      fetch('/api/acciones?op=solicitud-bazar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: nombre, bazar: bazar, whatsapp: whatsapp, instagram: instagram, mensaje: mensaje })
+      }).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (data) {
+          if (!r.ok) throw new Error(data.error || 'No se pudo enviar');
+          exito(nombre);
+        });
+      }).catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = textoOriginal;
+        fail(err.message || 'No se pudo enviar. Intenta de nuevo.');
+      });
+    });
+
+    function fail(msg) { errEl.textContent = msg; }
+
+    function exito(nombre) {
+      var card = document.getElementById('vdCard');
+      card.innerHTML =
+        '<div class="vd-ok">' +
+          '<div class="vd-ok-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>' +
+          '<h2>¡Solicitud enviada!</h2>' +
+          '<p>Gracias, ' + (nombre ? esc(nombre.split(' ')[0]) : 'gracias') + '. El equipo de STMP MARKET revisará tu bazar y te escribirá por WhatsApp muy pronto.</p>' +
+        '</div>';
+    }
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+      });
+    }
+  })();
+</script>
+</body>
+</html>

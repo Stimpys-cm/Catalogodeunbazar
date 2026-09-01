@@ -2975,3 +2975,52 @@ body.vista-compacta .item-actions { gap: 4px; }
 .vt-aviso-nota {
   font-size: 10.5px; color: var(--muted); margin: 9px 0 0; line-height: 1.5;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   SOLICITUDES DE BAZAR — apartado propio + badge del menú
+   ═══════════════════════════════════════════════════════════════ */
+.sidebar-badge {
+  margin-left: auto;
+  min-width: 20px; height: 20px; padding: 0 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #e0483c; color: #fff;
+  font-size: 11px; font-weight: 700; line-height: 1;
+  border-radius: 20px;
+}
+.sidebar-item.active .sidebar-badge { background: #fff; color: #2d6be4; }
+
+.sol-card {
+  background: #fff; border: 1.5px solid var(--border, #e8e2d8);
+  border-radius: 16px; padding: 18px 20px; margin-bottom: 14px;
+  box-shadow: 0 3px 16px rgba(45, 107, 228, .06);
+}
+.sol-card.sol-nueva { border-color: #2d6be4; box-shadow: 0 6px 22px rgba(45, 107, 228, .13); }
+.sol-card.sol-hecha { opacity: .72; }
+.sol-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.sol-bazar {
+  font-size: 16px; font-weight: 700; color: var(--black, #12161f);
+  display: flex; align-items: center; gap: 8px;
+}
+.sol-punto { width: 8px; height: 8px; border-radius: 50%; background: #e0483c; flex-shrink: 0; }
+.sol-nombre { font-size: 13.5px; color: var(--text2, #5c5750); margin-top: 2px; }
+.sol-fecha { font-size: 12px; color: var(--muted, #8a8178); white-space: nowrap; flex-shrink: 0; }
+.sol-msg {
+  font-size: 14px; color: var(--text, #1a1f2e); line-height: 1.55;
+  margin: 12px 0 0; padding-left: 12px; border-left: 3px solid var(--border, #e8e2d8);
+}
+.sol-acciones { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.sol-btn {
+  padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700;
+  cursor: pointer; border: 1.5px solid var(--border, #e8e2d8);
+  background: #fff; color: var(--text-dark, #1a1f2e); text-decoration: none;
+  display: inline-flex; align-items: center; transition: transform .12s, box-shadow .2s, background .2s;
+}
+.sol-btn:active { transform: scale(.97); }
+.sol-btn-wa { background: #25d366; border-color: #25d366; color: #fff; }
+.sol-btn-wa:hover { box-shadow: 0 6px 18px rgba(37, 211, 102, .3); }
+.sol-btn-marca:hover { border-color: var(--accent, #2d6be4); color: var(--accent, #2d6be4); }
+
+.sol-vacio { text-align: center; padding: 60px 20px; color: var(--text2, #5c5750); }
+.sol-vacio-ico { font-size: 40px; margin-bottom: 10px; }
+.sol-vacio-tit { font-size: 17px; font-weight: 700; color: var(--black, #12161f); margin-bottom: 4px; }
+.sol-vacio p { font-size: 14px; max-width: 34ch; margin: 0 auto; line-height: 1.5; }

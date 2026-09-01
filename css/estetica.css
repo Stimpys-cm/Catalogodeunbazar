@@ -38,6 +38,27 @@ select:focus-visible, textarea:focus-visible, summary:focus-visible {
   border-radius: var(--radio-chico);
 }
 
+/* En estos campos el contorno automático del navegador sobra: el propio
+   input ya marca el foco con su borde azul y su halo, y el outline
+   pintaba un tercer recuadro encima. Se quita solo el contorno; el
+   borde y el halo se quedan, que son los que dan la caja. */
+.ct-input-wrap input:focus-visible,
+.ct-pw-wrap input:focus-visible {
+  outline: none;
+}
+
+/* El @username es el único caso distinto: ahí el borde lo dibuja la
+   caja de fuera (.ct-input-arroba) y el input va sin ninguno. Si el
+   input marcase el foco por su cuenta saldría un recuadro dentro de
+   otro, tapando la arroba. Marca el foco la caja, no el campo. */
+.ct-input-arroba:focus-within { outline: none; }
+.ct-input-arroba input:focus,
+.ct-input-arroba input:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
 /* ── Barras de desplazamiento discretas ──────────────────────── */
 * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 *::-webkit-scrollbar { width: 10px; height: 8px; }

@@ -78,23 +78,56 @@
 
     document.getElementById('ctContenido').innerHTML = `
       <div class="ct-card">
-        <div class="ct-tabs">
-          <button class="ct-tab ${!esRegistro ? 'active' : ''}" onclick="MiCuenta.modo('entrar')">Entrar</button>
-          <button class="ct-tab ${esRegistro ? 'active' : ''}" onclick="MiCuenta.modo('registro')">Crear cuenta</button>
+        <div class="ct-tabs" role="tablist">
+          <button class="ct-tab ${!esRegistro ? 'active' : ''}" role="tab"
+                  aria-selected="${!esRegistro}" onclick="MiCuenta.modo('entrar')">Entrar</button>
+          <button class="ct-tab ${esRegistro ? 'active' : ''}" role="tab"
+                  aria-selected="${esRegistro}" onclick="MiCuenta.modo('registro')">Crear cuenta</button>
         </div>
 
         <div class="ct-error" id="ctError"></div>
 
-        <form id="ctForm" autocomplete="on">
+        <div class="ct-social" id="ctSocial" hidden>
+          <div class="ct-g">
+            <div class="ct-g-visible" aria-hidden="true">
+              <svg viewBox="0 0 48 48" width="19" height="19" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2.5 24 .5 14.6.5 6.5 5.9 2.6 13.7l7.8 6c1.9-5.6 7.1-9.7 13.3-9.7z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.2-.4-4.7H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.3z"/><path fill="#FBBC05" d="M10.4 28.3c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.8-6C1 16.4 0 20.1 0 23.8s1 7.4 2.6 10.5l7.8-6z"/><path fill="#34A853" d="M24 47.5c6.2 0 11.5-2 15.4-5.6l-7.5-5.8c-2.1 1.4-4.8 2.2-7.9 2.2-6.2 0-11.4-4.1-13.3-9.7l-7.8 6C6.5 42.1 14.6 47.5 24 47.5z"/></svg>
+              <span>Continuar con Google</span>
+            </div>
+            <div class="ct-g-real" id="ctGoogleBtn"></div>
+          </div>
+          <div class="ct-o"><span>o con tu correo</span></div>
+        </div>
+
+        <form id="ctForm" autocomplete="on" novalidate>
           ${esRegistro ? `
             <label class="ct-campo">
               <span>Tu nombre</span>
-              <input type="text" id="ctNombre" autocomplete="name" maxlength="60" placeholder="Cómo te llamas">
+              <div class="ct-input-wrap">
+                ${ICONO.persona}
+                <input type="text" id="ctNombre" autocomplete="name" maxlength="60"
+                       placeholder="Cómo te llamas" oninput="MiCuenta.revisarForm()">
+              </div>
+            </label>
+
+            <label class="ct-campo">
+              <span>Tu @username</span>
+              <div class="ct-input-wrap ct-arroba">
+                <input type="text" id="ctUsername" autocomplete="username" maxlength="30"
+                       placeholder="comotellaman" oninput="MiCuenta.revisarUsername()">
+              </div>
+              <small class="ct-ayuda" id="ctUsernameAyuda">
+                De 3 a 30 caracteres: letras, números, punto, guion o guion bajo.
+              </small>
             </label>` : ''}
 
           <label class="ct-campo">
             <span>Correo</span>
-            <input type="email" id="ctEmail" autocomplete="email" maxlength="120" placeholder="tucorreo@ejemplo.com">
+            <div class="ct-input-wrap">
+              ${ICONO.sobre}
+              <input type="email" id="ctEmail" autocomplete="email" maxlength="120"
+                     placeholder="tucorreo@ejemplo.com"
+                     ${esRegistro ? 'oninput="MiCuenta.revisarForm()"' : ''}>
+            </div>
           </label>
 
           <label class="ct-campo">
@@ -116,17 +149,31 @@
               <div class="ct-pw-barra"><span id="ctPwNivel"></span></div>
               <div class="ct-pw-nivel-txt" id="ctPwTexto">Escribe una contraseña</div>
               <ul class="ct-pw-reglas" id="ctPwReglas">
-                <li data-regla="len"><span class="ct-pw-punto"></span>8 caracteres o más</li>
-                <li data-regla="upper"><span class="ct-pw-punto"></span>Una mayúscula</li>
-                <li data-regla="lower"><span class="ct-pw-punto"></span>Una minúscula</li>
-                <li data-regla="num"><span class="ct-pw-punto"></span>Un número</li>
-                <li data-regla="sym"><span class="ct-pw-punto"></span>Un símbolo (!@#$…)</li>
-                <li data-regla="comun"><span class="ct-pw-punto"></span>Que no sea una contraseña obvia</li>
+                ${[['len','8 caracteres o más'], ['upper','Una mayúscula'],
+                   ['lower','Una minúscula'],    ['num','Un número'],
+                   ['sym','Un símbolo (!@#$…)'], ['comun','Que no sea una contraseña obvia']]
+                  .map(([k, t]) => `<li data-regla="${k}">${ICONO.check}${ICONO.cruz}<span>${t}</span></li>`).join('')}
               </ul>
-            </div>` : ''}
+            </div>
 
-          <button type="submit" class="ct-btn" id="ctEnviar">
-            ${esRegistro ? 'Crear mi cuenta' : 'Entrar'}
+            <label class="ct-campo">
+              <span>Repite la contraseña</span>
+              <div class="ct-pw-wrap">
+                <input type="password" id="ctPass2" maxlength="200" autocomplete="new-password"
+                       placeholder="La misma de arriba" oninput="MiCuenta.revisarForm()">
+              </div>
+              <small class="ct-ayuda" id="ctPass2Ayuda"></small>
+            </label>
+
+            <label class="ct-acepto">
+              <input type="checkbox" id="ctAcepto" onchange="MiCuenta.revisarForm()">
+              <span>Acepto los <a href="terminos.html" target="_blank" rel="noopener">Términos
+              y Condiciones</a> y el <a href="terminos.html#privacidad" target="_blank"
+              rel="noopener">Aviso de Privacidad</a>.</span>
+            </label>` : ''}
+
+          <button type="submit" class="ct-btn" id="ctEnviar" ${esRegistro ? 'disabled' : ''}>
+            <span class="ct-btn-txt">${esRegistro ? 'Crear mi cuenta' : 'Entrar'}</span>
           </button>
         </form>
 
@@ -143,21 +190,123 @@
       </div>
 
       <aside class="ct-lado">
-        <h3>¿Para qué sirve?</h3>
+        <h3>Con tu cuenta</h3>
         <ul>
-          <li>Tu <b>@username</b> es tu identidad en STMP MARKET: es lo que el bazar anota al venderte una prenda.</li>
-          <li>Tus compras se registran solas y puedes calificar al bazar.</li>
-          <li>Tus favoritos te siguen al celular, la tablet o la computadora.</li>
-          <li>Construyes reputación como comprador dentro de la comunidad.</li>
+          <li><b>Eres alguien en la comunidad.</b> Tu @username es tu identidad: es lo que el bazar anota al venderte una prenda.</li>
+          <li><b>No pierdes tus favoritos.</b> Te siguen del celular a la computadora, sin volver a buscarlos.</li>
+          <li><b>Tienes historial.</b> Cada compra queda registrada y puedes calificar al bazar.</li>
+          <li><b>Ganas reputación.</b> Un comprador con historial y buenas reseñas genera más confianza en el siguiente trato.</li>
         </ul>
         <p class="ct-lado-nota">
-          No hace falta cuenta para comprar: el catálogo y el contacto por
-          WhatsApp funcionan igual sin registrarte.
+          Tarda menos de un minuto y es gratis.
         </p>
       </aside>`;
 
     document.getElementById('ctForm').addEventListener('submit', enviar);
+    montarGoogle();
   }
+
+  /* ── Entrar con Google ────────────────────────────────────
+     Se usa Google Identity Services: el botón lo dibuja Google y
+     devuelve un token firmado que el servidor comprueba. No hay
+     redirecciones, así que no hace falta una página de vuelta.
+
+     Todo esto es opcional: si GOOGLE_CLIENT_ID no está configurado, el
+     bloque no aparece y el formulario de siempre funciona igual. */
+  const GIS = 'https://accounts.google.com/gsi/client';
+  let _gisCargando = null;
+
+  function cargarGIS() {
+    if (window.google?.accounts?.id) return Promise.resolve();
+    if (_gisCargando) return _gisCargando;
+    _gisCargando = new Promise((listo, falla) => {
+      const s = document.createElement('script');
+      s.src = GIS; s.async = true; s.defer = true;
+      s.onload = listo;
+      s.onerror = () => falla(new Error('No cargó Google'));
+      document.head.appendChild(s);
+    });
+    return _gisCargando;
+  }
+
+  async function montarGoogle() {
+    const caja = document.getElementById('ctSocial');
+    const hueco = document.getElementById('ctGoogleBtn');
+    if (!caja || !hueco) return;
+
+    let clientId = '';
+    try { clientId = (await Cuenta.config()).googleClientId || ''; } catch (_) {}
+    if (!clientId) {
+      // Sin identificador el botón no puede existir, y callar deja a
+      // quien administra el sitio adivinando por qué no aparece.
+      console.info('[cuenta] Entrar con Google está apagado: falta GOOGLE_CLIENT_ID. ' +
+        'Recuerda que Vercel fija las variables al desplegar: si acabas de añadirla, ' +
+        'hay que volver a desplegar. Comprueba /api/cuenta?op=config');
+      return;
+    }
+
+    try {
+      await cargarGIS();
+      // El formulario pudo repintarse mientras cargaba el script
+      if (!document.body.contains(hueco)) return;
+
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: entrarConGoogle,
+        // Sin el diálogo automático: aparecer solo, encima de la página,
+        // antes de que nadie lo pida, molesta más de lo que ayuda.
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+      // Se muestra ANTES de medir: oculto, el hueco mide cero y había que
+      // adivinar un ancho fijo que en tarjetas estrechas no cabía y
+      // recortaba el botón por los lados.
+      caja.hidden = false;
+
+      // El botón que se ve es el de arriba, dibujado por nosotros. El de
+      // Google va encima, transparente, y es quien recibe el clic: así
+      // el ancho y la altura los decidimos aquí y su recorte —que no se
+      // podía evitar desde fuera del iframe— deja de importar.
+      // Se pide el ancho real del hueco para que lo cubra entero.
+      const opciones = {
+        type: 'standard', theme: 'outline', size: 'large',
+        text: 'continue_with', shape: 'rectangular',
+        logo_alignment: 'left', locale: 'es',
+        width: Math.max(200, Math.min(400, Math.round(hueco.getBoundingClientRect().width) || 320)),
+      };
+
+      google.accounts.id.renderButton(hueco, opciones);
+    } catch (err) {
+      // Si Google no carga (bloqueadores, red, un origen no autorizado en
+      // Google Console), se queda el formulario de siempre.
+      console.info('[cuenta] No se pudo montar el botón de Google:', err.message);
+      caja.hidden = true;   // se mostró para medir; si falla, se recoge
+    }
+  }
+
+  async function entrarConGoogle(respuesta) {
+    const caja = document.getElementById('ctSocial');
+    if (caja) caja.classList.add('ct-social-cargando');
+    try {
+      await Cuenta.conGoogle(respuesta.credential);
+      aviso('¡Listo!');
+      pestana = 'compras';
+      pintarPanel();
+    } catch (err) {
+      error(err.message || 'No se pudo entrar con Google');
+      if (caja) caja.classList.remove('ct-social-cargando');
+    }
+  }
+
+  /* ── Iconos ───────────────────────────────────────────────
+     En línea y no como archivo: son cuatro trazos y así no cuestan
+     una petición más ni parpadean al cargar. */
+  const ICONO = {
+    persona: `<svg class="ct-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+    sobre:   `<svg class="ct-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>`,
+    check:   `<svg class="ct-marca ct-si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
+    cruz:    `<svg class="ct-marca ct-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
+  };
 
   /* ── Contraseñas ──────────────────────────────────────────
      Las mismas reglas que el panel de los bazares. La idea no es
@@ -209,7 +358,69 @@
         : 'Contraseña segura';
       texto.className = 'ct-pw-nivel-txt ' + clase;
     }
+    revisarForm();
     return { reglas: r, cumplidas, total, pw };
+  }
+
+  /* ── @username ────────────────────────────────────────────
+     Se comprueba el formato mientras se escribe. Que esté libre solo
+     lo sabe el servidor, y lo dice al enviar: preguntárselo en cada
+     tecla serían decenas de consultas por registro. */
+  function revisarUsername() {
+    const input = document.getElementById('ctUsername');
+    const ayuda = document.getElementById('ctUsernameAyuda');
+    if (!input || !ayuda) return true;
+
+    // Se limpia mientras escribe, así ve exactamente lo que se guardará
+    const limpio = input.value.trim().replace(/^@+/, '').toLowerCase()
+                        .replace(/[^a-z0-9._-]/g, '').slice(0, 30);
+    if (limpio !== input.value) input.value = limpio;
+
+    const vacio = limpio.length === 0;
+    const ok    = /^[a-z0-9._-]{3,30}$/.test(limpio);
+
+    ayuda.textContent = vacio
+      ? 'Si lo dejas en blanco, te asignamos uno con tu nombre.'
+      : ok ? `Se verá como @${limpio}`
+           : 'De 3 a 30 caracteres: letras, números, punto, guion o guion bajo.';
+    ayuda.className = 'ct-ayuda' + (vacio ? '' : ok ? ' ok' : ' mal');
+
+    revisarForm();
+    return vacio || ok;
+  }
+
+  /* ── ¿Se puede enviar ya? ─────────────────────────────────
+     El botón queda apagado hasta que todo está en orden. Se puede
+     hacer porque lo que falta está a la vista: la lista de la
+     contraseña, el aviso de que no coinciden y la casilla. Apagar un
+     botón sin decir por qué es lo que desespera. */
+  function revisarForm() {
+    if (modo !== 'registro') return true;
+    const v = id => (document.getElementById(id)?.value || '').trim();
+
+    const pass  = document.getElementById('ctPass')?.value || '';
+    const pass2 = document.getElementById('ctPass2')?.value || '';
+    const r     = reglasPass(pass);
+
+    const ayuda2 = document.getElementById('ctPass2Ayuda');
+    if (ayuda2) {
+      const iguales = pass2 && pass === pass2;
+      ayuda2.textContent = !pass2 ? '' : iguales ? 'Coinciden' : 'No coinciden';
+      ayuda2.className = 'ct-ayuda' + (!pass2 ? '' : iguales ? ' ok' : ' mal');
+    }
+
+    const usuario = v('ctUsername');
+    const listo =
+      v('ctNombre').length >= 2 &&
+      /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v('ctEmail')) &&
+      Object.values(r).every(Boolean) &&
+      pass2 === pass && pass.length > 0 &&
+      (!usuario || /^[a-z0-9._-]{3,30}$/.test(usuario)) &&
+      !!document.getElementById('ctAcepto')?.checked;
+
+    const btn = document.getElementById('ctEnviar');
+    if (btn && !btn.classList.contains('cargando')) btn.disabled = !listo;
+    return listo;
   }
 
   function verPass(btn) {
@@ -388,6 +599,8 @@
 
     if (!email || !pass) return error('Faltan datos');
 
+    const usuario = document.getElementById('ctUsername')?.value.trim() || '';
+
     if (modo === 'registro') {
       if (!nombre) return error('Escribe tu nombre');
       const { reglas, cumplidas, total } = revisarPass();
@@ -399,22 +612,34 @@
         const pendientes = Object.keys(reglas).filter(k => !reglas[k]).map(k => falta[k]);
         return error('A tu contraseña le falta ' + pendientes.join(', ') + '.');
       }
+      const pass2 = document.getElementById('ctPass2')?.value || '';
+      if (pass !== pass2) return error('Las dos contraseñas no coinciden');
+      if (!document.getElementById('ctAcepto')?.checked) {
+        return error('Para crear la cuenta tienes que aceptar los términos');
+      }
     }
 
+    // Estado de carga: el botón se apaga y se marca, para que no se pueda
+    // pulsar dos veces y se note que algo está pasando.
+    const original = btn.querySelector('.ct-btn-txt')?.textContent || btn.textContent;
     btn.disabled = true;
-    const original = btn.textContent;
-    btn.textContent = 'Un momento…';
+    btn.classList.add('cargando');
+    const txt = btn.querySelector('.ct-btn-txt');
+    if (txt) txt.textContent = 'Un momento…';
 
     try {
-      if (modo === 'registro') await Cuenta.registro(nombre, email, pass);
+      if (modo === 'registro') await Cuenta.registro(nombre, email, pass, usuario);
       else                     await Cuenta.entrar(email, pass);
       aviso('¡Listo!');
       pestana = 'compras';
       pintarPanel();
     } catch (err) {
       error(err.message);
-      btn.disabled = false;
-      btn.textContent = original;
+      btn.classList.remove('cargando');
+      if (txt) txt.textContent = original;
+      // Se vuelve a evaluar en vez de encender el botón a ciegas: si el
+      // servidor rechazó el @username, sigue habiendo algo que corregir.
+      btn.disabled = modo === 'registro' ? !revisarForm() : false;
     }
   }
 
@@ -1039,7 +1264,7 @@
     estrellas: elegirEstrellas,
     etiqueta: alternarEtiqueta,
     enviarResena,
-    revisarPass, verPass,
+    revisarPass, verPass, revisarUsername, revisarForm,
   };
 
   window.addEventListener('cuenta:lista', () => {

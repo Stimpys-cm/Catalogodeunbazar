@@ -1597,6 +1597,16 @@ header {
   }
   .ig-label { display: none !important; }
 
+  /* En la cabecera el botón queda en icono suelto sobre fondo claro, y
+     el blanco que lleva de escritorio lo volvía invisible. Se le da el
+     azul de la marca y el mismo contorno que "Inicio" y "Catálogo", que
+     son sus vecinos. */
+  .header-actions .btn-ig {
+    color: var(--accent) !important;
+    border: 1.5px solid var(--border) !important;
+    background: #fff !important;
+  }
+
   /* Hero más compacto */
   .hero {
     padding: 1.8rem 1rem !important;
@@ -1676,7 +1686,8 @@ header {
      tienda). En inicio y en la ficha no hay barra, así que este botón
      es la única forma de abrirla desde el móvil. */
   body:has(.bottom-nav) .btn-wishlist-header { display: none !important; }
-  .header-actions .btn-ig { display: none !important; }
+  /* Igual que la wishlist de arriba: solo donde hay barra inferior. */
+  body:has(.bottom-nav) .header-actions .btn-ig { display: none !important; }
 
   /* Espacio para que la barra inferior no tape contenido (incluye safe-area para notch/gesture bar) */
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }

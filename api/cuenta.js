@@ -27,6 +27,7 @@
 import { getDB, invalidarSyncCache } from './_db.js';
 import { verifyPassword, hashPassword } from './_password.js';
 import { rateLimit, resetRateLimit } from './_rateLimit.js';
+import { verificarTokenGoogle, googleActivo } from './_google.js';
 import {
   normalizarUsername, usernameValido, generarUsername, siguienteId,
   ventaPublica, resenaPublica, promedio, asegurarIndices,
@@ -303,7 +304,7 @@ export default async function handler(req, res) {
     // Lo demás (ver la sesión que ya tenías, cerrarla) sigue funcionando.
     // El admin general es la excepción: necesita poder probar el flujo
     // completo de comprador mientras arregla lo que sea que esté cerrado.
-    if (op === 'registro' || op === 'entrar') {
+    if (op === 'registro' || op === 'entrar' || op === 'google') {
       const ajustes = await leerAjustes();
       if (cerrada(ajustes, 'cuentas') || cerrada(ajustes, 'sitio')) {
         const quien = await getUser(req).catch(() => null);
@@ -333,10 +334,26 @@ export default async function handler(req, res) {
       const existe = await col.findOne({ email });
       if (existe) return res.status(409).json({ error: 'Ya hay una cuenta con ese correo' });
 
+      // El @username puede elegirlo la persona al registrarse. Si no manda
+      // ninguno se le genera a partir del nombre, como antes: es lo que el
+      // vendedor teclea en su panel para asignarle la prenda, así que nadie
+      // puede quedarse sin uno.
+      let username;
+      if (typeof req.body?.username === 'string' && req.body.username.trim()) {
+        username = normalizarUsername(req.body.username);
+        if (!usernameValido(username)) {
+          return res.status(400).json({
+            error: 'El @username lleva de 3 a 30 letras, números, punto, guion o guion bajo.',
+          });
+        }
+        if (await col.findOne({ username })) {
+          return res.status(409).json({ error: `@${username} ya está tomado` });
+        }
+      } else {
+        username = await generarUsername(nombre || email.split('@')[0]);
+      }
+
       const ultimo = await col.find({}).sort({ id: -1 }).limit(1).toArray();
-      // Todo comprador nace con un @username: es lo que el vendedor teclea
-      // en su panel para asignarle la prenda.
-      const username = await generarUsername(nombre || email.split('@')[0]);
       const nuevo = {
         id: (ultimo[0]?.id || 0) + 1,
         nombre,
@@ -384,6 +401,76 @@ export default async function handler(req, res) {
     }
 
     // ── SALIR ────────────────────────────────────────────────
+    // ── QUÉ HAY DISPONIBLE ───────────────────────────────────
+    // La página de la cuenta pregunta si el botón de Google está
+    // configurado, y con qué identificador. Ese identificador es público
+    // (el navegador se lo enseña a Google en cada login), pero vive en una
+    // variable de entorno para poder cambiarlo sin tocar el código. La
+    // respuesta la cachea el CDN, así que casi nunca llega hasta aquí.
+    if (op === 'config' && req.method === 'GET') {
+      res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600');
+      return res.status(200).json({ googleClientId: process.env.GOOGLE_CLIENT_ID || '' });
+    }
+
+    // ── ENTRAR CON GOOGLE ────────────────────────────────────
+    // Un solo camino para entrar y para registrarse: si el correo ya
+    // tiene cuenta se abre sesión, y si no, se crea al vuelo. Quien usa
+    // este botón no debería tener que elegir entre dos pestañas.
+    if (op === 'google' && req.method === 'POST') {
+      if (!googleActivo()) {
+        return res.status(503).json({ error: 'Entrar con Google no está disponible ahora mismo.' });
+      }
+      if (!(await rateLimit(req, res, { key: 'google', max: 20, windowSec: 900 }))) return;
+
+      const datos = await verificarTokenGoogle(req.body?.credential);
+      if (!datos) return res.status(401).json({ error: 'No se pudo verificar tu cuenta de Google' });
+
+      const token   = crypto.randomUUID();
+      let   cliente = await col.findOne({ email: datos.email });
+
+      if (cliente) {
+        // Cuenta que ya existía (creada con contraseña o con Google): se
+        // abre sesión sin tocar nada suyo. La foto solo se rellena si no
+        // tenía, para no pisar la que se haya puesto a mano.
+        const cambios = { sesionToken: token, ultimoAcceso: new Date() };
+        if (!cliente.avatar && datos.avatar) cambios.avatar = datos.avatar;
+        await col.updateOne({ id: cliente.id }, { $set: cambios });
+        cliente = { ...cliente, ...cambios };
+      } else {
+        const ultimo = await col.find({}).sort({ id: -1 }).limit(1).toArray();
+        cliente = {
+          id: (ultimo[0]?.id || 0) + 1,
+          nombre: datos.nombre || datos.email.split('@')[0],
+          email: datos.email,
+          username: await generarUsername(datos.nombre || datos.email.split('@')[0]),
+          telefono: '', direccion: '',
+          avatar: datos.avatar || '',
+          // Sin contraseña a propósito: se entra por Google. verifyPassword
+          // devuelve false ante un valor vacío, así que nadie puede entrar
+          // a esta cuenta por el formulario mandando la contraseña en blanco.
+          password: null,
+          google: true,
+          wishlist: [],
+          creadoEn: new Date(),
+          sesionToken: token,
+        };
+        try {
+          await col.insertOne(cliente);
+        } catch (e) {
+          // Dos pestañas a la vez: el índice único evita la cuenta doble
+          if (e?.code !== 11000) throw e;
+          cliente = await col.findOne({ email: datos.email });
+          if (!cliente) return res.status(500).json({ error: 'No se pudo completar la operación.' });
+          await col.updateOne({ id: cliente.id }, { $set: { sesionToken: token } });
+          cliente.sesionToken = token;
+        }
+      }
+
+      await resetRateLimit(req, 'google');
+      res.setHeader('Set-Cookie', cookieSesion(token));
+      return res.status(200).json({ ok: true, perfil: perfilPublico(cliente) });
+    }
+
     if (op === 'salir' && (req.method === 'POST' || req.method === 'DELETE')) {
       const cliente = await clienteDeSesion(req);
       if (cliente) await col.updateOne({ id: cliente.id }, { $set: { sesionToken: null } });

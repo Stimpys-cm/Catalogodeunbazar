@@ -77,7 +77,7 @@ let currentTab = 'inventario';
 
 // Pestañas válidas y las que requieren admin
 const TABS_VALIDAS   = ['inventario','registrar','catalogo','vendedores','bazares','drops','subastas','ganancias','cuenta','sistema'];
-const TABS_SOLO_ADMIN = ['catalogo'];
+const TABS_SOLO_ADMIN = ['catalogo', 'solicitudes'];
 // Sistema (logs de toda la plataforma) es solo del admin principal
 const TABS_SOLO_GLOBAL = ['sistema'];
 
@@ -122,6 +122,10 @@ function aplicarVisibilidadTabs() {
   // El registro de actividad de toda la plataforma es solo del admin principal
   const sis = document.getElementById('tab-sistema');
   if (sis) sis.classList.toggle('hidden', !esAdminGlobal());
+
+  // Las solicitudes de nuevos bazares también: las atiende el admin principal
+  const sol = document.getElementById('tab-solicitudes');
+  if (sol) sol.classList.toggle('hidden', !esAdminGlobal());
 
   // Catálogo: el admin principal o un bazar con permiso para el suyo
   const cat = document.getElementById('tab-catalogo');
@@ -183,7 +187,7 @@ function showTab(tab, fromHash) {
   if (tab === 'vendedores' && !esAdminGlobal() && !puedo('gestionarUsuarios')) return;
   if (tab === 'bazares'    && !esAdminGlobal() && !puedo('personalizar'))     return;
   currentTab = tab;
-  ['inventario','registrar','vendedores','catalogo','bazares','cuenta','drops','subastas','ganancias','sistema'].forEach(t => {
+  ['inventario','registrar','vendedores','catalogo','bazares','cuenta','drops','subastas','ganancias','sistema','solicitudes'].forEach(t => {
     const v = document.getElementById('view-'+t);
     const b = document.getElementById('tab-'+t);
     if (v) v.classList.toggle('hidden', t!==tab);
@@ -198,6 +202,7 @@ function showTab(tab, fromHash) {
   if (tab==='subastas')    cargarSubastas();
   if (tab==='ganancias')   cargarGanancias();
   if (tab==='sistema')     renderSistema();
+  if (tab==='solicitudes') renderSolicitudes();
   if (tab==='registrar')   { setTimeout(() => { initPreviewListeners(); updatePreview(); populateDropSelect(); }, 0); }
   closeSidebar();
 
@@ -273,6 +278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Pestañas que dependen del bazar (los permisos llegan con la BD)
   aplicarVisibilidadTabs();
+  if (esAdminGlobal()) actualizarBadgeSolicitudes();
 
   renderAll();
   populateSelects();
@@ -4082,6 +4088,9 @@ const LOG_ACCIONES = {
   drop_editar:        { txt: 'Editó drop',          ico: IC_EDIT,     cls: 'log-edit' },
   drop_eliminar:      { txt: 'Eliminó drop',        ico: IC_TRASH,    cls: 'log-del'  },
   drop_quitar_prenda: { txt: 'Quitó prenda de drop',ico: IC_X,        cls: 'log-del'  },
+  // Solicitudes de "vende con nosotros" (vender.html). Se ven aquí, en
+  // Sistema, con nombre e icono propios para que no pasen por alto.
+  'solicitud-bazar':  { txt: 'Nueva solicitud de bazar', ico: IC_ROCKET, cls: 'log-add' },
 };
 
 function fmtLogFecha(ts) {
@@ -4718,3 +4727,83 @@ setInterval(() => {
   checkDropsAutoPublish();
   if (currentTab === 'drops') renderDrops();
 }, 60000);
+
+// ═══════════════════════════════════════════════════════════════
+//  SOLICITUDES DE BAZAR — "vende con nosotros"
+//  Su propio apartado. El badge del menú avisa cuántas hay sin
+//  atender cada vez que el admin entra; baja al marcarlas atendidas.
+// ═══════════════════════════════════════════════════════════════
+let _solicitudes = [];
+
+async function cargarSolicitudes() {
+  try { _solicitudes = await api('/api/acciones?op=solicitud-bazar'); }
+  catch (_) { _solicitudes = []; }
+  return _solicitudes;
+}
+
+// Pinta el número de solicitudes nuevas en el menú. Se llama al entrar.
+async function actualizarBadgeSolicitudes() {
+  await cargarSolicitudes();
+  const nuevas = _solicitudes.filter(x => x.estado !== 'atendida').length;
+  const badge = document.getElementById('solicitudesBadge');
+  if (!badge) return;
+  badge.textContent = nuevas;
+  badge.classList.toggle('hidden', nuevas === 0);
+}
+
+async function renderSolicitudes() {
+  const cont = document.getElementById('solicitudesLista');
+  if (!cont) return;
+  cont.innerHTML = '<div class="logs-empty">Cargando…</div>';
+  await cargarSolicitudes();
+
+  if (!_solicitudes.length) {
+    cont.innerHTML = '<div class="sol-vacio">' +
+      '<div class="sol-vacio-ico">📭</div>' +
+      '<div class="sol-vacio-tit">Sin solicitudes por ahora</div>' +
+      '<p>Cuando alguien pida unirse desde “Vende con nosotros”, aparecerá aquí.</p></div>';
+    return;
+  }
+
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+  cont.innerHTML = _solicitudes.map(sol => {
+    const wa = String(sol.whatsapp || '').replace(/[^0-9]/g, '');
+    const nueva = sol.estado !== 'atendida';
+    const fecha = sol.creadoEn ? new Date(sol.creadoEn).toLocaleString('es-MX',
+      { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+    const msg = wa ? `Hola ${esc(sol.nombre || '')}, vi tu solicitud para publicar en STMP MARKET.` : '';
+    return `<div class="sol-card ${nueva ? 'sol-nueva' : 'sol-hecha'}">
+      <div class="sol-top">
+        <div>
+          <div class="sol-bazar">${esc(sol.bazar || 'Bazar')}${nueva ? '<span class="sol-punto"></span>' : ''}</div>
+          <div class="sol-nombre">${esc(sol.nombre || '')}${sol.instagram ? ' · @' + esc(sol.instagram) : ''}</div>
+        </div>
+        <span class="sol-fecha">${esc(fecha)}</span>
+      </div>
+      ${sol.mensaje ? `<p class="sol-msg">“${esc(sol.mensaje)}”</p>` : ''}
+      <div class="sol-acciones">
+        ${wa ? `<a class="sol-btn sol-btn-wa" href="https://wa.me/${wa}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">Escribir por WhatsApp</a>` : ''}
+        <button class="sol-btn sol-btn-marca" onclick="marcarSolicitud(${sol.id}, ${nueva})">
+          ${nueva ? 'Marcar atendida' : 'Marcar sin atender'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function marcarSolicitud(id, atendida) {
+  try {
+    await api('/api/acciones?op=solicitud-bazar', {
+      method: 'PATCH',
+      body: { id, estado: atendida ? 'atendida' : 'nueva' },
+    });
+    const s = _solicitudes.find(x => x.id === id);
+    if (s) s.estado = atendida ? 'atendida' : 'nueva';
+    renderSolicitudes();
+    actualizarBadgeSolicitudes();
+  } catch (e) {
+    toast(e.message || 'No se pudo actualizar', 'error');
+  }
+}

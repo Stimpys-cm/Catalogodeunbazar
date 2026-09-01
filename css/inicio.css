@@ -422,6 +422,66 @@
 .h-cta h2 em { color: var(--accent); font-style: normal; }
 .h-cta p { font-size: 14px; color: var(--text2); margin-bottom: 1.6rem; }
 
+/* ── CTA vendedores ─────────────────────────────────────────── */
+.h-vender {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  background: var(--accent-gradient);
+  border-radius: 24px;
+  padding: 2.6rem 2.6rem;
+  margin-bottom: 3rem;
+  box-shadow: 0 12px 34px rgba(45, 107, 228, .28);
+}
+.h-vender-txt { flex: 1; min-width: 0; }
+.h-vender-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(255, 255, 255, .18);
+  border: 1px solid rgba(255, 255, 255, .35);
+  padding: 4px 11px;
+  border-radius: 40px;
+  margin-bottom: .9rem;
+}
+.h-vender h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.9rem, 5vw, 2.9rem);
+  line-height: 1;
+  color: #fff;
+  margin-bottom: .7rem;
+}
+.h-vender h2 em { color: #fff; font-style: normal; opacity: .85; }
+.h-vender p {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, .92);
+  max-width: 46ch;
+  margin-bottom: 1.5rem;
+}
+.h-btn-vender {
+  background: #fff;
+  color: var(--accent);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
+}
+.h-btn-vender:hover { transform: translateY(-2px); }
+.h-vender-deco {
+  font-size: 6rem;
+  line-height: 1;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .2));
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .h-vender { flex-direction: column; text-align: center; padding: 2.2rem 1.5rem; gap: 1rem; }
+  .h-vender p { margin-left: auto; margin-right: auto; }
+  .h-vender-deco { font-size: 4.5rem; order: -1; }
+}
+
 /* ── Skeletons ──────────────────────────────────────────────── */
 .h-sk {
   border-radius: 18px;
@@ -577,9 +637,12 @@ main .hero.h-shop-hero p {
 }
 .h-nav-cta-ghost:hover { border-color: var(--accent); color: var(--accent); opacity: 1; }
 
-/* En móvil el catálogo ya tiene "Inicio" en el nav y en la barra inferior */
+/* En móvil se esconde solo donde la barra inferior ya lleva esos enlaces
+   (la tienda y las redes). En cuenta, la ficha y los términos no hay
+   barra, así que ocultarlo dejaba esas páginas sin ninguna forma de
+   navegar desde el teléfono. */
 @media (max-width: 480px) {
-  .h-nav-cta-ghost { display: none; }
+  body:has(.bottom-nav) .h-nav-cta-ghost { display: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2177,4 +2240,218 @@ a.sin-marca, .pp-marca.sin-marca {
   .ct-sb { flex-direction: column; }
   .ct-sb-foto { width: 100%; height: 140px; }
   .ct-sb-cifras { gap: 14px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CREAR CUENTA — campos con icono, requisitos con ✓/✕, casilla de
+   términos y estados del botón.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Icono dentro del campo ─────────────────────────────────────
+   Ayuda a reconocer de un vistazo qué pide cada casilla sin tener
+   que leer la etiqueta. El icono no recibe el clic: se lo queda el
+   input, que ocupa toda la caja. */
+.ct-input-wrap { position: relative; display: block; }
+.ct-input-wrap .ct-ico {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  width: 17px; height: 17px; color: var(--muted);
+  pointer-events: none;
+  transition: color var(--mov-normal, .2s ease);
+}
+.ct-input-wrap input { padding-left: 42px; }
+.ct-input-wrap:focus-within .ct-ico { color: var(--accent); }
+
+/* El @ del username hace de icono: es más claro que cualquier dibujo */
+.ct-arroba::before {
+  content: '@';
+  position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+  font-size: 15px; font-weight: 700; color: var(--muted);
+  pointer-events: none;
+  transition: color var(--mov-normal, .2s ease);
+}
+.ct-arroba:focus-within::before { color: var(--accent); }
+.ct-arroba input { padding-left: 34px; }
+
+/* ── Texto de ayuda bajo un campo ───────────────────────────── */
+.ct-ayuda {
+  display: block; margin-top: 6px;
+  font-size: 11.5px; line-height: 1.45; color: var(--muted);
+}
+.ct-ayuda.ok  { color: #27ae60; font-weight: 600; }
+.ct-ayuda.mal { color: var(--danger, #c0392b); font-weight: 600; }
+
+/* ── Requisitos de la contraseña con ✓ y ✕ ──────────────────────
+   Antes eran círculos apagados: no se distinguía lo cumplido de lo
+   pendiente de un vistazo. Ahora cada regla dice claramente en cuál
+   de los dos estados está. */
+.ct-pw-reglas li .ct-marca {
+  width: 13px; height: 13px; flex-shrink: 0;
+  transition: color var(--mov-normal, .2s ease);
+}
+.ct-pw-reglas li .ct-si { display: none; color: #27ae60; }
+.ct-pw-reglas li .ct-no { display: block; color: rgba(26, 31, 46, .28); }
+.ct-pw-reglas li.ok .ct-si { display: block; }
+.ct-pw-reglas li.ok .ct-no { display: none; }
+
+/* ── Casilla de términos ────────────────────────────────────── */
+.ct-acepto {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin: 4px 0 18px;
+  font-size: 12.5px; line-height: 1.5; color: var(--text2);
+  cursor: pointer;
+}
+.ct-acepto input {
+  width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.ct-acepto a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+
+/* ── Pestañas con más separación entre activa e inactiva ────────
+   La activa se percibía flotando sobre el fondo beige. Con borde y
+   una sombra algo más marcada se lee como una pastilla encima, y la
+   inactiva se apaga un punto para que el contraste sea evidente. */
+.ct-tab { color: var(--muted); }
+.ct-tab.active {
+  background: #fff;
+  color: var(--black);
+  border: 1px solid var(--border);
+  box-shadow: 0 3px 12px rgba(26, 31, 46, .10);
+}
+@media (hover: hover) {
+  .ct-tab:not(.active):hover { color: var(--text-dark); }
+}
+
+/* ── Estados del botón principal ────────────────────────────────
+   Apagado hasta que el formulario está completo, con relieve al
+   pasar por encima y una rueda mientras se envía. Lo que falta está
+   siempre a la vista (la lista, el aviso de coincidencia y la
+   casilla), así que apagarlo no deja a nadie adivinando. */
+.ct-btn {
+  transition: transform var(--mov-micro, .12s ease),
+              box-shadow var(--mov-normal, .2s ease),
+              opacity var(--mov-normal, .2s ease);
+}
+@media (hover: hover) {
+  .ct-btn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px rgba(45, 107, 228, .34);
+  }
+}
+.ct-btn:not(:disabled):active { transform: translateY(0) scale(.985); }
+.ct-btn:disabled {
+  opacity: 1;
+  background: var(--border);
+  color: var(--muted);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.ct-btn.cargando { gap: 10px; }
+.ct-btn.cargando::before {
+  content: '';
+  width: 15px; height: 15px; flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, .4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ct-girar .7s linear infinite;
+}
+@keyframes ct-girar { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .ct-btn.cargando::before { animation-duration: 2s; }
+}
+
+/* ── Entrar con Google ──────────────────────────────────────────
+   Va arriba del formulario porque es el camino más corto: quien lo
+   usa no escribe nada. El botón lo dibuja Google dentro de un
+   iframe, así que solo se le da sitio y se centra; su aspecto no se
+   puede tocar desde aquí. */
+.ct-social { margin-bottom: 20px; }
+.ct-social-cargando { opacity: .55; pointer-events: none; }
+
+/* El botón que se ve lo dibujamos nosotros; el de Google va encima,
+   transparente, y es quien recibe el clic.
+   Se hace así porque el suyo vive dentro de un iframe: su contenido
+   —con sesión abierta muestra el nombre y el correo entero— no cabía en
+   los 400 px que admite como máximo, y lo recortaba por la derecha. Ese
+   recorte ocurre dentro del iframe y no hay CSS que lo alcance. Con el
+   botón propio, el ancho y la altura los decidimos aquí. */
+.ct-g {
+  position: relative;
+  max-width: 400px;
+  margin: 0 auto;
+}
+.ct-g-visible {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; min-height: 46px;
+  padding: 12px 18px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px; font-weight: 600;
+  color: var(--text-dark);
+  /* El clic no es para este: pasa de largo hasta el de Google */
+  pointer-events: none;
+  transition: border-color var(--mov-normal, .2s ease),
+              box-shadow var(--mov-normal, .2s ease),
+              transform var(--mov-micro, .12s ease);
+}
+.ct-g-visible svg { flex-shrink: 0; }
+
+/* La capa de Google, invisible y cubriendo justo el botón de arriba */
+.ct-g-real {
+  position: absolute; inset: 0;
+  opacity: 0;
+  overflow: hidden;
+  cursor: pointer;
+}
+/* Su iframe se estira para cubrirlo entero: si quedara más corto, la
+   franja de abajo del botón no respondería al clic. */
+.ct-g-real > div,
+.ct-g-real iframe {
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+}
+
+/* El estado se pinta en el botón visible, según lo que pase en la capa */
+@media (hover: hover) {
+  .ct-g:hover .ct-g-visible {
+    border-color: var(--accent);
+    box-shadow: 0 4px 14px rgba(45, 107, 228, .16);
+  }
+}
+.ct-g:active .ct-g-visible { transform: scale(.985); }
+.ct-g:focus-within .ct-g-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(45, 107, 228, .13);
+}
+
+/* Separador "o con tu correo": una línea con el texto encima */
+.ct-o {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.ct-o::before, .ct-o::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+
+/* ── Skeletons de categorías y marcas ────────────────────────────
+   Mientras el JS trae los datos, estas rejillas estaban vacías y el
+   inicio parecía roto por un instante. Estos huecos con el mismo
+   brillo que las tarjetas hacen ver que el sitio está trabajando. El
+   JS reemplaza el contenido al cargar, así que desaparecen solos. */
+.h-sk-chip, .h-sk-pill {
+  background: linear-gradient(90deg, #efece6 25%, #f7f4ef 50%, #efece6 75%);
+  background-size: 200% 100%;
+  animation: hSk 1.3s linear infinite;
+}
+.h-sk-chip { aspect-ratio: 4/3; border-radius: 16px; }
+.h-sk-pill { height: 40px; border-radius: 40px; }
+@media (prefers-reduced-motion: reduce) {
+  .h-sk-chip, .h-sk-pill { animation: none; }
 }
