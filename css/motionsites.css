@@ -1,0 +1,410 @@
+/* ═══════════════════════════════════════════════════════════════
+   STMP MARKET — Motion layer inspired by premium motion-design sites
+   Progressive enhancement only. No external libraries, no API calls.
+   Loaded after premium.css so it can enrich existing interactions.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --motion-ease-out: cubic-bezier(.16, 1, .3, 1);
+  --motion-ease-soft: cubic-bezier(.22, .75, .15, 1);
+  --motion-ease-snap: cubic-bezier(.2, .9, .2, 1.15);
+  --motion-fast: 220ms;
+  --motion-base: 620ms;
+  --motion-slow: 960ms;
+  --motion-x: 50%;
+  --motion-y: 28%;
+}
+
+/* ── Ambient pointer light ─────────────────────────────────── */
+.motion-ambient {
+  position: fixed;
+  z-index: 9990;
+  left: 0;
+  top: 0;
+  width: 430px;
+  height: 430px;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate3d(calc(var(--cursor-x, -999px) - 50%), calc(var(--cursor-y, -999px) - 50%), 0);
+  background: radial-gradient(circle, rgba(67,123,230,.13) 0%, rgba(91,152,245,.07) 34%, transparent 72%);
+  filter: blur(12px);
+  opacity: 0;
+  transition: opacity .35s ease;
+  mix-blend-mode: multiply;
+}
+.motion-pointer .motion-ambient { opacity: .38; }
+
+
+/* ── Scroll progress ───────────────────────────────────────── */
+.motion-scroll-progress {
+  position: fixed;
+  z-index: 99999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 3px;
+  pointer-events: none;
+  transform-origin: left center;
+  transform: scaleX(var(--scroll-progress, 0));
+  background: linear-gradient(90deg, #2d6be4 0%, #78a7ff 55%, #2d6be4 100%);
+  box-shadow: 0 0 18px rgba(45,107,228,.45);
+}
+
+/* ── Richer entrance motion, reusing the existing safe observer ── */
+.motion-pro.js-mov [data-revelar] {
+  opacity: 0;
+  filter: blur(9px);
+  transform: translate3d(0, 38px, 0) scale(.985);
+  transition:
+    opacity 680ms var(--motion-ease-out),
+    transform 820ms var(--motion-ease-out),
+    filter 720ms var(--motion-ease-out);
+  transition-delay: var(--retraso, 0ms);
+  will-change: opacity, transform, filter;
+}
+.motion-pro.js-mov [data-revelar][data-motion-kind="left"] {
+  transform: translate3d(-46px, 18px, 0) scale(.985);
+}
+.motion-pro.js-mov [data-revelar][data-motion-kind="right"] {
+  transform: translate3d(46px, 18px, 0) scale(.985);
+}
+.motion-pro.js-mov [data-revelar][data-motion-kind="scale"] {
+  transform: translate3d(0, 24px, 0) scale(.94);
+}
+.motion-pro.js-mov [data-revelar].visible {
+  opacity: 1;
+  filter: blur(0);
+  transform: translate3d(0,0,0) scale(1);
+  will-change: auto;
+}
+
+/* ── Cinematic hero entrance ───────────────────────────────── */
+.motion-pro .h-hero,
+.motion-pro .h-shop-hero,
+.motion-pro .rd-hero,
+.motion-pro .pp-hero {
+  --hero-px: 0;
+  --hero-py: 0;
+}
+.motion-pro .h-hero::after,
+.motion-pro .h-shop-hero::after {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at calc(70% + var(--hero-px) * 1px) calc(24% + var(--hero-py) * 1px), rgba(65,125,238,.22), transparent 24%),
+    radial-gradient(circle at calc(20% - var(--hero-px) * .6px) calc(80% - var(--hero-py) * .4px), rgba(140,185,255,.15), transparent 28%);
+  transform: translateZ(0);
+  transition: background-position .2s linear;
+}
+
+.motion-pro .motion-hero-item {
+  opacity: 0;
+  transform: translate3d(0, 26px, 0);
+  filter: blur(8px);
+}
+.motion-pro.motion-loaded .motion-hero-item {
+  opacity: 1;
+  transform: translate3d(0,0,0);
+  filter: blur(0);
+  transition:
+    opacity 700ms var(--motion-ease-out),
+    transform 850ms var(--motion-ease-out),
+    filter 760ms var(--motion-ease-out);
+  transition-delay: var(--hero-delay, 0ms);
+}
+
+.motion-pro .motion-word {
+  display: inline-block;
+  overflow: clip;
+  vertical-align: bottom;
+  padding-bottom: .08em;
+  margin-bottom: -.08em;
+}
+.motion-pro .motion-word > span {
+  display: inline-block;
+  transform: translate3d(0, 115%, 0) rotate(2deg);
+  opacity: .01;
+  filter: blur(5px);
+}
+.motion-pro.motion-loaded .motion-word > span {
+  transform: translate3d(0,0,0) rotate(0);
+  opacity: 1;
+  filter: blur(0);
+  transition:
+    transform 900ms var(--motion-ease-out),
+    opacity 520ms ease,
+    filter 700ms ease;
+  transition-delay: var(--word-delay, 0ms);
+}
+
+/* Hero cards float subtly instead of sitting flat. */
+.motion-pro .h-hero-bazares .hb-card {
+  transform:
+    perspective(1100px)
+    translate3d(calc(var(--hero-px, 0) * .045px), calc(var(--hero-py, 0) * .045px), 0)
+    rotateX(calc(var(--hero-py, 0) * -.018deg))
+    rotateY(calc(var(--hero-px, 0) * .018deg));
+  transform-style: preserve-3d;
+}
+.motion-pro .h-hero-bazares .hb-card:nth-child(even) {
+  transform:
+    perspective(1100px)
+    translate3d(calc(var(--hero-px, 0) * -.035px), calc(var(--hero-py, 0) * -.035px), 0)
+    rotateX(calc(var(--hero-py, 0) * .014deg))
+    rotateY(calc(var(--hero-px, 0) * -.014deg));
+}
+
+/* ── Product/card depth + light sweep ──────────────────────── */
+@media (hover:hover) and (pointer:fine) {
+  .motion-pro .card[data-motion-tilt],
+  .motion-pro .h-card[data-motion-tilt],
+  .motion-pro .hb-card[data-motion-tilt],
+  .motion-pro .bz-card[data-motion-tilt],
+  .motion-pro .rd-card[data-motion-tilt],
+  .motion-pro .h-bazar[data-motion-tilt] {
+    --tilt-x: 0deg;
+    --tilt-y: 0deg;
+    --lift: 0px;
+    --card-scale: 1;
+    --shine-x: 50%;
+    --shine-y: 50%;
+    transform:
+      perspective(1000px)
+      translate3d(0, var(--lift), 0)
+      rotateX(var(--tilt-x))
+      rotateY(var(--tilt-y))
+      scale(var(--card-scale)) !important;
+    transform-style: preserve-3d;
+    transition:
+      transform 300ms var(--motion-ease-soft),
+      box-shadow 300ms ease,
+      border-color 260ms ease !important;
+  }
+  .motion-pro .card[data-motion-tilt]:hover,
+  .motion-pro .h-card[data-motion-tilt]:hover,
+  .motion-pro .hb-card[data-motion-tilt]:hover,
+  .motion-pro .bz-card[data-motion-tilt]:hover,
+  .motion-pro .rd-card[data-motion-tilt]:hover,
+  .motion-pro .h-bazar[data-motion-tilt]:hover {
+    --lift: -8px;
+    --card-scale: 1.008;
+  }
+  .motion-pro .card[data-motion-tilt]::before,
+  .motion-pro .h-card[data-motion-tilt]::before,
+  .motion-pro .hb-card[data-motion-tilt]::before,
+  .motion-pro .bz-card[data-motion-tilt]::before,
+  .motion-pro .rd-card[data-motion-tilt]::before,
+  .motion-pro .h-bazar[data-motion-tilt]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(circle at var(--shine-x) var(--shine-y), rgba(255,255,255,.42), transparent 32%);
+    transition: opacity 220ms ease;
+  }
+  .motion-pro .card[data-motion-tilt]:hover::before,
+  .motion-pro .h-card[data-motion-tilt]:hover::before,
+  .motion-pro .hb-card[data-motion-tilt]:hover::before,
+  .motion-pro .bz-card[data-motion-tilt]:hover::before,
+  .motion-pro .rd-card[data-motion-tilt]:hover::before,
+  .motion-pro .h-bazar[data-motion-tilt]:hover::before { opacity: .85; }
+
+  .motion-pro .card-img img,
+  .motion-pro .h-card-img img {
+    transform: translate3d(var(--img-x, 0px), var(--img-y, 0px), 28px) scale(1.04);
+  }
+}
+
+/* ── Magnetic controls / premium buttons ───────────────────── */
+.motion-magnetic {
+  --mag-x: 0px;
+  --mag-y: 0px;
+  transform: translate3d(var(--mag-x), var(--mag-y), 0);
+  transition: transform 260ms var(--motion-ease-out), box-shadow 240ms ease, background 240ms ease !important;
+  will-change: transform;
+}
+.motion-magnetic > * { pointer-events: none; }
+.motion-magnetic.motion-magnet-active { transition-duration: 80ms, 240ms, 240ms !important; }
+
+/* Animated sheen for primary actions. */
+.motion-pro :is(.h-btn-primary,.h-nav-cta,.pp-btn-wa,.btn-contact,.submit-btn,.ct-btn-primary,.fd-apply) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.motion-pro :is(.h-btn-primary,.h-nav-cta,.pp-btn-wa,.btn-contact,.submit-btn,.ct-btn-primary,.fd-apply)::after {
+  content: '';
+  position: absolute;
+  inset: -80% auto -80% -45%;
+  width: 34%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.34), transparent);
+  transform: skewX(-18deg) translateX(-220%);
+  transition: transform 720ms var(--motion-ease-out);
+  z-index: -1;
+}
+.motion-pro :is(.h-btn-primary,.h-nav-cta,.pp-btn-wa,.btn-contact,.submit-btn,.ct-btn-primary,.fd-apply):hover::after {
+  transform: skewX(-18deg) translateX(520%);
+}
+
+/* Navigation has a moving underline, similar to motion portfolio sites. */
+.motion-pro .h-tabs a,
+.motion-pro .cat-nav a,
+.motion-pro header nav a {
+  position: relative;
+}
+.motion-pro .h-tabs a::after,
+.motion-pro header nav a::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 3px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 340ms var(--motion-ease-out);
+  opacity: .65;
+}
+.motion-pro .h-tabs a:hover::after,
+.motion-pro header nav a:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ── Section heading kinetic accent ────────────────────────── */
+.motion-pro .h-section-head h2 em,
+.motion-pro .h-hero h1 em,
+.motion-pro .h-shop-title em {
+  position: relative;
+  display: inline-block;
+}
+.motion-pro .h-section-head h2 em::after,
+.motion-pro .h-hero h1 em::after,
+.motion-pro .h-shop-title em::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: .01em;
+  width: 100%;
+  height: .09em;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(45,107,228,.16), rgba(45,107,228,.72), rgba(120,170,255,.25));
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.motion-pro .visible .h-section-head h2 em::after,
+.motion-pro.motion-loaded .h-hero h1 em::after,
+.motion-pro.motion-loaded .h-shop-title em::after {
+  transform: scaleX(1);
+  transition: transform 900ms 380ms var(--motion-ease-out);
+}
+
+/* ── Steps feel like a connected motion sequence ───────────── */
+.motion-pro .h-steps { position: relative; }
+.motion-pro .h-steps::before {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 31px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(45,107,228,.25), rgba(45,107,228,.5), rgba(45,107,228,.25), transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.motion-pro .h-steps.visible::before,
+.motion-pro .visible .h-steps::before {
+  transform: scaleX(1);
+  transition: transform 1.25s 250ms var(--motion-ease-out);
+}
+.motion-pro .h-step-num {
+  transition: transform 480ms var(--motion-ease-snap), box-shadow 480ms ease;
+}
+.motion-pro .h-step:hover .h-step-num { transform: translateY(-4px) rotate(-4deg) scale(1.06); }
+
+/* ── Image reveal polish ───────────────────────────────────── */
+.motion-pro.js-mov img[data-fade] {
+  opacity: 0;
+  filter: blur(10px) saturate(.8);
+  transform: scale(1.025);
+  transition: opacity 520ms ease, filter 720ms var(--motion-ease-out), transform 900ms var(--motion-ease-out) !important;
+}
+.motion-pro.js-mov img[data-fade].cargada {
+  opacity: 1;
+  filter: blur(0) saturate(1);
+  transform: scale(1);
+}
+
+/* ── Page transitions: a subtle cinematic push/reveal ──────── */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: motion-page-old 360ms var(--motion-ease-out) both !important;
+  }
+  ::view-transition-new(root) {
+    animation: motion-page-new 680ms var(--motion-ease-out) both !important;
+  }
+  @keyframes motion-page-old {
+    to { opacity: 0; transform: translate3d(-18px,0,0) scale(.992); filter: blur(3px); }
+  }
+  @keyframes motion-page-new {
+    from { opacity: 0; transform: translate3d(26px,0,0) scale(.985); filter: blur(8px); clip-path: inset(0 0 0 5% round 18px); }
+    to   { opacity: 1; transform: none; filter: blur(0); clip-path: inset(0 0 0 0 round 0); }
+  }
+}
+
+/* ── Native scroll-linked hero depth where supported ───────── */
+@supports (animation-timeline: scroll()) {
+  @media (min-width: 800px) and (prefers-reduced-motion: no-preference) {
+    .motion-pro .h-hero-inner,
+    .motion-pro .h-shop-hero > * {
+      animation: motion-hero-scroll linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 560px;
+      transform-origin: center top;
+    }
+    @keyframes motion-hero-scroll {
+      from { transform: translateY(0) scale(1); opacity: 1; }
+      to   { transform: translateY(46px) scale(.975); opacity: .72; }
+    }
+  }
+}
+
+/* ── Mobile: keep the premium feel, drop expensive 3D pointer work ── */
+@media (max-width: 799px), (hover:none), (pointer:coarse) {
+  .motion-ambient { display: none; }
+  .motion-pro.js-mov [data-revelar] {
+    transform: translate3d(0, 26px, 0) scale(.992);
+    filter: blur(6px);
+    transition-duration: 560ms, 650ms, 580ms;
+  }
+  .motion-pro .h-hero-bazares .hb-card,
+  .motion-pro .h-hero-bazares .hb-card:nth-child(even) { transform: none; }
+  .motion-magnetic { transform: none !important; }
+}
+
+/* Accessibility has final say. */
+@media (prefers-reduced-motion: reduce) {
+  .motion-scroll-progress,
+  .motion-ambient { display: none !important; }
+  .motion-pro .motion-hero-item,
+  .motion-pro .motion-word > span,
+  .motion-pro.js-mov [data-revelar],
+  .motion-pro.js-mov img[data-fade] {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+  .motion-pro .h-steps::before,
+  .motion-pro .h-section-head h2 em::after,
+  .motion-pro .h-hero h1 em::after,
+  .motion-pro .h-shop-title em::after { transform: scaleX(1) !important; }
+}
