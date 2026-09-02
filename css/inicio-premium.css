@@ -1,0 +1,531 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   STMP MARKET · INICIO — CAPA PREMIUM
+   Dirección artística editorial para el home. Se carga la última, así que
+   refina la base sin reescribirla. TODO va scopeado a .home para no tocar
+   tienda, ficha ni panel. Se apoya en el motor de movimiento existente
+   (movimiento.js) — aquí no hay reveal-on-scroll duplicado, solo diseño.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Tokens premium (solo en el home) ─────────────────────────────────── */
+html.home {
+  --pm-ink:      #15171d;   /* tinta casi negra, más contraste que --black */
+  --pm-ink-soft: #3a3d47;
+  --pm-paper:    #f5f2ec;   /* papel cálido */
+  --pm-paper-2:  #ffffff;
+  --pm-line:     rgba(21, 23, 29, .10);   /* hairline */
+  --pm-line-2:   rgba(21, 23, 29, .16);
+  --pm-accent:   #2d6be4;
+  --pm-accent-ink:#1c48a0;
+  --pm-muted:    #74706a;
+
+  /* Escala tipográfica fluida */
+  --pm-display: clamp(3rem, 9.5vw, 7rem);
+  --pm-h2:      clamp(2rem, 5.2vw, 3.6rem);
+  --pm-h3:      clamp(1.1rem, 2.2vw, 1.45rem);
+  --pm-eyebrow: .72rem;
+
+  /* Ritmo vertical */
+  --pm-sec-y:   clamp(2.6rem, 5vw, 4.6rem);
+  --pm-gap:     clamp(1rem, 2.4vw, 1.8rem);
+
+  /* Profundidad sutil (nada de sombras enormes) */
+  --pm-shadow-sm: 0 1px 2px rgba(21,23,29,.04), 0 3px 8px rgba(21,23,29,.05);
+  --pm-shadow-md: 0 4px 12px rgba(21,23,29,.06), 0 16px 40px rgba(21,23,29,.09);
+  --pm-shadow-accent: 0 10px 30px rgba(45,107,228,.28);
+
+  /* Curvas */
+  --pm-ease: cubic-bezier(.22, 1, .36, 1);
+  --pm-ease-out: cubic-bezier(.16, 1, .3, 1);
+
+  background: var(--pm-paper);
+}
+
+.home body { background: var(--pm-paper); color: var(--pm-ink); }
+
+/* Tipografía base más nítida */
+.home main, .home .site-footer {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Selección con carácter */
+.home ::selection { background: var(--pm-accent); color: #fff; }
+
+/* Un ancho de lectura consistente para todas las secciones */
+.home .h-wrap, .home .h-section.h-wrap { max-width: 1240px; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1 · TICKER — hilo editorial fino
+   ═══════════════════════════════════════════════════════════════════════ */
+.home .ticker-bar {
+  background: var(--pm-ink);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.home .ticker-track span {
+  color: rgba(255,255,255,.72);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+.home .ticker-track span::before {
+  content: '✦';
+  color: var(--pm-accent);
+  opacity: .8;
+  margin: 0 2.4rem 0 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2 · HEADER — cristal limpio, hairline, compacta al bajar
+   ═══════════════════════════════════════════════════════════════════════ */
+.home header {
+  background: color-mix(in srgb, var(--pm-paper) 82%, transparent);
+  -webkit-backdrop-filter: saturate(140%) blur(14px);
+  backdrop-filter: saturate(140%) blur(14px);
+  border-bottom: 1px solid var(--pm-line);
+}
+.home .header-row { transition: padding .4s var(--pm-ease); }
+.home header.compacto .header-row { padding-top: 8px; padding-bottom: 8px; }
+.home header.compacto { box-shadow: 0 1px 0 var(--pm-line), 0 10px 30px -22px rgba(21,23,29,.5); }
+
+.home .logo { font-family: 'Bebas Neue', sans-serif; letter-spacing: .01em; }
+.home .logo span:last-child { color: var(--pm-accent); }
+
+/* Buscador como pastilla refinada */
+.home .h-header-search {
+  border: 1px solid var(--pm-line-2);
+  background: var(--pm-paper-2);
+  border-radius: 40px;
+  transition: border-color .25s var(--pm-ease), box-shadow .25s var(--pm-ease);
+}
+.home .h-header-search:focus-within {
+  border-color: var(--pm-accent);
+  box-shadow: 0 0 0 4px rgba(45,107,228,.12);
+}
+
+/* CTA del nav */
+.home .h-nav-cta {
+  background: var(--pm-ink);
+  color: #fff;
+  border-radius: 40px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  transition: transform .2s var(--pm-ease), background .2s var(--pm-ease);
+}
+.home .h-nav-cta:hover { background: var(--pm-accent); transform: translateY(-1px); }
+.home .h-nav-ig:hover { color: var(--pm-accent); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3 · HERO — introducción editorial y cinematográfica
+   ═══════════════════════════════════════════════════════════════════════ */
+.home .h-hero {
+  position: relative;
+  background:
+    radial-gradient(120% 90% at 88% 0%, rgba(45,107,228,.10) 0%, transparent 55%),
+    radial-gradient(90% 70% at 0% 100%, rgba(21,23,29,.05) 0%, transparent 60%),
+    var(--pm-paper);
+  overflow: clip;
+}
+/* Rejilla técnica muy sutil de fondo (papel de estudio) */
+.home .h-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--pm-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--pm-line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: radial-gradient(120% 80% at 70% 10%, #000 0%, transparent 70%);
+  mask-image: radial-gradient(120% 80% at 70% 10%, #000 0%, transparent 70%);
+  opacity: .5;
+  pointer-events: none;
+}
+.home .h-hero-inner { position: relative; z-index: 1; }
+.home .h-hero-inner.h-hero-bz { align-items: center; gap: clamp(2rem, 5vw, 4.5rem); }
+
+/* Tabs → segmento premium */
+.home .h-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  background: rgba(21,23,29,.05);
+  border: 1px solid var(--pm-line);
+  border-radius: 40px;
+  margin-bottom: 1.6rem;
+}
+.home .h-tabs a {
+  padding: 7px 18px;
+  border-radius: 40px;
+  font-size: 13px; font-weight: 700;
+  color: var(--pm-muted);
+  transition: color .2s var(--pm-ease), background .2s var(--pm-ease);
+}
+.home .h-tabs a.active { background: var(--pm-ink); color: #fff; }
+
+/* Eyebrow (se inyecta por CSS, sin tocar el hook del h1) */
+.home .h-hero-top { position: relative; }
+.home .h-hero-top::before {
+  content: 'Marketplace de bazares · México';
+  display: inline-block;
+  font-size: var(--pm-eyebrow);
+  font-weight: 800;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--pm-accent);
+  margin-bottom: 1.1rem;
+}
+
+/* Titular monumental */
+.home #heroTitulo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: var(--pm-display);
+  line-height: .9;
+  letter-spacing: -0.005em;
+  color: var(--pm-ink);
+  margin: 0 0 1.2rem;
+  text-wrap: balance;
+}
+.home #heroTitulo em {
+  font-style: normal;
+  color: var(--pm-accent);
+  position: relative;
+}
+.home .h-hero-sub {
+  font-size: clamp(1rem, 1.5vw, 1.18rem);
+  line-height: 1.6;
+  color: var(--pm-ink-soft);
+  max-width: 46ch;
+  margin-bottom: 2rem;
+}
+
+/* CTAs — jerarquía clara + botón magnético (sutil, por JS) */
+.home .h-cta-row { gap: 14px; }
+.home .h-btn {
+  border-radius: 40px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  padding: 15px 30px;
+  transition: transform .28s var(--pm-ease), box-shadow .28s var(--pm-ease), background .2s var(--pm-ease);
+  will-change: transform;
+}
+.home .h-btn-primary {
+  background: var(--pm-accent);
+  color: #fff;
+  box-shadow: var(--pm-shadow-accent);
+}
+.home .h-btn-primary:hover { box-shadow: 0 14px 38px rgba(45,107,228,.42); }
+.home .h-btn-wa {
+  background: var(--pm-paper-2);
+  color: var(--pm-ink);
+  border: 1px solid var(--pm-line-2);
+}
+.home .h-btn-wa:hover { border-color: var(--pm-ink); }
+
+/* Estadísticas — números editoriales con línea divisoria */
+.home .h-stats {
+  margin-top: 2.6rem;
+  padding-top: 1.8rem;
+  border-top: 1px solid var(--pm-line);
+  gap: clamp(1rem, 4vw, 2.6rem);
+}
+.home .h-stat { align-items: flex-start; text-align: left; }
+.home .h-stat svg { color: var(--pm-accent); opacity: .9; }
+.home .h-stat-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2rem, 4vw, 2.9rem);
+  line-height: 1;
+  color: var(--pm-ink);
+  font-variant-numeric: tabular-nums;
+}
+.home .h-stat-lbl {
+  font-size: 11.5px; letter-spacing: .04em;
+  color: var(--pm-muted); text-transform: uppercase; font-weight: 600;
+}
+
+/* Tarjetas de bazar del hero */
+.home .h-hero-bazares { gap: 14px; }
+.home .hb-card {
+  border-radius: 20px;
+  border: 1px solid var(--pm-line);
+  box-shadow: var(--pm-shadow-md);
+  overflow: hidden;
+  transition: transform .4s var(--pm-ease), box-shadow .4s var(--pm-ease);
+}
+.home .hb-card:hover { transform: translateY(-4px); box-shadow: 0 20px 50px rgba(21,23,29,.14); }
+
+/* Indicador de scroll */
+.home .h-hero::after {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: 14px;
+  width: 22px; height: 34px;
+  border: 1.5px solid var(--pm-line-2);
+  border-radius: 20px;
+  transform: translateX(-50%);
+  z-index: 1;
+  opacity: .8;
+}
+.home .h-hero .h-scroll-dot {
+  position: absolute; left: 50%; bottom: 22px;
+  width: 4px; height: 7px; border-radius: 4px;
+  background: var(--pm-accent);
+  transform: translateX(-50%);
+  z-index: 2;
+  animation: pmScroll 1.9s var(--pm-ease) infinite;
+}
+@keyframes pmScroll { 0%,100%{ transform:translate(-50%,0); opacity:1 } 50%{ transform:translate(-50%,9px); opacity:.3 } }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   4 · ENCABEZADOS DE SECCIÓN — editoriales y numerados
+   ═══════════════════════════════════════════════════════════════════════ */
+.home .h-section { padding-block: var(--pm-sec-y); }
+.home .h-section-head {
+  align-items: end;
+  margin-bottom: clamp(1.6rem, 3vw, 2.6rem);
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--pm-line);
+}
+.home .h-section-head h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: var(--pm-h2);
+  line-height: .95;
+  letter-spacing: -0.005em;
+  color: var(--pm-ink);
+}
+.home .h-section-head h2 em { font-style: normal; color: var(--pm-accent); }
+.home .h-section-head p {
+  color: var(--pm-muted);
+  font-size: 14px;
+  max-width: 52ch;
+  margin-top: .5rem;
+}
+.home .h-see-more {
+  font-size: 13px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: var(--pm-ink);
+  border-bottom: 2px solid var(--pm-accent);
+  padding-bottom: 3px;
+  white-space: nowrap;
+  transition: color .2s var(--pm-ease), gap .2s var(--pm-ease);
+}
+.home .h-see-more::after { content: ' →'; }
+.home .h-see-more:hover { color: var(--pm-accent); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   5 · TARJETAS DE PRENDA — premium, foto protagonista
+   ═══════════════════════════════════════════════════════════════════════ */
+.home .h-card {
+  background: var(--pm-paper-2);
+  border: 1px solid var(--pm-line);
+  border-radius: 18px;
+  overflow: hidden;
+  transition: transform .4s var(--pm-ease), box-shadow .4s var(--pm-ease), border-color .4s var(--pm-ease);
+}
+.home .h-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--pm-shadow-md);
+  border-color: transparent;
+}
+.home .h-card-img { overflow: hidden; background: var(--pm-mid, #ece7df); }
+.home .h-card-img img { transition: transform .7s var(--pm-ease); }
+.home .h-card:hover .h-card-img img { transform: scale(1.06); }
+.home .h-card-body { padding: 14px 15px 16px; }
+.home .h-card-brand {
+  font-size: 10.5px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--pm-muted);
+}
+.home .h-card-name {
+  font-weight: 700; color: var(--pm-ink);
+  font-size: 14.5px; line-height: 1.25;
+}
+.home .h-card-price { font-weight: 800; color: var(--pm-ink); }
+.home .h-card-size { color: var(--pm-muted); font-size: 12px; }
+
+/* Riel horizontal con scroll-snap suave */
+.home .h-rail {
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 2px;
+}
+.home .h-rail > * { scroll-snap-align: start; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   6 · CATEGORÍAS Y MARCAS — pastillas con carácter
+   ═══════════════════════════════════════════════════════════════════════ */
+.home .h-cats a, .home .h-cat {
+  border: 1px solid var(--pm-line-2);
+  background: var(--pm-paper-2);
+  border-radius: 40px;
+  transition: transform .2s var(--pm-ease), border-color .2s var(--pm-ease), color .2s var(--pm-ease);
+}
+.home .h-cats a:hover, .home .h-cat:hover {
+  border-color: var(--pm-ink);
+  transform: translateY(-2px);
+}
+.home .h-brands a, .home .h-brand {
+  border: 1px solid var(--pm-line-2);
+  border-radius: 40px;
+  transition: transform .2s var(--pm-ease), border-color .2s var(--pm-ease);
+}
+.home .h-brands a:hover, .home .h-brand:hover { border-color: var(--pm-accent); color: var(--pm-accent); transform: translateY(-2px); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   7 · CÓMO FUNCIONA — pasos editoriales con índice grande
+   ═══════════════════════════════════════════════════════════════════════ */
+.home .h-steps { gap: clamp(1rem, 2.5vw, 2rem); }
+.home .h-step {
+  background: var(--pm-paper-2);
+  border: 1px solid var(--pm-line);
+  border-radius: 20px;
+  padding: clamp(1.4rem, 3vw, 2.2rem);
+  position: relative;
+  overflow: hidden;
+  transition: transform .35s var(--pm-ease), box-shadow .35s var(--pm-ease);
+}
+.home .h-step:hover { transform: translateY(-4px); box-shadow: var(--pm-shadow-md); }
+.home .h-step-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(3rem, 7vw, 5rem);
+  line-height: .8;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--pm-line-2);
+  margin-bottom: .6rem;
+}
+.home .h-step h3 { font-size: var(--pm-h3); color: var(--pm-ink); margin-bottom: .5rem; }
+.home .h-step p { color: var(--pm-ink-soft); font-size: 14px; line-height: 1.6; }
+.home .h-step::after {
+  content: ''; position: absolute; left: 0; top: 0; height: 3px; width: 0;
+  background: var(--pm-accent); transition: width .5s var(--pm-ease);
+}
+.home .h-step:hover::after { width: 100%; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   8 · SOBRE STMP — bloque editorial asimétrico
+   ═══════════════════════════════════════════════════════════════════════ */
+/* El bloque .h-about tiene fondo OSCURO (hero-gradient) por diseño en
+   inicio.css → todo su texto va en claro para que se lea. */
+.home .h-about {
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: start;
+}
+.home .h-about > div:first-child h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: var(--pm-h2); line-height: .95; color: #fff;
+}
+.home .h-about > div:first-child h2 em { font-style: normal; color: #9dc0ff; }
+.home .h-about p { color: rgba(255, 255, 255, .82); line-height: 1.7; }
+.home .h-fact { border-top: 1px solid rgba(255, 255, 255, .18); padding-top: .9rem; }
+.home .h-fact-k {
+  font-size: 11px; font-weight: 800; letter-spacing: .12em;
+  text-transform: uppercase; color: #9dc0ff;
+}
+.home .h-fact-v { color: #fff; font-weight: 500; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   9 · FAQ — acordeón fluido
+   ═══════════════════════════════════════════════════════════════════════ */
+.home .h-faq details {
+  border: 1px solid var(--pm-line);
+  border-radius: 16px;
+  background: var(--pm-paper-2);
+  padding: 2px 20px;
+  transition: border-color .25s var(--pm-ease), box-shadow .25s var(--pm-ease);
+  margin-bottom: 12px;
+}
+.home .h-faq details[open] { border-color: var(--pm-line-2); box-shadow: var(--pm-shadow-sm); }
+.home .h-faq summary {
+  font-weight: 700; color: var(--pm-ink);
+  font-size: 15px; padding: 16px 0;
+  cursor: pointer; list-style: none;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+}
+.home .h-faq summary::-webkit-details-marker { display: none; }
+.home .h-faq summary::after {
+  content: '+'; color: var(--pm-accent); font-size: 22px; line-height: 1;
+  transition: transform .3s var(--pm-ease);
+}
+.home .h-faq details[open] summary::after { content: '–'; transform: rotate(180deg); }
+.home .h-faq p { color: var(--pm-ink-soft); line-height: 1.65; padding-bottom: 16px; }
+@media (prefers-reduced-motion: no-preference) {
+  .home .h-faq details[open] p { animation: pmFaq .35s var(--pm-ease-out); }
+  @keyframes pmFaq { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   10 · CTA FINAL — cierre monumental en tinta
+   ═══════════════════════════════════════════════════════════════════════ */
+.home .h-cta {
+  background: var(--pm-ink);
+  border: none;
+  border-radius: 28px;
+  padding: clamp(2.5rem, 6vw, 4.5rem) 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.home .h-cta::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(80% 120% at 50% -20%, rgba(45,107,228,.5) 0%, transparent 60%);
+  pointer-events: none;
+}
+.home .h-cta > * { position: relative; z-index: 1; }
+.home .h-cta h2 { color: #fff; font-size: clamp(2rem, 6vw, 3.6rem); }
+.home .h-cta h2 em { font-style: normal; color: #9dc0ff; }
+.home .h-cta p { color: rgba(255,255,255,.72); }
+.home .h-cta .h-btn-primary { background: #fff; color: var(--pm-ink); box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+.home .h-cta .h-btn-primary:hover { background: var(--pm-accent); color: #fff; }
+
+/* Banda "¿Tienes un bazar?" ya vive en inicio.css; solo afinamos el ritmo */
+.home .h-vender { box-shadow: var(--pm-shadow-md); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   11 · FOOTER — refinado
+   ═══════════════════════════════════════════════════════════════════════ */
+.home .site-footer { background: var(--pm-ink); color: rgba(255,255,255,.7); }
+.home .sf-logo { font-family: 'Bebas Neue', sans-serif; color: #fff; }
+.home .sf-logo span { color: var(--pm-accent); }
+.home .sf-col h3 { color: #fff; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; }
+.home .sf-col a { color: rgba(255,255,255,.62); transition: color .2s var(--pm-ease); }
+.home .sf-col a:hover { color: #fff; }
+.home .site-footer .sf-desc, .home .sf-ubi { color: rgba(255,255,255,.5); }
+.home .sf-aviso { color: rgba(255,255,255,.55); border-top-color: rgba(255,255,255,.1); }
+.home .sf-base { color: rgba(255,255,255,.5); border-top-color: rgba(255,255,255,.1); }
+.home .sf-aviso a, .home .sf-base a { color: rgba(255,255,255,.75); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   12 · FOCO ACCESIBLE — consistente en todo el home
+   ═══════════════════════════════════════════════════════════════════════ */
+.home a:focus-visible,
+.home button:focus-visible,
+.home input:focus-visible,
+.home summary:focus-visible {
+  outline: 2px solid var(--pm-accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   13 · MOBILE — diseñado para móvil, no comprimido
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 720px) {
+  .home .h-hero-top::before { margin-bottom: .8rem; }
+  .home #heroTitulo { font-size: clamp(2.7rem, 13vw, 4.2rem); }
+  .home .h-hero-sub { font-size: 1rem; }
+  .home .h-stats { flex-wrap: wrap; gap: 1.2rem 1.8rem; }
+  .home .h-stat { min-width: 40%; }
+  .home .h-section-head { flex-wrap: wrap; gap: .6rem; }
+  .home .h-cta { border-radius: 22px; }
+  /* El indicador de scroll estorba en pantallas cortas */
+  .home .h-hero::after, .home .h-hero .h-scroll-dot { display: none; }
+}
+@media (max-width: 400px) {
+  .home #heroTitulo { font-size: clamp(2.4rem, 15vw, 3.4rem); }
+  .home .h-btn { padding: 14px 24px; width: 100%; text-align: center; }
+  .home .h-cta-row { flex-direction: column; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   14 · REDUCED MOTION — respeto total
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .home .h-hero .h-scroll-dot { animation: none; }
+  .home * { scroll-behavior: auto !important; }
+}

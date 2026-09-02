@@ -108,9 +108,24 @@ function _confirmarEscritura(col) {
 }
 
 // ── Polling: UNA sola petición cada 10 segundos ──────────────
+// ¿El cliente cree ahora mismo que alguna parte está cerrada?
+function _algoCerrado() {
+  const m = _ajustes && _ajustes.mantenimiento;
+  if (!m) return false;
+  return Object.values(m).some(v =>
+    v && v.cerrado && (!v.hasta || new Date(v.hasta).getTime() > Date.now()));
+}
+
 async function _poll() {
   try {
-    const data = await api(RUTA_SYNC);
+    // Regla clave: si el sitio (o una sección) se ve cerrado, la siguiente
+    // consulta esquiva TODA caché —CDN incluido— con fresh=1 y un sello de
+    // tiempo único. Así, en cuanto el admin reabre, la cortina se levanta a
+    // la primera vuelta del poll sin depender de que expire el caché del CDN.
+    // Solo pasa mientras hay cortina, así que no afecta el uso normal.
+    let ruta = RUTA_SYNC;
+    if (_algoCerrado()) ruta += (MODO_PUBLICO ? '&' : '?') + 'fresh=1&_=' + Date.now();
+    const data = await api(ruta);
 
     const inv     = data.inventario || [];
     const cats    = data.categorias || [];

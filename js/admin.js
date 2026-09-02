@@ -3899,7 +3899,12 @@ async function cargarMantenimiento() {
   try {
     _mntEstado = await api('/api/acciones?op=mantenimiento', { method: 'GET' });
   } catch (_) {
-    _mntEstado = null;
+    // Si el GET falla NO asumimos "abierto": eso haría creer que el sitio
+    // está abierto cuando en realidad puede estar cerrado. Usamos el estado
+    // que ya trae el sync (getAjustes), y si tampoco hay, conservamos el
+    // último conocido en vez de mostrar todo abierto.
+    const delSync = (typeof getAjustes === 'function') ? getAjustes() : null;
+    _mntEstado = delSync || _mntEstado || null;
   }
   pintarMantenimiento();
 }

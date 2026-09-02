@@ -1,0 +1,141 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   STMP MARKET · PREMIUM BASE
+   Lenguaje visual compartido (el mismo del inicio) para tienda, ficha,
+   cuenta y redes. Se carga la última en cada página, así refina sin
+   reescribir. NO va scopeado a .home a propósito: unifica el "chrome"
+   (ticker, header, footer, botones, tipografía) y los componentes comunes.
+   No se enlaza en admin.html (tiene su propio sistema).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --pm-ink:      #15171d;
+  --pm-ink-soft: #3a3d47;
+  --pm-paper:    #f5f2ec;
+  --pm-paper-2:  #ffffff;
+  --pm-line:     rgba(21, 23, 29, .10);
+  --pm-line-2:   rgba(21, 23, 29, .16);
+  --pm-accent:   #2d6be4;
+  --pm-accent-ink:#1c48a0;
+  --pm-muted:    #74706a;
+  --pm-shadow-sm: 0 1px 2px rgba(21,23,29,.04), 0 3px 8px rgba(21,23,29,.05);
+  --pm-shadow-md: 0 4px 12px rgba(21,23,29,.06), 0 16px 40px rgba(21,23,29,.09);
+  --pm-shadow-accent: 0 10px 30px rgba(45,107,228,.28);
+  --pm-ease: cubic-bezier(.22, 1, .36, 1);
+  --pm-ease-out: cubic-bezier(.16, 1, .3, 1);
+}
+
+body { background: var(--pm-paper); color: var(--pm-ink); }
+main { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+::selection { background: var(--pm-accent); color: #fff; }
+
+/* ── Ticker ───────────────────────────────────────────────────────────── */
+.ticker-bar { background: var(--pm-ink); border-bottom: 1px solid rgba(255,255,255,.06); }
+.ticker-track span {
+  color: rgba(255,255,255,.72);
+  font-size: 11px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
+}
+.ticker-track span::before { content: '✦'; color: var(--pm-accent); opacity: .8; margin: 0 2.4rem 0 0; }
+
+/* ── Header ───────────────────────────────────────────────────────────── */
+header {
+  background: color-mix(in srgb, var(--pm-paper) 82%, transparent);
+  -webkit-backdrop-filter: saturate(140%) blur(14px);
+  backdrop-filter: saturate(140%) blur(14px);
+  border-bottom: 1px solid var(--pm-line);
+}
+.header-row { transition: padding .4s var(--pm-ease); }
+header.compacto .header-row { padding-top: 8px; padding-bottom: 8px; }
+header.compacto { box-shadow: 0 1px 0 var(--pm-line), 0 10px 30px -22px rgba(21,23,29,.5); }
+.logo { font-family: 'Bebas Neue', sans-serif; letter-spacing: .01em; }
+.logo span:last-child { color: var(--pm-accent); }
+
+.h-header-search {
+  border: 1px solid var(--pm-line-2); background: var(--pm-paper-2); border-radius: 40px;
+  transition: border-color .25s var(--pm-ease), box-shadow .25s var(--pm-ease);
+}
+.h-header-search:focus-within { border-color: var(--pm-accent); box-shadow: 0 0 0 4px rgba(45,107,228,.12); }
+
+.h-nav-cta {
+  background: var(--pm-ink); color: #fff; border-radius: 40px; font-weight: 700;
+  transition: transform .2s var(--pm-ease), background .2s var(--pm-ease);
+}
+.h-nav-cta:hover { background: var(--pm-accent); transform: translateY(-1px); }
+.h-nav-cta-ghost { background: var(--pm-paper-2); color: var(--pm-ink); border: 1px solid var(--pm-line-2); }
+.h-nav-cta-ghost:hover { background: var(--pm-paper-2); border-color: var(--pm-ink); color: var(--pm-ink); }
+.h-nav-ig:hover, .btn-ig:hover { color: var(--pm-accent); }
+
+/* ── Cabecera de página (hero de sección) ─────────────────────────────── */
+.h-shop-hero { background: var(--pm-paper); }
+.h-shop-hero h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.4rem, 6vw, 4.4rem); line-height: .92;
+  letter-spacing: -0.005em; color: var(--pm-ink);
+}
+.h-shop-hero h2 em { font-style: normal; color: var(--pm-accent); }
+.h-shop-hero p { color: var(--pm-ink-soft); }
+.h-crumb {
+  color: var(--pm-ink); border: 1px solid var(--pm-line-2); border-radius: 40px;
+  background: var(--pm-paper-2); font-weight: 700;
+  transition: border-color .2s var(--pm-ease), transform .2s var(--pm-ease);
+}
+.h-crumb:hover { border-color: var(--pm-ink); transform: translateX(-2px); }
+
+/* ── Botones ──────────────────────────────────────────────────────────── */
+.h-btn { border-radius: 40px; font-weight: 700; letter-spacing: .02em; transition: transform .28s var(--pm-ease), box-shadow .28s var(--pm-ease), background .2s var(--pm-ease); }
+.h-btn-primary { background: var(--pm-accent); color: #fff; box-shadow: var(--pm-shadow-accent); }
+.h-btn-primary:hover { box-shadow: 0 14px 38px rgba(45,107,228,.42); transform: translateY(-2px); }
+
+/* ── Cards de prenda (tienda) ─────────────────────────────────────────── */
+.card {
+  border: 1px solid var(--pm-line); border-radius: 18px; background: var(--pm-paper-2);
+  transition: transform .4s var(--pm-ease), box-shadow .4s var(--pm-ease), border-color .4s var(--pm-ease);
+}
+.card:hover { transform: translateY(-6px); box-shadow: var(--pm-shadow-md); border-color: transparent; }
+.card-img img { transition: transform .7s var(--pm-ease); }
+.card:hover .card-img img { transform: scale(1.06); }
+.card-name { color: var(--pm-ink); font-weight: 700; }
+.card-price { color: var(--pm-ink); font-weight: 800; }
+.sort-btn {
+  border: 1px solid var(--pm-line-2); border-radius: 40px; background: var(--pm-paper-2);
+  transition: border-color .2s var(--pm-ease);
+}
+.sort-btn:hover { border-color: var(--pm-ink); }
+.filters-fab { border-radius: 40px; }
+
+/* ── Ficha de prenda (prenda.html) ────────────────────────────────────── */
+.pp-nombre {
+  font-family: 'Bebas Neue', sans-serif; letter-spacing: -0.005em;
+  line-height: .95; color: var(--pm-ink);
+}
+.pp-precio { color: var(--pm-accent); }
+.pp-btn-wa {
+  background: var(--pm-accent); border-radius: 40px; box-shadow: var(--pm-shadow-accent);
+  transition: transform .2s var(--pm-ease), box-shadow .2s var(--pm-ease);
+}
+.pp-btn-wa:hover { transform: translateY(-2px); box-shadow: 0 14px 38px rgba(45,107,228,.42); }
+.pp-bazar {
+  border: 1px solid var(--pm-line); border-radius: 16px;
+  transition: border-color .25s var(--pm-ease), box-shadow .25s var(--pm-ease);
+}
+.pp-bazar:hover { border-color: var(--pm-accent); box-shadow: var(--pm-shadow-sm); }
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+.site-footer { background: var(--pm-ink); color: rgba(255,255,255,.7); }
+.sf-logo { font-family: 'Bebas Neue', sans-serif; color: #fff; }
+.sf-logo span { color: var(--pm-accent); }
+.sf-col h3 { color: #fff; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; }
+.sf-col a { color: rgba(255,255,255,.62); transition: color .2s var(--pm-ease); }
+.sf-col a:hover { color: #fff; }
+.site-footer .sf-desc, .sf-ubi { color: rgba(255,255,255,.5); }
+.sf-aviso { color: rgba(255,255,255,.55); border-top-color: rgba(255,255,255,.1); }
+.sf-base { color: rgba(255,255,255,.5); border-top-color: rgba(255,255,255,.1); }
+.sf-aviso a, .sf-base a { color: rgba(255,255,255,.75); }
+
+/* ── Foco accesible ───────────────────────────────────────────────────── */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--pm-accent); outline-offset: 3px; border-radius: 6px;
+}
+
+/* ── Bottom-nav móvil (tienda/ficha) ──────────────────────────────────── */
+.bottom-nav { border-top: 1px solid var(--pm-line); background: color-mix(in srgb, var(--pm-paper) 90%, transparent); }
+.bn-item.activo, .bn-item:active { color: var(--pm-accent); }
