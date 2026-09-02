@@ -480,7 +480,7 @@ html.home {
    11 · FOOTER — refinado
    ═══════════════════════════════════════════════════════════════════════ */
 .home .site-footer { background: var(--pm-ink); color: rgba(255,255,255,.7); }
-.home .sf-logo { font-family: 'Bebas Neue', sans-serif; color: #fff; }
+.home .sf-logo { font-family: 'Bebas Neue', sans-serif; color: #fff !important; }
 .home .sf-logo span { color: var(--pm-accent); }
 .home .sf-col h3 { color: #fff; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; }
 .home .sf-col a { color: rgba(255,255,255,.62); transition: color .2s var(--pm-ease); }
@@ -489,6 +489,7 @@ html.home {
 .home .sf-aviso { color: rgba(255,255,255,.55); border-top-color: rgba(255,255,255,.1); }
 .home .sf-base { color: rgba(255,255,255,.5); border-top-color: rgba(255,255,255,.1); }
 .home .sf-aviso a, .home .sf-base a { color: rgba(255,255,255,.75); }
+.home .sf-aviso strong, .home .sf-aviso b { color: rgba(255,255,255,.9); }
 
 /* ═══════════════════════════════════════════════════════════════════════
    12 · FOCO ACCESIBLE — consistente en todo el home

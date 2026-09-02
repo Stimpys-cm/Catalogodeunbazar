@@ -1045,11 +1045,12 @@ footer.site-footer {
 .sf-aviso {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 18px 2.5rem 20px;
+  padding: 26px 2.5rem 24px;
   border-top: 1px solid var(--border);
   font-size: 12.5px;
-  line-height: 1.65;
+  line-height: 1.7;
   color: var(--text2);
+  overflow: visible;
 }
 .sf-aviso strong { color: var(--black); }
 .sf-aviso b { color: var(--black); }
@@ -1063,7 +1064,7 @@ footer.site-footer {
 .sf-base {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 16px 2.5rem calc(24px + env(safe-area-inset-bottom, 0px));
+  padding: 20px 2.5rem calc(26px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--border);
   display: flex;
   flex-wrap: wrap;
