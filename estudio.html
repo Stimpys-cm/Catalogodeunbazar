@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es" class="home">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <title>Estudio de Posts | STMP MARKET</title>
+  <meta name="description" content="Crea posts profesionales de Instagram con tus prendas, descuentos y avisos. Listos para descargar y subir.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#2d6be4">
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/global.css">
+  <link rel="stylesheet" href="css/estetica.css">
+  <link rel="stylesheet" href="css/estudio.css">
+  <style>html,body{overflow-x:hidden;max-width:100%}</style>
+  <script src="js/db.js" defer></script>
+  <script src="js/estudio.js" defer></script>
+</head>
+<body data-seccion="">
+
+<header>
+  <div class="header-row">
+    <a href="inicio.html" class="logo"><span class="logo-full">STMP MARKET</span><span class="logo-short">STMP</span><span>.</span></a>
+    <div class="header-actions">
+      <a href="inicio.html" class="h-nav-cta">Inicio</a>
+    </div>
+  </div>
+</header>
+
+<main class="es-main">
+
+  <div class="es-head">
+    <h1>Estudio de <em>posts</em></h1>
+    <p>Arma posts profesionales para Instagram con tus prendas, descuentos o avisos. Elige un diseño, edítalo y descárgalo listo para subir.</p>
+  </div>
+
+  <div class="es-layout">
+
+    <!-- ── PANEL DE CONTROLES ─────────────────────────────── -->
+    <aside class="es-panel">
+
+      <div class="es-group">
+        <label class="es-lbl">Tipo de post</label>
+        <div class="es-chips" id="esTipos">
+          <button class="es-chip active" data-tipo="prenda">Prenda</button>
+          <button class="es-chip" data-tipo="descuento">Descuento</button>
+          <button class="es-chip" data-tipo="apertura">Apertura</button>
+          <button class="es-chip" data-tipo="aviso">Aviso</button>
+        </div>
+      </div>
+
+      <div class="es-group">
+        <label class="es-lbl">Formato</label>
+        <div class="es-chips" id="esFormatos">
+          <button class="es-chip active" data-fmt="post">Post 1:1</button>
+          <button class="es-chip" data-fmt="story">Story 9:16</button>
+        </div>
+      </div>
+
+      <div class="es-group es-solo-prenda">
+        <label class="es-lbl">Elige una prenda</label>
+        <select class="es-input" id="esPrenda"><option value="">Cargando prendas…</option></select>
+      </div>
+
+      <div class="es-group">
+        <label class="es-lbl">Imagen</label>
+        <div class="es-foto-row">
+          <button class="es-btn-sec" id="esSubirFoto" type="button">Subir foto propia</button>
+          <input type="file" id="esFile" accept="image/*" hidden>
+        </div>
+        <div class="es-mini" id="esFotoInfo">Se usa la foto de la prenda elegida.</div>
+      </div>
+
+      <div class="es-group">
+        <label class="es-lbl" for="esTitulo">Título</label>
+        <input class="es-input" id="esTitulo" maxlength="46" placeholder="Título">
+      </div>
+
+      <div class="es-group">
+        <label class="es-lbl" for="esSubtitulo">Texto</label>
+        <input class="es-input" id="esSubtitulo" maxlength="90" placeholder="Texto de apoyo">
+      </div>
+
+      <div class="es-group">
+        <label class="es-lbl" for="esDestacado" id="esDestacadoLbl">Precio</label>
+        <input class="es-input" id="esDestacado" maxlength="24" placeholder="$0">
+      </div>
+
+      <div class="es-group">
+        <label class="es-lbl" for="esPie">Pie de página</label>
+        <input class="es-input" id="esPie" maxlength="40" placeholder="@tubazar · WhatsApp">
+      </div>
+
+      <div class="es-group">
+        <label class="es-lbl">Color</label>
+        <div class="es-colores" id="esColores"></div>
+      </div>
+
+      <div class="es-group">
+        <label class="es-lbl">Estilo</label>
+        <div class="es-chips" id="esEstilos">
+          <button class="es-chip active" data-estilo="claro">Claro</button>
+          <button class="es-chip" data-estilo="oscuro">Oscuro</button>
+          <button class="es-chip" data-estilo="color">Color</button>
+        </div>
+      </div>
+
+      <button class="es-descargar" id="esDescargar" type="button">Descargar imagen</button>
+      <div class="es-mini es-nota">Se descarga en calidad Instagram (1080px). Súbela como publicación normal.</div>
+
+    </aside>
+
+    <!-- ── LIENZO ─────────────────────────────────────────── -->
+    <div class="es-stage">
+      <div class="es-canvas-wrap" id="esCanvasWrap">
+        <canvas id="esCanvas" width="1080" height="1080"></canvas>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+</body>
+</html>

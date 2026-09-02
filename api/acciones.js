@@ -51,6 +51,7 @@ export default async function handler(req, res) {
     if (op === 'subasta-vendedor')   return await handleSubastaVendedor(req, res);
     if (op === 'mis-subastas')       return await handleMisSubastas(req, res);
     if (op === 'solicitud-bazar')    return await handleSolicitudBazar(req, res);
+    if (op === 'anuncios')           return await handleAnuncios(req, res);
     return res.status(400).json({ error: 'op no reconocida' });
   } catch (err) {
     console.error('[acciones:' + op + ']', err);
@@ -824,4 +825,111 @@ async function handleSolicitudBazar(req, res) {
   } catch (_) { /* si el registro falla, la solicitud ya quedó guardada */ }
 
   return res.status(201).json({ ok: true });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ANUNCIOS / NOVEDADES
+   Cada bazar publica anuncios (con foto y texto) que salen en la
+   portada como noticias. El público solo ve los publicados; cada
+   bazar administra los suyos y el admin principal los de todos.
+   Solo el admin principal puede "destacar" uno en la portada.
+   ═══════════════════════════════════════════════════════════ */
+async function handleAnuncios(req, res) {
+  const db  = await getDB();
+  const col = db.collection('anuncios');
+  const limpiar = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
+
+  if (req.method === 'GET') {
+    // El panel pide los suyos (incluye borradores); el público, los publicados.
+    if (req.query.scope === 'admin') {
+      const user = await requireAuth(req, res);
+      if (!user) return;
+      const filtro = esGlobal(user) ? {} : { bazarId: Number(user.bazarId) };
+      const items = await col.find(filtro).sort({ creadoEn: -1 }).limit(200).toArray();
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(200).json(items.map(({ _id, ...r }) => r));
+    }
+    const filtro = { publicado: true };
+    if (req.query.bazar) filtro.bazarId = Number(req.query.bazar);
+    const items = await col.find(filtro)
+      .sort({ destacado: -1, creadoEn: -1 }).limit(60).toArray();
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
+    return res.status(200).json(items.map(({ _id, ...r }) => r));
+  }
+
+  // De aquí en adelante hace falta sesión.
+  const user = await requireAuth(req, res);
+  if (!user) return;
+
+  if (req.method === 'POST') {
+    const titulo = limpiar(req.body?.titulo, 120);
+    if (titulo.length < 3) return res.status(400).json({ error: 'Escribe un título' });
+
+    // El admin principal puede publicar a nombre de cualquier bazar.
+    let bazarId = Number(user.bazarId) || 0;
+    if (esGlobal(user) && req.body?.bazarId) bazarId = Number(req.body.bazarId);
+    if (!bazarId) return res.status(400).json({ error: 'Elige un bazar' });
+
+    const bazar = await db.collection('bazares').findOne({ id: bazarId });
+    const doc = {
+      id: await siguienteId('anuncios'),
+      bazarId,
+      bazarNombre: bazar?.nombre || '',
+      titulo,
+      resumen:  limpiar(req.body?.resumen, 200),
+      cuerpo:   limpiar(req.body?.cuerpo, 6000),
+      imagen:   limpiar(req.body?.imagen, 500),
+      destacado: esGlobal(user) ? !!req.body?.destacado : false,
+      publicado: req.body?.publicado !== false,
+      autor:    user.username || '',
+      creadoEn: new Date(),
+      actualizadoEn: new Date(),
+    };
+    await col.insertOne(doc);
+
+    try {
+      await db.collection('logs').insertOne({
+        ts: new Date(),
+        usuario: user.username || 'bazar',
+        rol: user.role || 'bazar',
+        accion: 'anuncio-publicado',
+        objeto: titulo,
+        detalle: (doc.bazarNombre ? doc.bazarNombre + ' · ' : '') + (doc.publicado ? 'Publicado' : 'Borrador'),
+      });
+    } catch (_) { /* el anuncio ya quedó guardado */ }
+
+    const { _id, ...limpio } = doc;
+    return res.status(201).json(limpio);
+  }
+
+  // Editar o borrar exige ser dueño del anuncio (o admin principal).
+  async function propio(id) {
+    const a = await col.findOne({ id: Number(id) });
+    if (!a) { res.status(404).json({ error: 'Anuncio no encontrado' }); return null; }
+    if (!mismoBazar(user, a.bazarId)) { res.status(403).json({ error: 'Ese anuncio es de otro bazar.' }); return null; }
+    return a;
+  }
+
+  if (req.method === 'PATCH') {
+    const a = await propio(req.body?.id);
+    if (!a) return;
+    const cambios = { actualizadoEn: new Date() };
+    if (req.body.titulo    !== undefined) cambios.titulo    = limpiar(req.body.titulo, 120);
+    if (req.body.resumen   !== undefined) cambios.resumen   = limpiar(req.body.resumen, 200);
+    if (req.body.cuerpo    !== undefined) cambios.cuerpo    = limpiar(req.body.cuerpo, 6000);
+    if (req.body.imagen    !== undefined) cambios.imagen    = limpiar(req.body.imagen, 500);
+    if (req.body.publicado !== undefined) cambios.publicado = !!req.body.publicado;
+    if (req.body.destacado !== undefined && esGlobal(user)) cambios.destacado = !!req.body.destacado;
+    await col.updateOne({ id: a.id }, { $set: cambios });
+    return res.status(200).json({ ok: true });
+  }
+
+  if (req.method === 'DELETE') {
+    const a = await propio(req.query.id);
+    if (!a) return;
+    await col.deleteOne({ id: a.id });
+    return res.status(200).json({ ok: true });
+  }
+
+  return res.status(405).json({ error: 'Método no permitido' });
 }

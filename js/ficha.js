@@ -10,6 +10,17 @@ const pEsc = s => String(s ?? '').replace(/[&<>"']/g, c =>
 // Precios en pesos mexicanos: el MXN va en pequeño junto al importe
 const pMoney = n => '$' + Number(n || 0).toLocaleString('es-MX') + ' <span class="cur">MXN</span>';
 
+// Oferta: precio anterior tachado + nuevo + % de descuento.
+const pHayOferta = p => { const a = Number(p.precioAnterior); return a > 0 && a > Number(p.precio_venta); };
+const pDescuento = p => Math.round((1 - Number(p.precio_venta) / Number(p.precioAnterior)) * 100);
+const pPrecioHTML = p => pHayOferta(p)
+  ? `<span class="of-antes">$${Number(p.precioAnterior).toLocaleString('es-MX')}</span>` +
+    `<span class="of-ahora">${pMoney(p.precio_venta)}</span>` +
+    `<span class="of-badge">-${pDescuento(p)}%</span>`
+  : pMoney(p.precio_venta);
+// "Nuevo": subida en los últimos 7 días.
+const pEsNuevo = p => { const t = new Date(p.creadoEn || 0).getTime() || 0; return t && (Date.now() - t) < 7 * 86400000; };
+
 let prenda   = null;
 let fotos    = [];
 let fotoIdx  = 0;
@@ -144,12 +155,14 @@ function tarjeta(p) {
                     sizes="(max-width: 700px) 45vw, 220px"
                     alt="${pEsc(p.nombre)}" loading="lazy" decoding="async">`
             : `<div class="h-card-nophoto">Sin foto</div>`}
+      ${pHayOferta(p) ? `<span class="of-corner">-${pDescuento(p)}%</span>` : ''}
+      ${(!pHayOferta(p) && pEsNuevo(p)) ? `<span class="nuevo-corner">Nuevo</span>` : ''}
     </div>
     <div class="h-card-body">
       <div class="h-card-brand${p.marca ? '' : ' sin-marca'}">${pEsc(p.marca || 'Sin marca')}</div>
       <div class="h-card-name">${pEsc(p.nombre)}</div>
       <div class="h-card-foot">
-        <span class="h-card-price">${pMoney(p.precio_venta)}</span>
+        <span class="h-card-price${pHayOferta(p) ? ' tiene-oferta' : ''}">${pPrecioHTML(p)}</span>
         <span class="h-card-size">Talla ${pEsc(talla || '–')}</span>
       </div>
       ${bz ? `<div class="card-bazar-row"><span class="card-bazar" style="--bz-color:${pEsc(bz.color || '#2d6be4')}">@${pEsc(bz.slug)}</span></div>` : ''}
@@ -200,6 +213,18 @@ function pintarPrenda(p) {
   const waMsg = encodeURIComponent(
     `Hola! Me interesa: ${p.nombre}${p.talla ? ' · Talla ' + p.talla : ''} · $${p.precio_venta} MXN\n${location.href}`);
   const waUrl = `https://wa.me/${wa}?text=${waMsg}`;
+
+  // Prueba social del bazar: calificación promedio (de sus reseñas) y cuántas
+  // prendas ha vendido. Da confianza para escribirle.
+  let ppSocial = '';
+  if (bz) {
+    const rt   = (typeof ratingDeBazar === 'function') ? ratingDeBazar(bz.id) : { promedio: 0, total: 0 };
+    const vend = (typeof getDB === 'function' ? getDB() : []).filter(x => Number(x.bazarId) === Number(bz.id) && x.vendido).length;
+    const trozos = [];
+    if (rt.total) trozos.push(`<span class="pp-bz-rating">${(typeof estrellasHTML === 'function' ? estrellasHTML(rt.promedio, 'st-estrellas') : '★')} <b>${rt.promedio.toFixed(1)}</b> <i>(${rt.total})</i></span>`);
+    if (vend)     trozos.push(`<span class="pp-bz-ventas">${vend} vendida${vend !== 1 ? 's' : ''}</span>`);
+    if (trozos.length) ppSocial = `<span class="pp-bazar-social">${trozos.join('')}</span>`;
+  }
 
   // Si está en subasta, el precio fijo y el botón de apartar sobran: aquí
   // no se aparta, se oferta.
@@ -253,9 +278,10 @@ function pintarPrenda(p) {
 
       ${enSubasta ? '' : `
       <div class="pp-precio-fila">
-        <span class="pp-precio">${pMoney(p.precio_venta)}</span>
+        <span class="pp-precio${pHayOferta(p) ? ' tiene-oferta' : ''}">${pPrecioHTML(p)}</span>
         ${p.vendido ? `<span class="pp-vendida">Vendida</span>` : `<span class="pp-unica">Pieza única</span>`}
-      </div>`}
+      </div>
+      ${(!p.vendido && pHayOferta(p)) ? `<div class="pp-ahorro">¡Bajó de precio! Te ahorras $${(Number(p.precioAnterior) - Number(p.precio_venta)).toLocaleString('es-MX')}</div>` : ''}`}
 
       <div id="sbPanel" hidden></div>
 
@@ -286,6 +312,7 @@ function pintarPrenda(p) {
           <span class="pp-bazar-datos">
             <span class="pp-bazar-nombre">${pEsc(bz.nombre)}</span>
             <span class="pp-bazar-slug">@${pEsc(bz.slug)}</span>
+            ${ppSocial}
           </span>
           <span class="pp-bazar-ver">Ver su bazar →</span>
         </a>` : ''}
@@ -346,7 +373,7 @@ function pintarPrenda(p) {
         };
       }
     } else {
-      if (precioBarra) precioBarra.innerHTML = pMoney(p.precio_venta);
+      if (precioBarra) precioBarra.innerHTML = pPrecioHTML(p);
       if (btnBarra) { btnBarra.href = waUrl; btnBarra.onclick = null; }
     }
   }

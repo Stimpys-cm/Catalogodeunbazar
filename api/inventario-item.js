@@ -16,7 +16,7 @@ import { esGlobal, mismoBazar, puede } from './_bazar.js';
 // Lo que puede traer una prenda. Cualquier otra cosa que mande el
 // navegador se descarta: nadie va a inventar campos desde fuera.
 const CAMPOS = [
-  'nombre', 'marca', 'categorias', 'talla', 'precio_venta', 'costo',
+  'nombre', 'marca', 'categorias', 'talla', 'precio_venta', 'precioAnterior', 'costo',
   'estado', 'descripcion', 'imagenes', 'vendido', 'vendidoEn', 'vendidoA',
   'oculto', 'dropId', 'creadoEn', 'reservedUntil', 'reservedBy',
 ];

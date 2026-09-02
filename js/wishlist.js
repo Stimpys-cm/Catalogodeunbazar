@@ -16,6 +16,13 @@
 
   const pesos = n => '$' + Number(n || 0).toLocaleString('es-MX');
   const pesosHTML = n => pesos(n) + ' <span class="cur">MXN</span>';
+  // Oferta: precio anterior tachado + precio nuevo + % de descuento.
+  const wlHayOferta = p => { const a = Number(p.precioAnterior); return a > 0 && a > Number(p.precio_venta); };
+  const wlPrecioHTML = p => wlHayOferta(p)
+    ? `<span class="of-antes">${pesos(p.precioAnterior)}</span>` +
+      `<span class="of-ahora">${pesosHTML(p.precio_venta)}</span>` +
+      `<span class="of-badge">-${Math.round((1 - Number(p.precio_venta) / Number(p.precioAnterior)) * 100)}%</span>`
+    : pesosHTML(p.precio_venta);
 
   function lista() {
     try { return JSON.parse(localStorage.getItem(WL_LLAVE)) || []; }
@@ -217,7 +224,7 @@
       <div class="wl-item-info">
         <div class="wl-item-name">${esc(p.nombre)}</div>
         <div class="wl-item-sub">Talla ${esc(p.talla || '–')}${p.estado ? ' · ' + esc(p.estado) : ''}</div>
-        <span class="wl-item-price">${pesosHTML(p.precio_venta)}</span>
+        <span class="wl-item-price${wlHayOferta(p) ? ' tiene-oferta' : ''}">${wlPrecioHTML(p)}</span>
       </div>
       <button class="wl-btn-remove" onclick="removeFromWishlist('${esc(String(p.id))}')"
               aria-label="Quitar ${esc(p.nombre)} de la wishlist" title="Quitar">✕</button>

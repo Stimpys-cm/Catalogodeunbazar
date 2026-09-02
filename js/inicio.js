@@ -7,6 +7,18 @@ const hEsc = s => String(s ?? '').replace(/[&<>"']/g, c =>
 // Precios en pesos mexicanos: el MXN va en pequeño junto al importe
 const hMoney = n => '$' + Number(n || 0).toLocaleString('es-MX') + ' <span class="cur">MXN</span>';
 
+// Oferta: si la prenda trae un precio anterior mayor, se muestra tachado
+// junto al precio nuevo y una etiqueta con el porcentaje de descuento.
+const hHayOferta = p => { const a = Number(p.precioAnterior); return a > 0 && a > Number(p.precio_venta); };
+const hPrecio = p => hHayOferta(p)
+  ? `<span class="of-antes">$${Number(p.precioAnterior).toLocaleString('es-MX')}</span>` +
+    `<span class="of-ahora">${hMoney(p.precio_venta)}</span>` +
+    `<span class="of-badge">-${Math.round((1 - Number(p.precio_venta) / Number(p.precioAnterior)) * 100)}%</span>`
+  : hMoney(p.precio_venta);
+
+// "Nuevo": subida en los últimos 7 días (misma ventana que el contador del hero).
+const hEsNuevo = p => { const t = new Date(p.creadoEn || 0).getTime() || 0; return t && (Date.now() - t) < 7 * 86400000; };
+
 // Prendas visibles (no vendidas ni ocultas), de la más reciente a la más vieja
 function disponibles() {
   return getDB()
@@ -35,6 +47,8 @@ function cardHTML(p, badge) {
     <div class="h-card-img">
       ${imgHTML}
       ${badge ? `<span class="h-badge">${hEsc(badge)}</span>` : ''}
+      ${hHayOferta(p) ? `<span class="of-corner">-${Math.round((1 - Number(p.precio_venta) / Number(p.precioAnterior)) * 100)}%</span>` : ''}
+      ${(!badge && hEsNuevo(p)) ? `<span class="nuevo-corner">Nuevo</span>` : ''}
     </div>
     <div class="h-card-body">
       ${p.marca
@@ -42,7 +56,7 @@ function cardHTML(p, badge) {
         : '<div class="h-card-brand sin-marca">Sin marca</div>'}
       <div class="h-card-name">${hEsc(p.nombre)}</div>
       <div class="h-card-foot">
-        <span class="h-card-price">${hMoney(p.precio_venta)}</span>
+        <span class="h-card-price${hHayOferta(p) ? ' tiene-oferta' : ''}">${hPrecio(p)}</span>
         <span class="h-card-size" title="${hEsc(p.talla || '')}">Talla ${hEsc(etiquetaTalla(p.talla) || '–')}</span>
       </div>
       ${bz ? `<div class="card-bazar-row"><span class="card-bazar" style="--bz-color:${hEsc(bz.color || '#2d6be4')}">@${hEsc(bz.slug)}</span></div>` : ''}
@@ -324,6 +338,15 @@ function pintarFilasPorBazar(items) {
 function pintarInicio() {
   const items = disponibles();
   pintarHero(items);
+
+  // "En oferta": prendas rebajadas, ordenadas por mayor descuento. Si no hay
+  // ninguna, la sección entera se oculta.
+  const pctOff = p => hHayOferta(p) ? (1 - Number(p.precio_venta) / Number(p.precioAnterior)) : 0;
+  const ofertas = items.filter(hHayOferta).sort((a, b) => pctOff(b) - pctOff(a)).slice(0, 10);
+  const secOfertas = document.getElementById('ofertasSeccion');
+  if (secOfertas) secOfertas.classList.toggle('hidden', ofertas.length === 0);
+  if (ofertas.length) pintarRail('railOfertas', ofertas);
+
   // "Precio accesible": lo más económico disponible
   const baratos = [...items].sort((a, b) => Number(a.precio_venta) - Number(b.precio_venta)).slice(0, 10);
   pintarRail('railPrecio', baratos);

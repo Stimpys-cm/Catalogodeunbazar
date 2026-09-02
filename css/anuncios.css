@@ -1,0 +1,121 @@
+/* ═══════════════════════════════════════════════════════════
+   Novedades / anuncios — tarjetas en portada + artículo modal
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Rejilla de tarjetas ────────────────────────────────── */
+.an-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.4rem;
+}
+
+.an-card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  transition: transform .22s var(--curva-suave, ease), box-shadow .22s, border-color .22s;
+}
+.an-card:hover, .an-card:focus-visible {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .12);
+  border-color: var(--accent);
+  outline: none;
+}
+
+.an-card-img {
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #ece7df;
+}
+.an-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s ease; }
+.an-card:hover .an-card-img img { transform: scale(1.05); }
+.an-card-noimg { background: var(--accent-gradient); }
+
+.an-card-txt { padding: 1.1rem 1.2rem 1.3rem; display: flex; flex-direction: column; gap: .5rem; flex: 1; }
+.an-card-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.an-card-bazar {
+  font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--accent); background: rgba(45, 107, 228, .1);
+  padding: 3px 10px; border-radius: 40px;
+}
+.an-card-dest {
+  font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+  color: #fff; background: var(--accent);
+  padding: 3px 10px; border-radius: 40px;
+}
+.an-card-tit {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem; line-height: 1.05; color: var(--black); margin: 0;
+}
+.an-card-res { font-size: 13.5px; color: var(--text2); line-height: 1.5; margin: 0;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.an-card-fecha { margin-top: auto; font-size: 12px; color: var(--text2); opacity: .85; padding-top: .3rem; }
+
+/* ── Artículo modal ─────────────────────────────────────── */
+.an-modal-overlay {
+  position: fixed; inset: 0; z-index: 4000;
+  background: rgba(15, 15, 20, .6);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: flex-start; justify-content: center;
+  padding: 4vh 1rem;
+  overflow-y: auto;
+}
+.an-modal-overlay.abierto { display: flex; }
+
+.an-modal {
+  position: relative;
+  width: 100%; max-width: 720px;
+  background: #fff;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .35);
+  animation: anSube .3s var(--curva-salida, cubic-bezier(.16,1,.3,1));
+}
+@keyframes anSube { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .an-modal { animation: none; } }
+
+.an-modal-x {
+  position: absolute; top: 14px; right: 14px; z-index: 2;
+  width: 40px; height: 40px; border-radius: 50%;
+  border: none; cursor: pointer;
+  background: rgba(255, 255, 255, .92); color: #111;
+  font-size: 16px; line-height: 1;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .2);
+  transition: transform .15s;
+}
+.an-modal-x:hover { transform: scale(1.08); }
+
+.an-modal-img { width: 100%; max-height: 400px; overflow: hidden; background: #ece7df; }
+.an-modal-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.an-modal-cont { padding: 2rem 2.2rem 2.6rem; }
+.an-modal-meta {
+  font-size: 12.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: .7rem;
+}
+.an-modal-tit {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2rem, 6vw, 3rem); line-height: 1; color: var(--black); margin: 0 0 .8rem;
+}
+.an-modal-res { font-size: 17px; line-height: 1.55; color: var(--text2); font-weight: 600; margin: 0 0 1.4rem; }
+
+.an-modal-cuerpo { font-size: 15.5px; line-height: 1.75; color: #2c2c2c; }
+.an-modal-cuerpo h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.7rem; line-height: 1.1; color: var(--black); margin: 1.6rem 0 .6rem;
+}
+.an-modal-cuerpo h3 { font-size: 1.15rem; font-weight: 800; color: var(--black); margin: 1.3rem 0 .5rem; }
+.an-modal-cuerpo p { margin: 0 0 1rem; }
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .an-grid { grid-template-columns: 1fr; gap: 1.1rem; }
+  .an-modal-cont { padding: 1.5rem 1.3rem 2rem; }
+  .an-modal-overlay { padding: 2vh .6rem; }
+}

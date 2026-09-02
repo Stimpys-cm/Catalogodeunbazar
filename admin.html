@@ -184,6 +184,11 @@
       Drops
     </button>
 
+    <button class="sidebar-item" id="tab-anuncios" onclick="showTab('anuncios')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+      Anuncios
+    </button>
+
     <button class="sidebar-item" id="tab-subastas" onclick="showTab('subastas')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 13-7.5 7.5a2.12 2.12 0 0 1-3-3L11 10"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg>
       Subastas
@@ -193,6 +198,11 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
       Ganancias
     </button>
+
+    <a class="sidebar-item" id="tab-estudio" href="estudio.html" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      Estudio de posts
+    </a>
 
     <div class="sidebar-nav-label" style="margin-top:1rem">Cuenta</div>
 
@@ -331,6 +341,11 @@
             <label><svg class="lucide" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Costo Interno</label>
             <input type="number" id="f_costo" placeholder="Me costó..." min="0" step="0.01">
           </div>
+        </div>
+
+        <div class="fg">
+          <label>Precio anterior <span style="color:var(--muted);font-weight:400">(opcional — para mostrar oferta con el precio tachado)</span></label>
+          <input type="number" id="f_precioAnterior" placeholder="Antes costaba… (déjalo vacío si no hay oferta)" min="0" step="0.01">
         </div>
 
         <div class="fg">
@@ -853,6 +868,76 @@
       <button class="submit-btn" onclick="renderSolicitudes()" style="width:auto;padding:10px 22px">Actualizar</button>
     </div>
     <div id="solicitudesLista"></div>
+  </div>
+
+
+  <!-- ── ANUNCIOS ── -->
+  <div id="view-anuncios" class="hidden">
+    <div class="view-header">
+      <div>
+        <h1 class="view-title">Anuncios</h1>
+        <p class="view-subtitle">Publica novedades que salen en la portada como noticias</p>
+      </div>
+    </div>
+
+    <div class="an-admin-cols">
+      <div class="form-card an-form-card">
+        <div class="form-title" id="anFormTitle">Nuevo anuncio</div>
+        <input type="hidden" id="an_id">
+        <input type="hidden" id="an_imagen">
+
+        <div class="fg an-solo-global hidden" id="anBazarWrap">
+          <label>Publicar como bazar</label>
+          <select id="an_bazar"></select>
+        </div>
+
+        <div class="fg">
+          <label>Título <span style="color:var(--muted);font-weight:400">(sale grande, como titular)</span></label>
+          <input type="text" id="an_titulo" maxlength="120" placeholder="Ej. ¡Nueva colección de invierno!">
+        </div>
+
+        <div class="fg">
+          <label>Resumen <span style="color:var(--muted);font-weight:400">(una línea de gancho)</span></label>
+          <input type="text" id="an_resumen" maxlength="200" placeholder="Ej. 30 piezas nuevas de streetwear, disponibles ya.">
+        </div>
+
+        <div class="fg">
+          <label>Contenido</label>
+          <textarea id="an_cuerpo" rows="8" style="resize:vertical" placeholder="Escribe aquí el anuncio.&#10;&#10;## Usa dos ## para un subtítulo&#10;### y tres ### para uno más chico&#10;&#10;Deja una línea en blanco para separar párrafos."></textarea>
+          <p class="form-hint">Formato: <b>## Subtítulo</b> · <b>### Subtítulo chico</b> · línea en blanco = párrafo nuevo.</p>
+        </div>
+
+        <div class="fg"><label>Imagen de portada <span style="color:var(--muted);font-weight:400">(opcional)</span></label></div>
+        <div class="upload-zone an-upload" id="anUploadZone" onclick="document.getElementById('anFile').click()">
+          <input type="file" id="anFile" accept="image/*" hidden onchange="subirImagenAnuncio(this.files[0])">
+          <div class="upload-icon"><svg class="lucide" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div>
+          <div class="upload-text">Toca para subir una foto</div>
+        </div>
+        <div class="an-preview hidden" id="anPreview"></div>
+
+        <div class="drop-toggle-wrap">
+          <label class="drop-toggle-label">
+            <input type="checkbox" id="an_publicado" checked>
+            <span class="drop-toggle-ui"></span>
+            <span>Publicado <span style="color:var(--muted);font-weight:400">(visible en la portada)</span></span>
+          </label>
+        </div>
+
+        <div class="drop-toggle-wrap an-solo-global hidden" id="anDestacarWrap">
+          <label class="drop-toggle-label">
+            <input type="checkbox" id="an_destacado">
+            <span class="drop-toggle-ui"></span>
+            <span>Destacar en portada <span style="color:var(--muted);font-weight:400">(aparece primero)</span></span>
+          </label>
+        </div>
+
+        <button class="submit-btn" id="anGuardar" onclick="guardarAnuncio()">Publicar anuncio</button>
+        <button class="submit-btn an-cancelar hidden" id="anCancelar" onclick="resetFormAnuncio()"
+                style="background:transparent;color:var(--muted);border:1.5px solid var(--border);margin-top:8px">Cancelar edición</button>
+      </div>
+
+      <div class="an-admin-lista" id="anunciosAdminLista"></div>
+    </div>
   </div>
 
 </div><!-- /admin-main -->

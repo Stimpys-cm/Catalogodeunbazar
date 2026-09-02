@@ -10,7 +10,7 @@ const shopFilters = { tallas:new Set(), marcas:new Set(), estados:new Set(), baz
 let shopPriceMax  = 0;
 let shopSort      = 'recent';
 // Los únicos órdenes válidos: lo que llegue por la URL se contrasta aquí.
-const ORDENES = ['recent', 'priceLow', 'priceHigh', 'brand'];
+const ORDENES = ['recent', 'priceLow', 'priceHigh', 'brand', 'descuento'];
 // Hasta que el catálogo no está cargado, la vista son esqueletos: escribir
 // la URL en ese momento borraría los filtros que traía el enlace.
 let _dbListaTienda = false;
@@ -237,6 +237,17 @@ const SIN_MARCA = 'Sin marca';
 const money = n => '$' + Number(n||0).toLocaleString('es-MX') + ' MXN';
 const moneyHTML = n => '$' + Number(n||0).toLocaleString('es-MX') + ' <span class="cur">MXN</span>';
 
+// Oferta: cuando la prenda bajó de precio (precioAnterior mayor al de venta)
+// se muestra el precio anterior tachado, el nuevo, y el % de descuento.
+const hayOferta = p => { const a = Number(p.precioAnterior); return a > 0 && a > Number(p.precio_venta); };
+// "Nuevo": subida en los últimos 7 días.
+const esNuevo = p => { const t = new Date(p.creadoEn || 0).getTime() || 0; return t && (Date.now() - t) < 7 * 86400000; };
+const ventaHTML = p => hayOferta(p)
+  ? `<span class="of-antes">$${Number(p.precioAnterior).toLocaleString('es-MX')}</span>` +
+    `<span class="of-ahora">${moneyHTML(p.precio_venta)}</span>` +
+    `<span class="of-badge">-${Math.round((1 - Number(p.precio_venta) / Number(p.precioAnterior)) * 100)}%</span>`
+  : moneyHTML(p.precio_venta);
+
 // ─── BAZARES ─────────────────────────────────────────────────
 // El catálogo mezcla las prendas de todos los bazares; cada tarjeta
 // dice de quién es y contacta al WhatsApp de ese bazar.
@@ -313,6 +324,10 @@ function renderGrid(query) {
   if (shopSort === 'priceLow')  items.sort((a,b)=> Number(a.precio_venta) - Number(b.precio_venta));
   if (shopSort === 'priceHigh') items.sort((a,b)=> Number(b.precio_venta) - Number(a.precio_venta));
   if (shopSort === 'brand')     items.sort((a,b)=> (a.marca||'').localeCompare(b.marca||''));
+  if (shopSort === 'descuento') {
+    const pct = p => hayOferta(p) ? (1 - Number(p.precio_venta) / Number(p.precioAnterior)) : -1;
+    items.sort((a,b)=> pct(b) - pct(a));
+  }
   if (shopSort === 'recent')    items.sort((a,b)=> {
     const ta = new Date(a.creadoEn||0).getTime()||0, tb = new Date(b.creadoEn||0).getTime()||0;
     return tb - ta || (b.id||0) - (a.id||0);
@@ -391,7 +406,7 @@ function renderGrid(query) {
 
     return `<div class="card" data-product='${productData}' style="cursor:pointer">
       <div class="card-img">
-        ${imgHtml}${marcaTag}${subCinta}
+        ${imgHtml}${marcaTag}${subCinta}${(!sub && hayOferta(p)) ? `<span class="of-corner">-${Math.round((1 - Number(p.precio_venta) / Number(p.precioAnterior)) * 100)}%</span>` : ''}${(!sub && !hayOferta(p) && esNuevo(p)) ? `<span class="nuevo-corner">Nuevo</span>` : ''}
         <button class="card-fav-btn ${favActive}" data-wl-id="${favId}" data-product='${productData}'
           aria-label="Guardar en wishlist">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -418,9 +433,9 @@ function renderGrid(query) {
             <div class="card-brand${p.marca ? '' : ' sin-marca'}">${esc(p.marca || SIN_MARCA)}</div>
             <div class="card-name">${esc(p.nombre)}</div>
           </div>
-          <div class="card-price${sub ? ' es-subasta' : ''}">
+          <div class="card-price${sub ? ' es-subasta' : (hayOferta(p) ? ' tiene-oferta' : '')}">
             ${sub ? `<span class="card-price-tag">${sub.totalOfertas ? 'Van' : 'Desde'}</span>` : ''}
-            ${moneyHTML(sub ? (sub.totalOfertas ? sub.ofertaActual : sub.precioInicial) : p.precio_venta)}
+            ${sub ? moneyHTML(sub.totalOfertas ? sub.ofertaActual : sub.precioInicial) : ventaHTML(p)}
           </div>
         </div>
         <div class="card-sub" title="${esc(p.talla || '')}">
@@ -723,7 +738,7 @@ function _openProductDetailDrawer(p) {
             <div class="pd-sim-info">
               ${s.marca ? `<span class="pd-sim-brand">${esc(s.marca)}</span>` : ''}
               <span class="pd-sim-name">${esc(s.nombre)}</span>
-              <span class="pd-sim-price">${moneyHTML(s.precio_venta)}</span>
+              <span class="pd-sim-price${hayOferta(s) ? ' tiene-oferta' : ''}">${ventaHTML(s)}</span>
             </div>
           </button>`;
         }).join('')}
@@ -749,7 +764,7 @@ function _openProductDetailDrawer(p) {
           ${cats.length ? `<div class="pd-chips">${catChips}</div>` : ''}
         </div>
 
-        <div class="pd-price">${moneyHTML(p.precio_venta)}</div>
+        <div class="pd-price${hayOferta(p) ? ' tiene-oferta' : ''}">${ventaHTML(p)}</div>
 
         <div class="pd-specs">
           ${p.talla  ? `<div class="pd-spec"><span class="pd-spec-k">Talla</span><span class="pd-spec-v">${esc(p.talla)}</span></div>`  : ''}

@@ -60,6 +60,7 @@
   <link rel="stylesheet" href="css/estetica.css">
   <link rel="stylesheet" href="css/premium.css">
   <link rel="stylesheet" href="css/motionsites.css">
+  <link rel="stylesheet" href="css/anuncios.css">
   <style>
     html, body { overflow-x: hidden; max-width: 100%; }
     .logo-short { display: none; }
@@ -79,6 +80,7 @@
   <script src="js/movimiento.js" defer></script>
   <script src="js/motion-pro.js" defer></script>
   <script src="js/experiencia.js" defer></script>
+  <script src="js/anuncios.js" defer></script>
 </head>
 <body data-seccion="">
 
@@ -184,6 +186,18 @@
     </div>
   </section>
 
+  <!-- ── NOVEDADES / ANUNCIOS ─────────────────────────────── -->
+  <!-- js/anuncios.js llena esta sección; si no hay anuncios se oculta sola. -->
+  <section class="h-section h-wrap an-seccion hidden" id="anunciosSeccion">
+    <div class="h-section-head">
+      <div>
+        <h2>Novedades y <em>anuncios</em></h2>
+        <p>Lo último de los bazares: lanzamientos, aperturas, rebajas y avisos importantes.</p>
+      </div>
+    </div>
+    <div class="an-grid" id="anunciosGrid"></div>
+  </section>
+
   <!-- ── FILAS POR BAZAR (una por cada tienda) ─────────────── -->
   <div id="filasBazares"></div>
 
@@ -197,6 +211,19 @@
       <a href="tienda.html" class="h-see-more">Todas</a>
     </div>
     <div class="h-cats" id="homeCats"><div class="h-sk-chip"></div><div class="h-sk-chip"></div><div class="h-sk-chip"></div><div class="h-sk-chip"></div><div class="h-sk-chip"></div><div class="h-sk-chip"></div></div>
+  </section>
+
+  <!-- ── OFERTAS ──────────────────────────────────────────── -->
+  <!-- js/inicio.js la llena; si no hay prendas rebajadas se oculta sola. -->
+  <section class="h-section h-wrap of-seccion hidden" id="ofertasSeccion">
+    <div class="h-section-head">
+      <div>
+        <h2>En <em>oferta</em> 🔥</h2>
+        <p>Prendas que acaban de bajar de precio. Se van rápido.</p>
+      </div>
+      <a href="tienda.html?orden=descuento" class="h-see-more">Ver todo</a>
+    </div>
+    <div class="h-rail" id="railOfertas"></div>
   </section>
 
   <!-- ── PRECIO ───────────────────────────────────────────── -->
@@ -363,6 +390,14 @@
   </section>
 
 </main>
+
+<!-- ── ARTÍCULO DEL ANUNCIO (modal) ───────────────────────── -->
+<div class="an-modal-overlay" id="anModalOverlay" onclick="cerrarAnuncio(event)">
+  <article class="an-modal" id="anModal" role="dialog" aria-modal="true" aria-label="Anuncio">
+    <button class="an-modal-x" onclick="cerrarAnuncio()" aria-label="Cerrar">✕</button>
+    <div class="an-modal-body" id="anModalBody"></div>
+  </article>
+</div>
 
 <!-- ── FOOTER ─────────────────────────────────────────────── -->
 <footer class="site-footer">

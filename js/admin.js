@@ -76,7 +76,7 @@ window.addEventListener('db:ready',   vigilarCierreDelPanel);
 let currentTab = 'inventario';
 
 // Pestañas válidas y las que requieren admin
-const TABS_VALIDAS   = ['inventario','registrar','catalogo','vendedores','bazares','drops','subastas','ganancias','cuenta','sistema'];
+const TABS_VALIDAS   = ['inventario','registrar','catalogo','vendedores','bazares','drops','anuncios','subastas','ganancias','cuenta','sistema'];
 const TABS_SOLO_ADMIN = ['catalogo', 'solicitudes'];
 // Sistema (logs de toda la plataforma) es solo del admin principal
 const TABS_SOLO_GLOBAL = ['sistema'];
@@ -188,7 +188,7 @@ function showTab(tab, fromHash) {
   if (tab === 'bazares'    && !esAdminGlobal() && !puedo('personalizar'))     return;
   const cambioDeVista = currentTab !== tab;
   currentTab = tab;
-  ['inventario','registrar','vendedores','catalogo','bazares','cuenta','drops','subastas','ganancias','sistema','solicitudes'].forEach(t => {
+  ['inventario','registrar','vendedores','catalogo','bazares','cuenta','drops','anuncios','subastas','ganancias','sistema','solicitudes'].forEach(t => {
     const v = document.getElementById('view-'+t);
     const b = document.getElementById('tab-'+t);
     if (v) v.classList.toggle('hidden', t!==tab);
@@ -200,6 +200,7 @@ function showTab(tab, fromHash) {
   if (tab==='catalogo')    renderCatalogo();
   if (tab==='cuenta')      renderCuenta();
   if (tab==='drops')       renderDrops();
+  if (tab==='anuncios')    renderAnuncios();
   if (tab==='subastas')    cargarSubastas();
   if (tab==='ganancias')   cargarGanancias();
   if (tab==='sistema')     renderSistema();
@@ -223,7 +224,7 @@ function showTab(tab, fromHash) {
   // Título de la pestaña en el navegador
   const titulos = {
     inventario:'Inventario', registrar:'Registrar', catalogo:'Catálogo',
-    vendedores:'Vendedores', bazares:'Bazares', drops:'Drops', subastas:'Subastas', ganancias:'Ganancias', cuenta:'Mi cuenta', sistema:'Sistema'
+    vendedores:'Vendedores', bazares:'Bazares', drops:'Drops', anuncios:'Anuncios', subastas:'Subastas', ganancias:'Ganancias', cuenta:'Mi cuenta', sistema:'Sistema'
   };
   document.title = `${titulos[tab] || 'Panel'} · STMP MARKET`;
 }
@@ -669,7 +670,8 @@ function renderInv() {
           <div class="item-meta">Talla ${p.talla||'–'} · ${p.estado||''}</div>
           ${compradorHtml}
           ${enSubasta ? '' : `<div class="item-prices">
-            <span class="item-price">$${p.precio_venta} <span class="cur">MXN</span></span>
+            <span class="item-price">${(p.precioAnterior && Number(p.precioAnterior) > Number(p.precio_venta))
+              ? `<s class="item-antes">$${Number(p.precioAnterior).toLocaleString('es-MX')}</s> ` : ''}$${p.precio_venta} <span class="cur">MXN</span></span>
             ${costoHtml}
           </div>`}
         </div>
@@ -1109,6 +1111,8 @@ function editItem(id) {
   document.getElementById('editId').value   = id;
   document.getElementById('f_nombre').value = p.nombre||'';
   document.getElementById('f_precio').value = p.precio_venta||'';
+  const fpa = document.getElementById('f_precioAnterior');
+  if (fpa) fpa.value = (p.precioAnterior && Number(p.precioAnterior) > Number(p.precio_venta)) ? p.precioAnterior : '';
   document.getElementById('f_costo').value  = p.costo||'';
   poblarTallas('f');
   escribirTalla('f', p.talla || '');
@@ -1437,7 +1441,7 @@ function removePreview(i) {
 }
 function clearForm() {
   document.getElementById('editId').value = '';
-  ['f_nombre','f_precio','f_costo','f_estado','f_descripcion','f_dropNombre'].forEach(id => {
+  ['f_nombre','f_precio','f_precioAnterior','f_costo','f_estado','f_descripcion','f_dropNombre'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const brandSel = document.getElementById('f_marca');
@@ -1502,6 +1506,14 @@ function diffPrenda(anterior, nuevo) {
   return cambios.length ? cambios.join(' · ') : 'Sin cambios de datos';
 }
 
+// Lee el "precio anterior" del formulario. Solo cuenta como oferta si es un
+// número mayor al precio de venta actual; si está vacío o no es mayor, se
+// devuelve null y así se quita cualquier oferta previa.
+function leerPrecioAnterior(precioActual) {
+  const v = parseFloat(document.getElementById('f_precioAnterior')?.value);
+  return (!isNaN(v) && v > 0 && v > Number(precioActual)) ? v : null;
+}
+
 async function submitForm() {
   if (!esAdminGlobal() && !puedo('crearPrendas') && !puedo('editarPrendas')) {
     return toast('Tu bazar no tiene permitido publicar prendas');
@@ -1533,7 +1545,7 @@ async function submitForm() {
       const nuevos = {
         nombre, marca, categorias,
         talla: leerTalla('f'),
-        precio_venta: precio, costo,
+        precio_venta: precio, precioAnterior: leerPrecioAnterior(precio), costo,
         estado: document.getElementById('f_estado').value.trim(),
         descripcion: (document.getElementById('f_descripcion')?.value || '').trim(),
       };
@@ -1583,7 +1595,7 @@ async function submitForm() {
       nuevaPrenda = await crearPrenda({
         nombre, marca, categorias,
         talla: leerTalla('f'),
-        precio_venta: precio, costo,
+        precio_venta: precio, precioAnterior: leerPrecioAnterior(precio), costo,
         estado: document.getElementById('f_estado').value.trim(),
         descripcion: (document.getElementById('f_descripcion')?.value||'').trim(),
         imagenes: combined, vendido: false,
@@ -4102,6 +4114,7 @@ const LOG_ACCIONES = {
   // Solicitudes de "vende con nosotros" (vender.html). Se ven aquí, en
   // Sistema, con nombre e icono propios para que no pasen por alto.
   'solicitud-bazar':  { txt: 'Nueva solicitud de bazar', ico: IC_ROCKET, cls: 'log-add' },
+  'anuncio-publicado': { txt: 'Publicó un anuncio',   ico: IC_ROCKET,   cls: 'log-add'  },
 };
 
 function fmtLogFecha(ts) {
@@ -4817,4 +4830,190 @@ async function marcarSolicitud(id, atendida) {
   } catch (e) {
     toast(e.message || 'No se pudo actualizar', 'error');
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ANUNCIOS — el bazar publica novedades que salen en la portada
+   ═══════════════════════════════════════════════════════════ */
+let _anuncios = [];
+
+function _escAn(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+async function cargarAnunciosAdmin() {
+  try { _anuncios = await api('/api/acciones?op=anuncios&scope=admin'); }
+  catch (_) { _anuncios = []; }
+  return _anuncios;
+}
+
+async function renderAnuncios() {
+  const cont = document.getElementById('anunciosAdminLista');
+  if (!cont) return;
+
+  // El selector de bazar y el "destacar" son solo del admin principal.
+  const global = esAdminGlobal();
+  document.querySelectorAll('.an-solo-global').forEach(el => el.classList.toggle('hidden', !global));
+  if (global) {
+    const sel = document.getElementById('an_bazar');
+    if (sel && !sel.dataset.listo) {
+      sel.innerHTML = getBazares().map(b => `<option value="${b.id}">${_escAn(b.nombre)}</option>`).join('');
+      sel.dataset.listo = '1';
+    }
+  }
+
+  cont.innerHTML = '<div class="logs-empty">Cargando…</div>';
+  await cargarAnunciosAdmin();
+
+  if (!_anuncios.length) {
+    cont.innerHTML = '<div class="sol-vacio">' +
+      '<div class="sol-vacio-ico">📰</div>' +
+      '<div class="sol-vacio-tit">Aún no hay anuncios</div>' +
+      '<p>Crea el primero con el formulario. Saldrá en la portada como noticia.</p></div>';
+    return;
+  }
+
+  cont.innerHTML = _anuncios.map(a => {
+    const fecha = a.creadoEn ? new Date(a.creadoEn).toLocaleDateString('es-MX',
+      { day:'2-digit', month:'2-digit', year:'numeric' }) : '';
+    const pub = a.publicado;
+    return `<div class="an-item ${pub ? '' : 'an-item-borrador'}">
+      ${a.imagen ? `<div class="an-item-img"><img src="${_escAn(a.imagen)}" alt="" loading="lazy"></div>` : '<div class="an-item-img an-item-noimg">📰</div>'}
+      <div class="an-item-txt">
+        <div class="an-item-badges">
+          <span class="an-item-estado ${pub ? 'es-pub' : 'es-bor'}">${pub ? 'Publicado' : 'Borrador'}</span>
+          ${a.destacado ? '<span class="an-item-dest">Destacado</span>' : ''}
+          ${esAdminGlobal() && a.bazarNombre ? `<span class="an-item-bazar">${_escAn(a.bazarNombre)}</span>` : ''}
+        </div>
+        <div class="an-item-tit">${_escAn(a.titulo)}</div>
+        ${a.resumen ? `<div class="an-item-res">${_escAn(a.resumen)}</div>` : ''}
+        <div class="an-item-fecha">${_escAn(fecha)}</div>
+      </div>
+      <div class="an-item-acc">
+        <button class="an-mini-btn" onclick="editarAnuncio(${a.id})">Editar</button>
+        <button class="an-mini-btn" onclick="togglePublicadoAnuncio(${a.id}, ${!pub})">${pub ? 'Ocultar' : 'Publicar'}</button>
+        <button class="an-mini-btn an-mini-del" onclick="borrarAnuncio(${a.id})">Borrar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function pintarPreviewAnuncio(url) {
+  const box = document.getElementById('anPreview');
+  if (!box) return;
+  if (!url) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+  box.classList.remove('hidden');
+  box.innerHTML = `<img src="${_escAn(url)}" alt="portada">
+    <button type="button" class="an-preview-x" onclick="quitarImagenAnuncio()" aria-label="Quitar">✕</button>`;
+}
+
+async function subirImagenAnuncio(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = async e => {
+    try {
+      toast('Subiendo foto…');
+      const url = await uploadToCloud(e.target.result);
+      document.getElementById('an_imagen').value = url;
+      pintarPreviewAnuncio(url);
+      toast('Foto lista', 'success');
+    } catch (err) {
+      toast(err.message || 'No se pudo subir la foto', 'error');
+    }
+  };
+  r.readAsDataURL(file);
+}
+
+function quitarImagenAnuncio() {
+  document.getElementById('an_imagen').value = '';
+  document.getElementById('anFile').value = '';
+  pintarPreviewAnuncio('');
+}
+
+function resetFormAnuncio() {
+  document.getElementById('an_id').value = '';
+  document.getElementById('an_titulo').value = '';
+  document.getElementById('an_resumen').value = '';
+  document.getElementById('an_cuerpo').value = '';
+  document.getElementById('an_imagen').value = '';
+  document.getElementById('anFile').value = '';
+  document.getElementById('an_publicado').checked = true;
+  const dest = document.getElementById('an_destacado'); if (dest) dest.checked = false;
+  pintarPreviewAnuncio('');
+  document.getElementById('anFormTitle').textContent = 'Nuevo anuncio';
+  document.getElementById('anGuardar').textContent = 'Publicar anuncio';
+  document.getElementById('anCancelar').classList.add('hidden');
+}
+
+async function guardarAnuncio() {
+  const id      = document.getElementById('an_id').value;
+  const titulo  = document.getElementById('an_titulo').value.trim();
+  const resumen = document.getElementById('an_resumen').value.trim();
+  const cuerpo  = document.getElementById('an_cuerpo').value.trim();
+  const imagen  = document.getElementById('an_imagen').value;
+  const publicado = document.getElementById('an_publicado').checked;
+  const destacado = (document.getElementById('an_destacado') || {}).checked || false;
+
+  if (titulo.length < 3) { toast('Escribe un título', 'error'); return; }
+
+  const body = { titulo, resumen, cuerpo, imagen, publicado };
+  if (esAdminGlobal()) {
+    body.destacado = destacado;
+    const sel = document.getElementById('an_bazar');
+    if (sel && sel.value) body.bazarId = Number(sel.value);
+  }
+
+  const btn = document.getElementById('anGuardar');
+  btn.disabled = true;
+  try {
+    if (id) {
+      body.id = Number(id);
+      await api('/api/acciones?op=anuncios', { method: 'PATCH', body });
+      toast('Anuncio actualizado', 'success');
+    } else {
+      await api('/api/acciones?op=anuncios', { method: 'POST', body });
+      toast('Anuncio publicado', 'success');
+    }
+    resetFormAnuncio();
+    renderAnuncios();
+  } catch (e) {
+    toast(e.message || 'No se pudo guardar', 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function editarAnuncio(id) {
+  const a = _anuncios.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('an_id').value = a.id;
+  document.getElementById('an_titulo').value = a.titulo || '';
+  document.getElementById('an_resumen').value = a.resumen || '';
+  document.getElementById('an_cuerpo').value = a.cuerpo || '';
+  document.getElementById('an_imagen').value = a.imagen || '';
+  document.getElementById('an_publicado').checked = a.publicado !== false;
+  const dest = document.getElementById('an_destacado'); if (dest) dest.checked = !!a.destacado;
+  if (esAdminGlobal()) { const sel = document.getElementById('an_bazar'); if (sel) sel.value = a.bazarId; }
+  pintarPreviewAnuncio(a.imagen || '');
+  document.getElementById('anFormTitle').textContent = 'Editar anuncio';
+  document.getElementById('anGuardar').textContent = 'Guardar cambios';
+  document.getElementById('anCancelar').classList.remove('hidden');
+  document.getElementById('view-anuncios').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function togglePublicadoAnuncio(id, publicar) {
+  try {
+    await api('/api/acciones?op=anuncios', { method: 'PATCH', body: { id, publicado: publicar } });
+    renderAnuncios();
+  } catch (e) { toast(e.message || 'No se pudo actualizar', 'error'); }
+}
+
+async function borrarAnuncio(id) {
+  if (!confirm('¿Borrar este anuncio? No se puede deshacer.')) return;
+  try {
+    await api('/api/acciones?op=anuncios&id=' + id, { method: 'DELETE' });
+    toast('Anuncio borrado', 'success');
+    renderAnuncios();
+  } catch (e) { toast(e.message || 'No se pudo borrar', 'error'); }
 }
