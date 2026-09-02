@@ -1,0 +1,388 @@
+/* ═══════════════════════════════════════════════════════════════
+   STMP MARKET 3.3 — INVENTARIO RESPONSIVE
+   PC / tablet / móvil
+   Capa final: corrige la composición del inventario sin tocar la lógica.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* El inventario no debe usar auto-fill con tracks vacíos: en escritorio
+   eso dejaba dos tarjetas minúsculas pegadas a la izquierda y media pantalla
+   vacía. Las tarjetas ahora tienen un ancho legible y un máximo coherente. */
+@media (min-width: 901px) {
+  body.stmp-admin #view-inventario {
+    width: 100%;
+    max-width: 1200px;
+  }
+
+  body.stmp-admin .inv-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 340px));
+    justify-content: start;
+    align-items: start;
+    gap: 22px;
+  }
+
+  body.stmp-admin.vista-compacta .inv-grid {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 300px));
+    gap: 16px;
+  }
+
+  body.stmp-admin .item-card,
+  body.stmp-admin.vista-compacta .item-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 4px 18px rgba(34,46,72,.07);
+    transition: transform .22s cubic-bezier(.2,.75,.2,1),
+                box-shadow .22s ease,
+                border-color .22s ease;
+  }
+
+  body.stmp-admin .item-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 34px rgba(34,46,72,.12);
+  }
+
+  /* Thumbnail de inventario: suficiente para reconocer la prenda sin que
+     la fotografía convierta cada registro en una ficha de producto gigante. */
+  body.stmp-admin .item-img,
+  body.stmp-admin.vista-compacta .item-img {
+    width: 100%;
+    height: 250px;
+    min-height: 250px;
+    aspect-ratio: auto;
+    flex: 0 0 250px;
+    border-radius: 0;
+    overflow: hidden;
+    background: #ece9e3;
+  }
+
+  body.stmp-admin.vista-compacta .item-img {
+    height: 220px;
+    min-height: 220px;
+    flex-basis: 220px;
+  }
+
+  body.stmp-admin .item-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 42%;
+  }
+
+  body.stmp-admin .item-body,
+  body.stmp-admin.vista-compacta .item-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 15px 16px 16px;
+    min-width: 0;
+  }
+
+  body.stmp-admin.vista-compacta .item-body {
+    padding: 12px 13px 13px;
+  }
+
+  body.stmp-admin .item-summary {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  body.stmp-admin .item-name,
+  body.stmp-admin.vista-compacta .item-name {
+    margin: 0 0 7px;
+    font-size: 13.5px;
+    line-height: 1.28;
+    letter-spacing: .035em;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  body.stmp-admin.vista-compacta .item-name {
+    font-size: 12.5px;
+  }
+
+  body.stmp-admin .item-tags {
+    margin: 0 0 7px;
+    gap: 5px;
+  }
+
+  body.stmp-admin .item-tags .tag {
+    padding: 3px 8px;
+    font-size: 8.5px;
+    line-height: 1.15;
+  }
+
+  body.stmp-admin .item-meta {
+    margin: 0 0 10px;
+    font-size: 10.5px;
+    line-height: 1.4;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  body.stmp-admin .item-prices {
+    min-height: 38px;
+    margin: 2px 0 0;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  body.stmp-admin .item-price {
+    font-size: 1.85rem;
+    line-height: .95;
+  }
+
+  body.stmp-admin .item-costo {
+    padding-bottom: 3px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  /* Subasta compacta: información de decisión, no una segunda página dentro
+     de la tarjeta. Conserva ganador, ofertas, cierre, salida y contacto. */
+  body.stmp-admin .inv-sb {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 14px;
+    row-gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 11px 0 0;
+    padding: 12px 13px;
+    border-radius: 13px;
+  }
+
+  body.stmp-admin .inv-sb-top {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+
+  body.stmp-admin .inv-sb-tag {
+    font-size: 8px;
+  }
+
+  body.stmp-admin .inv-sb-reloj {
+    padding: 3px 9px;
+    font-size: 9px;
+  }
+
+  body.stmp-admin .inv-sb-cifra {
+    grid-column: 1;
+    margin: 0;
+    align-self: center;
+  }
+
+  body.stmp-admin .inv-sb-cifra-label {
+    font-size: 7.5px;
+  }
+
+  body.stmp-admin .inv-sb-cifra-monto {
+    font-size: 1.8rem;
+  }
+
+  body.stmp-admin .inv-sb-datos {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 5px;
+    font-size: 10px;
+    text-align: right;
+  }
+
+  body.stmp-admin .inv-sb-lider {
+    max-width: 132px;
+    line-height: 1.25;
+  }
+
+  body.stmp-admin .inv-sb-cuenta {
+    padding: 2px 7px;
+    font-size: 8.5px;
+  }
+
+  body.stmp-admin .inv-sb-pie {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    margin: 0;
+    padding: 7px 0 0;
+    font-size: 9px;
+    line-height: 1.3;
+  }
+
+  body.stmp-admin .inv-sb-cierre {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  body.stmp-admin .inv-sb-salida {
+    white-space: nowrap;
+  }
+
+  body.stmp-admin .inv-sb-btn {
+    grid-column: 1 / -1;
+    min-height: 38px;
+    margin: 0;
+    padding: 7px 10px;
+    border-radius: 10px;
+    font-size: 9.5px;
+    line-height: 1.2;
+  }
+
+  body.stmp-admin .item-prices.solo-costo {
+    min-height: 0;
+    margin: 9px 0 0;
+    justify-content: flex-start;
+  }
+
+  /* Barra de acciones estable: el botón principal usa el espacio disponible
+     y editar/eliminar siempre conservan la misma medida. */
+  body.stmp-admin .item-actions,
+  body.stmp-admin.vista-compacta .item-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px 44px;
+    gap: 7px;
+    margin-top: 12px;
+    align-items: stretch;
+  }
+
+  body.stmp-admin .item-actions .act-btn {
+    min-width: 0;
+    min-height: 42px;
+    margin: 0;
+    border-radius: 10px;
+  }
+
+  body.stmp-admin .item-actions .act-btn.sell,
+  body.stmp-admin .item-actions .act-btn.unsell {
+    grid-column: 1;
+    padding: 7px 9px;
+    font-size: 8.2px;
+    line-height: 1.2;
+    letter-spacing: .075em;
+  }
+
+  body.stmp-admin .item-actions .act-btn.edit,
+  body.stmp-admin .item-actions .act-btn.del {
+    width: 44px;
+    padding: 0;
+  }
+
+  body.stmp-admin .item-actions .act-btn.edit { grid-column: 2; }
+  body.stmp-admin .item-actions .act-btn.del  { grid-column: 3; }
+
+  body.stmp-admin .item-actions .act-btn.cal,
+  body.stmp-admin .item-actions .act-btn.cal-hecha {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  body.stmp-admin .vendido-badge,
+  body.stmp-admin .item-card.en-subasta .item-img::after,
+  body.stmp-admin .item-card.subasta-cerrada .item-img::after {
+    top: 10px;
+    left: 10px;
+    padding: 5px 9px;
+    font-size: 8px;
+  }
+
+  body.stmp-admin .photo-counter {
+    top: 10px;
+    right: 10px;
+  }
+}
+
+/* En pantallas grandes caben tres tarjetas reales; el ancho máximo evita
+   que dos productos se estiren como banners cuando hay poco inventario. */
+@media (min-width: 1450px) {
+  body.stmp-admin .inv-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 350px));
+    gap: 24px;
+  }
+}
+
+/* Tablet: dos columnas fluidas, todavía con foto controlada. */
+@media (min-width: 769px) and (max-width: 900px) {
+  body.stmp-admin .inv-grid,
+  body.stmp-admin.vista-compacta .inv-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  body.stmp-admin .item-img,
+  body.stmp-admin.vista-compacta .item-img {
+    height: 230px;
+    min-height: 230px;
+    aspect-ratio: auto;
+  }
+}
+
+/* Móvil: conserva la composición 3.2 (miniatura + resumen arriba, bloques
+   completos abajo) y termina de pulir densidad/alineación. */
+@media (max-width: 560px) {
+  body.stmp-admin .item-card,
+  body.stmp-admin.vista-compacta .item-card {
+    border-color: rgba(176,168,152,.56) !important;
+    background: rgba(255,255,255,.96) !important;
+  }
+
+  body.stmp-admin .item-summary {
+    justify-content: flex-start;
+  }
+
+  body.stmp-admin .item-summary .item-prices {
+    width: 100%;
+  }
+
+  body.stmp-admin .inv-sb {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.55);
+  }
+
+  body.stmp-admin .item-actions {
+    padding-top: 1px;
+  }
+
+  body.stmp-admin .item-actions .act-btn.sell,
+  body.stmp-admin .item-actions .act-btn.unsell {
+    white-space: normal;
+  }
+}
+
+/* En iOS con viewport-fit=cover, el contenido puede desplazarse por detrás
+   de la barra de estado. Este scrim fijo hace que esa zona se vea intencional
+   y evita que filtros/títulos se lean debajo de la hora o Dynamic Island. */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 768px) {
+    body.stmp-admin::before {
+      content: '';
+      position: fixed;
+      z-index: 285;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: max(46px, env(safe-area-inset-top, 0px));
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(244,246,251,.995) 0%, rgba(244,246,251,.96) 72%, rgba(244,246,251,0) 100%);
+    }
+  }
+}
+
+/* Accesibilidad: el motion no debe desplazar tarjetas cuando el usuario
+   pidió reducir animaciones. */
+@media (prefers-reduced-motion: reduce) {
+  body.stmp-admin .item-card,
+  body.stmp-admin .item-card:hover {
+    transform: none !important;
+    transition: none !important;
+  }
+}

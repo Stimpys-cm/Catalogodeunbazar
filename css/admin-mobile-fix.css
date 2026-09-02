@@ -1,0 +1,743 @@
+/* ═══════════════════════════════════════════════════════════════
+   STMP MARKET 3.1 — FIX MÓVIL DEL PANEL
+   iPhone / Safari / navegadores in-app (WhatsApp, Instagram, etc.)
+   Se carga al final para corregir únicamente el panel administrativo.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Evita que Safari calcule la página con la altura antigua cuando su barra
+   inferior aparece/desaparece. */
+html { min-height: 100%; }
+body.stmp-admin {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Los SVG de acciones deben conservar tamaño y color incluso dentro de
+   flex/grid muy angostos de iOS. */
+body.stmp-admin .act-btn .lucide,
+body.stmp-admin .cat-actions .lucide {
+  display: block !important;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  max-width: none !important;
+  flex: 0 0 16px !important;
+  stroke: currentColor !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+@media (max-width: 768px) {
+  body.stmp-admin {
+    display: block;
+    width: 100%;
+    overflow-x: clip;
+  }
+
+  /* Respeta notch / Dynamic Island. El viewport-fit=cover del HTML permite
+     usar estos inset sin desperdiciar espacio en Android. */
+  body.stmp-admin .admin-main {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100vw;
+    margin-left: 0;
+    padding-top: max(14px, calc(env(safe-area-inset-top, 0px) + 10px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(28px, calc(env(safe-area-inset-bottom, 0px) + 22px));
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+  }
+
+  body.stmp-admin .topbar-mobile {
+    min-height: 44px;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 5;
+  }
+
+  body.stmp-admin .sidebar {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  body.stmp-admin .view-header {
+    margin-bottom: 18px;
+    gap: 10px;
+  }
+  body.stmp-admin .view-title {
+    font-size: clamp(2rem, 10vw, 2.45rem);
+    line-height: .95;
+  }
+  body.stmp-admin .view-subtitle {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  /* ── Resumen: mantiene 2x2, pero sin tarjetas gigantes ── */
+  body.stmp-admin .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin-bottom: 18px;
+  }
+  body.stmp-admin .stat-card {
+    min-width: 0;
+    min-height: 112px;
+    padding: 15px 14px 13px;
+    border-radius: 16px;
+  }
+  body.stmp-admin .stat-icon {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  body.stmp-admin .stat-label {
+    font-size: 8px;
+    letter-spacing: .16em;
+    line-height: 1.3;
+  }
+  body.stmp-admin .stat-value {
+    font-size: clamp(1.85rem, 9.2vw, 2.25rem);
+    white-space: nowrap;
+  }
+
+  /* ── Buscador + filtros ── */
+  body.stmp-admin .inv-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  body.stmp-admin .inv-search {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 10px 14px;
+    border-radius: 16px;
+  }
+  body.stmp-admin .inv-search input {
+    width: 100%;
+    min-width: 0;
+    line-height: 1.2;
+  }
+  body.stmp-admin .filter-btns {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+    overflow: visible;
+  }
+  body.stmp-admin .filter-btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 8px 5px;
+    border-radius: 14px;
+    font-size: 9px;
+    letter-spacing: .075em;
+    white-space: nowrap;
+  }
+  body.stmp-admin .inv-bazar-select {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    border-radius: 14px;
+  }
+
+  /* ── Catálogo (categorías / marcas) ── */
+  body.stmp-admin .catalogo-layout { gap: 16px; }
+  body.stmp-admin .catalogo-section {
+    border-radius: 17px;
+    overflow: hidden;
+  }
+  body.stmp-admin .catalogo-header {
+    padding: 14px 14px 12px;
+    gap: 8px;
+  }
+  body.stmp-admin .catalogo-header span:first-child {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  body.stmp-admin .catalogo-hint {
+    font-size: 10px;
+    line-height: 1.35;
+    text-align: right;
+  }
+  body.stmp-admin .catalogo-add {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 12px 14px;
+  }
+  body.stmp-admin .catalogo-add input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 11px 12px;
+    border-radius: 11px;
+  }
+  body.stmp-admin .catalogo-add .add-btn {
+    min-width: 112px;
+    min-height: 46px;
+    padding: 9px 13px;
+    border-radius: 11px;
+    white-space: nowrap;
+  }
+  body.stmp-admin .cat-list { padding: 0; }
+  body.stmp-admin .cat-item {
+    min-height: 64px;
+    padding: 10px 14px;
+    gap: 10px;
+    font-size: 13px;
+  }
+  body.stmp-admin .cat-item > span:first-child {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    line-height: 1.3;
+  }
+  body.stmp-admin .cat-tag {
+    flex: 0 0 auto;
+    margin: 0;
+  }
+  body.stmp-admin .cat-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+    align-items: center;
+  }
+  body.stmp-admin .cat-actions .act-btn.edit,
+  body.stmp-admin .cat-actions .act-btn.del {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    flex: 0 0 42px;
+    padding: 0;
+    border-width: 1.5px;
+    border-radius: 12px;
+  }
+  body.stmp-admin .cat-actions .act-btn.general {
+    min-height: 42px;
+    padding: 8px 10px;
+  }
+}
+
+/* El panel es para administrar, no para navegar como tienda: en teléfono
+   una tarjeta horizontal aprovecha mucho mejor el ancho que dos columnas
+   de 170 px. Esto corrige subastas, precios, acciones y huecos desiguales. */
+@media (max-width: 560px) {
+  body.stmp-admin .inv-grid,
+  body.stmp-admin.vista-compacta .inv-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 11px !important;
+  }
+
+  body.stmp-admin .item-card,
+  body.stmp-admin.vista-compacta .item-card {
+    display: grid;
+    grid-template-columns: clamp(108px, 34vw, 132px) minmax(0, 1fr);
+    align-items: stretch;
+    min-width: 0;
+    border-radius: 17px !important;
+    overflow: hidden;
+  }
+  body.stmp-admin .item-img {
+    width: 100%;
+    height: 100%;
+    min-height: 218px;
+    aspect-ratio: auto;
+  }
+  body.stmp-admin .item-img img {
+    width: 100%;
+    height: 100% !important;
+    object-fit: cover;
+  }
+  body.stmp-admin .item-body,
+  body.stmp-admin.vista-compacta .item-body {
+    min-width: 0;
+    padding: 13px 12px 12px;
+  }
+  body.stmp-admin .item-name,
+  body.stmp-admin.vista-compacta .item-name {
+    font-size: 12px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  body.stmp-admin .item-meta {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.35;
+    margin-bottom: 8px;
+  }
+  body.stmp-admin .item-tags { margin-bottom: 7px; }
+  body.stmp-admin .item-prices {
+    gap: 5px 10px;
+    align-items: flex-end;
+    margin-bottom: 10px;
+  }
+  body.stmp-admin .item-price { font-size: 1.55rem; }
+  body.stmp-admin .item-costo { line-height: 1.25; }
+
+  /* Acciones: vender/reactivar + editar + eliminar siempre caben en una fila. */
+  body.stmp-admin .item-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 42px 42px;
+    grid-auto-flow: row dense;
+    gap: 7px;
+    align-items: stretch;
+  }
+  body.stmp-admin .item-actions .act-btn {
+    min-width: 0;
+    min-height: 42px;
+    margin: 0;
+    border-radius: 11px;
+  }
+  body.stmp-admin .item-actions .act-btn.sell,
+  body.stmp-admin .item-actions .act-btn.unsell {
+    grid-column: 1;
+    flex: initial;
+    padding: 7px 8px;
+    font-size: 8.5px;
+    line-height: 1.25;
+    letter-spacing: .075em;
+    white-space: normal;
+  }
+  body.stmp-admin .item-actions .act-btn.edit {
+    grid-column: 2;
+    width: 42px;
+    padding: 0;
+    flex: initial;
+  }
+  body.stmp-admin .item-actions .act-btn.del {
+    grid-column: 3;
+    width: 42px;
+    padding: 0;
+    flex: initial;
+  }
+  body.stmp-admin .item-actions .act-btn.cal,
+  body.stmp-admin .item-actions .act-btn.cal-hecha {
+    grid-column: 1 / -1;
+    width: 100%;
+    flex: initial;
+    order: initial;
+    min-height: 40px;
+  }
+
+  body.stmp-admin .vendido-badge,
+  body.stmp-admin .item-card.en-subasta .item-img::after,
+  body.stmp-admin .item-card.subasta-cerrada .item-img::after {
+    top: 8px;
+    left: 8px;
+    max-width: calc(100% - 16px);
+    padding: 5px 8px;
+    font-size: 7.5px;
+    letter-spacing: .11em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  body.stmp-admin .photo-counter {
+    top: 8px;
+    right: 8px;
+    padding: 3px 6px;
+    font-size: 9px;
+  }
+
+  /* Subasta compacta: conserva toda la información pero deja de convertir
+     la tarjeta en una columna interminable. */
+  body.stmp-admin .inv-sb {
+    margin-top: 8px;
+    padding: 10px;
+    border-radius: 11px;
+  }
+  body.stmp-admin .inv-sb-top {
+    gap: 6px;
+    margin-bottom: 7px;
+  }
+  body.stmp-admin .inv-sb-tag { font-size: 8px; letter-spacing: .11em; }
+  body.stmp-admin .inv-sb-reloj {
+    padding: 3px 7px;
+    font-size: 9px;
+  }
+  body.stmp-admin .inv-sb-cifra { margin-bottom: 6px; }
+  body.stmp-admin .inv-sb-cifra-label { font-size: 8px; }
+  body.stmp-admin .inv-sb-cifra-monto { font-size: 1.55rem; }
+  body.stmp-admin .inv-sb-datos {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+    font-size: 10.5px;
+  }
+  body.stmp-admin .inv-sb-cuenta { justify-self: start; }
+  body.stmp-admin .inv-sb-pie {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    margin-top: 7px;
+    padding-top: 7px;
+    font-size: 9.5px;
+  }
+  body.stmp-admin .inv-sb-btn {
+    min-height: 40px;
+    margin-top: 8px;
+    padding: 7px 8px;
+    font-size: 9.5px;
+    line-height: 1.3;
+  }
+  body.stmp-admin .item-prices.solo-costo { margin: 7px 0 8px; }
+
+  /* En el catálogo de configuración damos prioridad al nombre. */
+  body.stmp-admin .catalogo-hint { display: none; }
+  body.stmp-admin .catalogo-header { align-items: center; }
+}
+
+@media (max-width: 390px) {
+  body.stmp-admin .admin-main {
+    padding-right: max(10px, env(safe-area-inset-right, 0px));
+    padding-left: max(10px, env(safe-area-inset-left, 0px));
+  }
+  body.stmp-admin .stats-grid { gap: 7px; }
+  body.stmp-admin .stat-card { padding: 13px 11px 12px; min-height: 104px; }
+  body.stmp-admin .stat-value { font-size: 1.8rem; }
+  body.stmp-admin .filter-btn { font-size: 8.2px; letter-spacing: .055em; }
+
+  body.stmp-admin .item-card,
+  body.stmp-admin.vista-compacta .item-card {
+    grid-template-columns: 104px minmax(0, 1fr);
+  }
+  body.stmp-admin .item-img { min-height: 205px; }
+  body.stmp-admin .item-body,
+  body.stmp-admin.vista-compacta .item-body { padding: 11px 10px; }
+
+  body.stmp-admin .catalogo-add {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  body.stmp-admin .catalogo-add .add-btn {
+    width: 100%;
+  }
+  body.stmp-admin .cat-item { padding: 9px 11px; }
+}
+
+/* Modales y mensajes no deben quedar detrás de la barra de gestos de iOS. */
+@media (max-width: 600px) {
+  body.stmp-admin .re-modal,
+  body.stmp-admin .sb-modal {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body.stmp-admin .toast {
+    bottom: max(18px, calc(env(safe-area-inset-bottom, 0px) + 12px));
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STMP MARKET 3.2 — MOBILE POLISH
+   La tarjeta deja de estirar la fotografía con el contenido.
+   Resumen arriba; subasta/costo/acciones debajo a ancho completo.
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 560px) {
+  body.stmp-admin .inv-grid,
+  body.stmp-admin.vista-compacta .inv-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  body.stmp-admin .item-card,
+  body.stmp-admin.vista-compacta .item-card {
+    display: grid !important;
+    grid-template-columns: 116px minmax(0, 1fr) !important;
+    align-items: start !important;
+    gap: 0 !important;
+    padding: 11px !important;
+    border-radius: 18px !important;
+    overflow: hidden !important;
+    box-shadow: 0 3px 16px rgba(34, 46, 72, .065) !important;
+    transform: none !important;
+  }
+
+  body.stmp-admin .item-card:hover {
+    transform: none !important;
+    box-shadow: 0 3px 16px rgba(34, 46, 72, .065) !important;
+  }
+
+  /* La foto ya NO mide lo mismo que toda la card. */
+  body.stmp-admin .item-img,
+  body.stmp-admin.vista-compacta .item-img {
+    grid-column: 1;
+    grid-row: 1;
+    width: 116px !important;
+    height: 150px !important;
+    min-height: 0 !important;
+    aspect-ratio: auto !important;
+    align-self: start !important;
+    border-radius: 13px !important;
+    overflow: hidden !important;
+  }
+  body.stmp-admin .item-img img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+  }
+  body.stmp-admin .item-card:hover .item-img img {
+    transform: none !important;
+  }
+
+  /* display:contents permite que resumen, subasta y acciones ocupen
+     zonas distintas del grid sin cambiar la versión de escritorio. */
+  body.stmp-admin .item-body,
+  body.stmp-admin.vista-compacta .item-body {
+    display: contents !important;
+    padding: 0 !important;
+  }
+
+  body.stmp-admin .item-summary {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    min-height: 150px;
+    box-sizing: border-box;
+    padding: 3px 1px 2px 13px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  body.stmp-admin .item-name,
+  body.stmp-admin.vista-compacta .item-name {
+    font-size: 12.5px !important;
+    line-height: 1.25 !important;
+    letter-spacing: .035em !important;
+    margin: 0 0 8px !important;
+    white-space: normal !important;
+    overflow: visible !important;
+  }
+
+  body.stmp-admin .item-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 0 0 7px !important;
+  }
+  body.stmp-admin .item-tags .tag {
+    max-width: 100%;
+    padding: 3px 8px;
+    font-size: 8px;
+    line-height: 1.15;
+  }
+
+  body.stmp-admin .item-meta {
+    margin: 0 0 8px !important;
+    font-size: 10px !important;
+    line-height: 1.35 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    color: var(--muted);
+  }
+
+  body.stmp-admin .inv-card-bazar,
+  body.stmp-admin .inv-card-comprador {
+    margin-bottom: 6px;
+  }
+
+  /* Precio al fondo del resumen para que las cards normales tengan
+     una jerarquía estable incluso con nombre/tags de distinto largo. */
+  body.stmp-admin .item-summary .item-prices {
+    margin: auto 0 0 !important;
+    min-height: 34px;
+    display: flex !important;
+    gap: 8px;
+    align-items: flex-end !important;
+    justify-content: space-between !important;
+  }
+  body.stmp-admin .item-summary .item-price {
+    font-size: 1.55rem !important;
+    line-height: .95;
+  }
+  body.stmp-admin .item-summary .item-costo {
+    font-size: 9.5px !important;
+    white-space: nowrap;
+    padding-bottom: 2px;
+  }
+
+  /* Subasta: bloque horizontal y compacto debajo de la foto/resumen. */
+  body.stmp-admin .inv-sb {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 11px 0 0 !important;
+    padding: 11px 12px !important;
+    border-radius: 13px !important;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: 12px;
+    row-gap: 7px;
+  }
+  body.stmp-admin .inv-sb-top {
+    grid-column: 1 / -1;
+    margin: 0 !important;
+    min-width: 0;
+  }
+  body.stmp-admin .inv-sb-tag {
+    font-size: 8px !important;
+  }
+  body.stmp-admin .inv-sb-reloj {
+    font-size: 8.5px !important;
+    padding: 3px 8px !important;
+  }
+  body.stmp-admin .inv-sb-cifra {
+    grid-column: 1;
+    margin: 0 !important;
+    align-self: center;
+  }
+  body.stmp-admin .inv-sb-cifra-label {
+    font-size: 7.5px !important;
+    letter-spacing: .12em !important;
+  }
+  body.stmp-admin .inv-sb-cifra-monto {
+    font-size: 1.7rem !important;
+    line-height: 1 !important;
+  }
+  body.stmp-admin .inv-sb-datos {
+    grid-column: 2;
+    display: flex !important;
+    flex-direction: column;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    min-width: 0;
+    font-size: 9.5px !important;
+    text-align: right;
+  }
+  body.stmp-admin .inv-sb-lider {
+    white-space: normal;
+    line-height: 1.25;
+  }
+  body.stmp-admin .inv-sb-cuenta {
+    font-size: 8px !important;
+    padding: 2px 7px !important;
+  }
+  body.stmp-admin .inv-sb-pie {
+    grid-column: 1 / -1;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin: 1px 0 0 !important;
+    padding: 7px 0 0 !important;
+    font-size: 8.5px !important;
+    line-height: 1.25;
+  }
+  body.stmp-admin .inv-sb-btn {
+    grid-column: 1 / -1;
+    min-height: 39px !important;
+    margin: 1px 0 0 !important;
+    padding: 7px 10px !important;
+    border-radius: 10px !important;
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+  }
+
+  body.stmp-admin .item-prices.solo-costo {
+    grid-column: 1 / -1;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 8px 1px 0 !important;
+    min-height: 0;
+    font-size: 9.5px;
+  }
+
+  /* Acciones siempre forman una franja limpia al final de la tarjeta. */
+  body.stmp-admin .item-actions {
+    grid-column: 1 / -1;
+    width: 100%;
+    box-sizing: border-box;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 44px 44px !important;
+    gap: 7px !important;
+    margin-top: 11px !important;
+    align-items: stretch !important;
+  }
+  body.stmp-admin .item-actions .act-btn {
+    min-height: 44px !important;
+    border-radius: 11px !important;
+    margin: 0 !important;
+  }
+  body.stmp-admin .item-actions .act-btn.sell,
+  body.stmp-admin .item-actions .act-btn.unsell {
+    grid-column: 1 !important;
+    padding: 7px 9px !important;
+    font-size: 8.2px !important;
+    line-height: 1.2 !important;
+    letter-spacing: .07em !important;
+  }
+  body.stmp-admin .item-actions .act-btn.edit {
+    grid-column: 2 !important;
+    width: 44px !important;
+    padding: 0 !important;
+  }
+  body.stmp-admin .item-actions .act-btn.del {
+    grid-column: 3 !important;
+    width: 44px !important;
+    padding: 0 !important;
+  }
+  body.stmp-admin .item-actions .act-btn.cal,
+  body.stmp-admin .item-actions .act-btn.cal-hecha {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+
+  body.stmp-admin .vendido-badge,
+  body.stmp-admin .item-card.en-subasta .item-img::after,
+  body.stmp-admin .item-card.subasta-cerrada .item-img::after {
+    top: 7px !important;
+    left: 7px !important;
+    max-width: calc(100% - 14px) !important;
+    padding: 5px 7px !important;
+    font-size: 7px !important;
+    line-height: 1 !important;
+  }
+  body.stmp-admin .photo-counter {
+    top: 7px !important;
+    right: 7px !important;
+    font-size: 8px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  body.stmp-admin .item-card,
+  body.stmp-admin.vista-compacta .item-card {
+    grid-template-columns: 104px minmax(0, 1fr) !important;
+    padding: 10px !important;
+  }
+  body.stmp-admin .item-img,
+  body.stmp-admin.vista-compacta .item-img {
+    width: 104px !important;
+    height: 138px !important;
+  }
+  body.stmp-admin .item-summary {
+    min-height: 138px;
+    padding-left: 11px;
+  }
+  body.stmp-admin .item-name { font-size: 12px !important; }
+  body.stmp-admin .item-tags .tag { font-size: 7.6px; padding: 3px 7px; }
+  body.stmp-admin .item-meta { font-size: 9.5px !important; }
+  body.stmp-admin .item-summary .item-price { font-size: 1.45rem !important; }
+  body.stmp-admin .item-actions {
+    grid-template-columns: minmax(0, 1fr) 42px 42px !important;
+  }
+  body.stmp-admin .item-actions .act-btn.edit,
+  body.stmp-admin .item-actions .act-btn.del {
+    width: 42px !important;
+  }
+}

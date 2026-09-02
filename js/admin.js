@@ -186,6 +186,7 @@ function showTab(tab, fromHash) {
   if (TABS_SOLO_GLOBAL.includes(tab) && !esAdminGlobal()) return;
   if (tab === 'vendedores' && !esAdminGlobal() && !puedo('gestionarUsuarios')) return;
   if (tab === 'bazares'    && !esAdminGlobal() && !puedo('personalizar'))     return;
+  const cambioDeVista = currentTab !== tab;
   currentTab = tab;
   ['inventario','registrar','vendedores','catalogo','bazares','cuenta','drops','subastas','ganancias','sistema','solicitudes'].forEach(t => {
     const v = document.getElementById('view-'+t);
@@ -205,6 +206,14 @@ function showTab(tab, fromHash) {
   if (tab==='solicitudes') renderSolicitudes();
   if (tab==='registrar')   { setTimeout(() => { initPreviewListeners(); updatePreview(); populateDropSelect(); }, 0); }
   closeSidebar();
+
+  // Cada pestaña es una vista distinta aunque viva en el mismo HTML. En iPhone
+  // Safari conservaba el scroll de la vista anterior y podía dejar el título
+  // detrás de la barra de estado / navegador. Al cambiar de sección volvemos
+  // arriba inmediatamente, igual que una navegación real entre páginas.
+  if (cambioDeVista || !fromHash) {
+    requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }));
+  }
 
   // Sincronizar el hash de la URL (admin.html#registrar, etc.)
   // fromHash = true cuando el cambio vino de la propia URL, para no duplicar historial
@@ -631,7 +640,7 @@ function renderInv() {
           ? `<span class="act-btn cal-hecha" title="Ya calificaste a @${escAdmin(p.vendidoA)}">★ Calificado</span>`
           : `<button class="act-btn cal" onclick="abrirModalComprador(${p.id})">★ Calificar comprador</button>`)
       : '';
-    const delBtn    = `<button class="act-btn del" onclick="delItem(${p.id})">${IC_TRASH}</button>`;
+    const delBtn    = `<button class="act-btn del" onclick="delItem(${p.id})" aria-label="Eliminar ${escAdmin(p.nombre)}" title="Eliminar">${IC_TRASH}</button>`;
     const costoHtml = isAdmin() ? `<span class="item-costo">Costo: $${p.costo}</span>` : '';
 
     // Cuando el admin principal ve varios bazares, cada card dice de quién es
@@ -653,20 +662,22 @@ function renderInv() {
         ${imgHtml}${navHtml}${vendidoBadge}${photoCounterHtml}
       </div>
       <div class="item-body">
-        <div class="item-name">${escAdmin(p.nombre)}</div>
-        ${bazarHtml}
-        <div class="item-tags">${tagsHtml}</div>
-        <div class="item-meta">Talla ${p.talla||'–'} · ${p.estado||''}</div>
-        ${compradorHtml}
-        ${enSubasta ? '' : `<div class="item-prices">
-          <span class="item-price">$${p.precio_venta} <span class="cur">MXN</span></span>
-          ${costoHtml}
-        </div>`}
+        <div class="item-summary">
+          <div class="item-name">${escAdmin(p.nombre)}</div>
+          ${bazarHtml}
+          <div class="item-tags">${tagsHtml}</div>
+          <div class="item-meta">Talla ${p.talla||'–'} · ${p.estado||''}</div>
+          ${compradorHtml}
+          ${enSubasta ? '' : `<div class="item-prices">
+            <span class="item-price">$${p.precio_venta} <span class="cur">MXN</span></span>
+            ${costoHtml}
+          </div>`}
+        </div>
         ${enSubasta ? bloqueSubasta(p) + (costoHtml ? `<div class="item-prices solo-costo">${costoHtml}</div>` : '') : ''}
         <div class="item-actions">
           ${vendBtn}
           ${calBtn}
-          <button class="act-btn edit" onclick="re_editar_prenda(${p.id})">${IC_EDIT}</button>
+          <button class="act-btn edit" onclick="re_editar_prenda(${p.id})" aria-label="Editar ${escAdmin(p.nombre)}" title="Editar">${IC_EDIT}</button>
           ${delBtn}
         </div>
       </div>
@@ -2346,11 +2357,11 @@ function renderCatList() {
           ? `<button class="act-btn general" onclick="hacerGeneral('cat',${c.id})"
                      title="Compartirla como general de STMP MARKET">Hacer general</button>` : '';
         const acciones = aGeneral + (mio ? `
-          <button class="act-btn edit" onclick="editCat(${c.id},'${String(c.nombre).replace(/'/g, "\\'")}')">${IC_EDIT}</button>
-          <button class="act-btn del"  onclick="deleteCat(${c.id})">${IC_TRASH}</button>` : '');
+          <button class="act-btn edit" type="button" onclick="editCat(${c.id},'${String(c.nombre).replace(/'/g, "\\'")}')" title="Editar categoría" aria-label="Editar categoría ${escAdmin(c.nombre)}">${IC_EDIT}</button>
+          <button class="act-btn del" type="button" onclick="deleteCat(${c.id})" title="Eliminar categoría" aria-label="Eliminar categoría ${escAdmin(c.nombre)}">${IC_TRASH}</button>` : '');
         return `<div class="cat-item">
           <span>${escAdmin(c.nombre)} ${tag}</span>
-          <div style="display:flex;gap:6px">${acciones}</div>
+          <div class="cat-actions">${acciones}</div>
         </div>`;
       }).join('');
 }
@@ -2432,11 +2443,11 @@ function renderBrandList() {
           ? `<button class="act-btn general" onclick="hacerGeneral('brand',${c.id})"
                      title="Compartirla como general de STMP MARKET">Hacer general</button>` : '';
         const acciones = aGeneral + (mio ? `
-          <button class="act-btn edit" onclick="editBrand(${c.id},'${String(c.nombre).replace(/'/g, "\\'")}')">${IC_EDIT}</button>
-          <button class="act-btn del"  onclick="deleteBrand(${c.id})">${IC_TRASH}</button>` : '');
+          <button class="act-btn edit" type="button" onclick="editBrand(${c.id},'${String(c.nombre).replace(/'/g, "\\'")}')" title="Editar marca" aria-label="Editar marca ${escAdmin(c.nombre)}">${IC_EDIT}</button>
+          <button class="act-btn del" type="button" onclick="deleteBrand(${c.id})" title="Eliminar marca" aria-label="Eliminar marca ${escAdmin(c.nombre)}">${IC_TRASH}</button>` : '');
         return `<div class="cat-item">
           <span>${escAdmin(c.nombre)} ${tag}</span>
-          <div style="display:flex;gap:6px">${acciones}</div>
+          <div class="cat-actions">${acciones}</div>
         </div>`;
       }).join('');
 }
