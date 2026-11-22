@@ -44,6 +44,8 @@
     "js/panel/borradores.js",
     "js/panel/ig-borradores.js",
     "js/panel/ig-crecer.js",
+    "js/panel/ig-mp4.js",
+    "js/panel/ig-reels.js",
     "js/vendor/qrcode.js",
     "js/panel/ventas-panel.js",
     "js/panel/sistema-panel.js",

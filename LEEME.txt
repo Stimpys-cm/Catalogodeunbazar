@@ -1,6 +1,6 @@
-STIIMPYS v58 — PUBLICACIONES DE INSTAGRAM QUE SE QUEDABAN ATORADAS
-=================================================================
-Incluye todo lo de la v57 y anteriores. Las notas de antes están en
+STIIMPYS v59 — REELS PROFESIONALES, PENSADOS PARA LA PANTALLA DE INSTAGRAM
+=========================================================================
+Incluye todo lo de la v58 y anteriores. Las notas de antes están en
 docs/HISTORIAL-VERSIONES.txt.
 
 CÓMO SUBIRLO
@@ -8,46 +8,75 @@ CÓMO SUBIRLO
 Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
 el contenido de este paquete, git add -A → commit → push a una rama → revisa la
 vista previa de Vercel → producción. No hay variables nuevas.
-Las prendas que hoy dicen "Ya se está publicando" se destraban solas al subir
-esta versión (el candado viejo ya no cuenta).
 
-1 · POR QUÉ PASABA
-------------------
-Al publicar un carrusel, cada foto se subía a Instagram una tras otra. Con
-6–7 fotos (más la portada con plantilla) se pasaba del límite de 60 segundos
-del servidor, que cortaba a medias. La marca de "publicando" nunca se
-quitaba y la prenda quedaba bloqueada para siempre ("Ya se está publicando,
-espera unos segundos"). A veces el post sí alcanzaba a salir, pero no
-quedaba ligado a la prenda.
+1 · LO QUE ESTABA MAL
+---------------------
+- El texto de cada prenda iba abajo a la izquierda, justo donde Instagram pone
+  tu usuario, la descripción, el audio y los botones (me gusta, comentar,
+  enviar). En el celular se tapaba el nombre y el precio.
+- El video se grababa "en vivo": si la compu iba lenta se saltaba cuadros y
+  en Chrome salía en WebM.
+- Un solo diseño, una sola foto por prenda y sin portada propia.
 
-2 · QUÉ CAMBIA
---------------
-- Las fotos del carrusel se suben todas a la vez: mucho más rápido.
-- Si Instagram tarda demasiado, se detiene a tiempo sin publicar nada y te
-  dice que lo intentes en unos minutos (ya no se corta a medias).
-- La marca de "publicando" lleva la hora: si pasan más de 2.5 minutos, se
-  libera sola.
-- Antes de reintentar, se revisa si el post sí salió en Instagram. Si salió,
-  solo se liga con la prenda: no se publica dos veces.
-- El error queda guardado en la prenda. En el inventario, el botón de
-  Instagram se marca con un "!" rojo y al pasar el mouse dice por qué falló;
-  tocándolo se reintenta.
+2 · DIMENSIONES Y ZONA SEGURA
+-----------------------------
+- Video vertical 1080 × 1920 (9:16), 30 cuadros por segundo, MP4 H.264: lo
+  que Instagram recomienda.
+- Todo el texto queda dentro de la zona que Instagram no tapa: 270 px libres
+  arriba, 440 px libres abajo, 72 px en las orillas y, de la mitad para abajo,
+  sin nada debajo de la columna de botones de la derecha.
+- Se revisa solo: debajo de la vista previa dice si todo el texto quedó en la
+  zona segura. Nombres muy largos se acomodan en dos líneas o se recortan con
+  "…"; nunca se salen.
+- Interruptor "Zonas de Instagram": encima de la vista previa se ven las
+  partes que tapa Instagram (arriba, abajo y botones) y la zona segura.
+- Interruptor "Recorte del perfil (3:4)": muestra qué parte se ve en la
+  cuadrícula de tu perfil.
 
-3 · INSTAGRAM → "CON PROBLEMAS" (nuevo)
----------------------------------------
-Con un número rojo en el menú cuando hay algo:
-- Prendas que fallaron (con el motivo y cuántos intentos), que se quedaron a
-  medias o que se están publicando en este momento.
-- Publicaciones programadas que dieron error o se quedaron a medias.
-Botones:
-- Reintentar: revisa si ya salió (y la liga) o la vuelve a publicar.
-- Cancelar: quita el aviso; la prenda queda lista para publicarla cuando
-  quieras (en programados, la quita de la fila).
-El aviso de error al publicar trae "Ver publicaciones con problemas".
-Las programadas que se cortan también se revisan solas: si sí salieron, se
-marcan como publicadas en vez de repetirse.
+3 · MÁS PROFESIONALES
+---------------------
+- 3 diseños:
+  · Galería: la prenda completa en una tarjeta, sobre la misma foto
+    difuminada (no se corta la prenda).
+  · Pantalla completa: la foto de orilla a orilla con un acercamiento lento.
+  · Claro: fondo crema, estilo catálogo.
+- Inicio con tu logo, el título, cuántas piezas son, desde qué precio y una
+  tira con las primeras prendas.
+- Cada prenda: número (01 / 06), marca, nombre, talla y estado, precio; si
+  bajó, el precio anterior tachado y el porcentaje.
+- Cierre con "stiimpys.store", "Link en bio · @stiimpys" y las formas de pago.
+  Se desvanece al final para que, al repetirse, empiece limpio.
+- Hasta 2 fotos por prenda, con fundido entre ellas, y transiciones suaves
+  entre prendas.
+- Portada propia (1080 × 1920) con el título y un collage de hasta 4 prendas
+  con su precio, pensada para el recorte 3:4 del perfil. Se publica como
+  portada del Reel y se puede descargar.
+- El video se hace cuadro por cuadro: no se salta nada aunque la compu vaya
+  lenta o cambies de pestaña. Se puede cancelar. En navegadores viejos se
+  graba como antes.
+
+4 · CÓMO SE USA
+---------------
+Instagram → Reels:
+ 1. Tipo: Nuevos ingresos, Bajaron de precio o Drop.
+ 2. Diseño: Galería, Pantalla completa o Claro.
+ 3. Prendas (hasta 10; salen en el orden en que las eliges), segundos por
+    prenda y fotos por prenda.
+ 4. Vista previa: dale play o mueve la barra; prende "Zonas de Instagram"
+    para ver qué tapa Instagram.
+ "Crear video" → "Descargar video" / "Descargar portada" o "Publicar Reel en
+ Instagram" (sale con la portada). Para música en tendencia: descárgalo y
+ súbelo desde la app de Instagram eligiendo el audio ahí (la API no deja
+ poner música).
+
+5 · SEGURIDAD
+-------------
+Al publicar, el servidor solo acepta video y portada subidos a TU cuenta de
+Cloudinary (no de otra cuenta ni de otra página, sin parámetros raros). Así
+nadie puede usar tu cuenta de Instagram para publicar algo de otro lado. El
+video se sigue revisando y convirtiendo a H.264 antes de mandarlo.
 
 PRUEBAS
 -------
-pruebas/v58-publicar.mjs (25) y pruebas/v58-navegador.py (24). Servidor 908
-de 908; en navegador v33–v58 sin fallas (pruebas/RESULTADOS-v58.md).
+pruebas/v59-reels.mjs (45) y pruebas/v59-navegador.py (47). Servidor 953 de
+953; en navegador v33–v59 sin fallas (pruebas/RESULTADOS-v59.md).

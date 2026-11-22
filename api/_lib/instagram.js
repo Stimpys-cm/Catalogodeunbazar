@@ -1157,9 +1157,11 @@ export async function todosLosComentarios(bazar, mediaId, max = 3000) {
 }
 
 // ── Reels ────────────────────────────────────────────────────
-export async function crearContenedorReel(bazar, videoUrl, caption) {
+export async function crearContenedorReel(bazar, videoUrl, caption, { portada = '' } = {}) {
   const cred = exigir(bazar);
-  const r = await igPost(cred, `${cred.userId}/media`, { media_type: 'REELS', video_url: videoUrl, caption: String(caption || '').slice(0, 2200), share_to_feed: 'true' });
+  const datos = { media_type: 'REELS', video_url: videoUrl, caption: String(caption || '').slice(0, 2200), share_to_feed: 'true' };
+  if (portada) datos.cover_url = portada;   // v59: portada propia (si no, Instagram usa el primer cuadro)
+  const r = await igPost(cred, `${cred.userId}/media`, datos);
   return r.id;
 }
 export async function estadoContenedor(bazar, id) {

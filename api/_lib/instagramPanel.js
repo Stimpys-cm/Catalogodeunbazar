@@ -61,6 +61,18 @@ const ID_CONV = /^[A-Za-z0-9_\-:=]{5,200}$/;
 const URL_CLOUD = /^https:\/\/res\.cloudinary\.com\//;
 
 const idValido = v => typeof v === 'string' && ID_IG.test(v);
+// v59: una dirección de un archivo subido por el panel a TU Cloudinary (no a otra cuenta).
+// Devuelve la dirección limpia o '' si no es de ahí (otra cuenta, transformaciones, parámetros raros).
+// La carpeta (bazar/reels) es opcional porque en el modo de "carpetas dinámicas" no va en la dirección.
+export function urlReelPropia(v, tipo) {
+  const nube = String(process.env.CLOUDINARY_CLOUD_NAME || '');
+  if (typeof v !== 'string' || v.length > 600 || !nube || !/^[\w-]+$/.test(nube)) return '';
+  let u; try { u = new URL(v); } catch { return ''; }
+  if (u.protocol !== 'https:' || u.hostname !== 'res.cloudinary.com' || u.username || u.password || u.port || u.search || u.hash) return '';
+  const ruta = u.pathname;
+  const re = new RegExp(`^/${nube}/${tipo}/upload/(?:v\\d+/)?(?:[\\w-]+/){0,4}[\\w-]+\\.(?:${tipo === 'video' ? 'mp4|webm|mov' : 'jpg|jpeg|png|webp'})$`, 'i');
+  return re.test(ruta) ? `https://res.cloudinary.com${ruta}` : '';
+}
 
 async function bazarDelUsuario(req, user, db) {
   const pedido = Number(req.query.bazarId || req.body?.bazarId || 0);
@@ -847,11 +859,18 @@ export async function handleInstagram(req, res, op) {
         return res.status(200).json({ cloud, api_key: key, timestamp, folder, signature });
       }
       case 'ig-reel-crear': {
-        const url = String(b.video || '');
-        if (!/^https:\/\/res\.cloudinary\.com\/[\w-]+\/video\/upload\//.test(url)) return res.status(400).json({ error: 'Video inválido.' });
+        // v59: solo archivos subidos a TU Cloudinary (así nadie puede hacer que Instagram
+        // descargue cualquier otra dirección con tu cuenta). La portada es opcional.
+        const video = urlReelPropia(b.video, 'video');
+        if (!video) return res.status(400).json({ error: 'Video inválido.' });
+        let portada = '';
+        if (b.portada != null && b.portada !== '') {
+          portada = urlReelPropia(b.portada, 'image');
+          if (!portada) return res.status(400).json({ error: 'Portada inválida.' });
+        }
         // H.264 + AAC en MP4: lo que Instagram acepta
-        const mp4 = url.replace('/video/upload/', '/video/upload/vc_h264,ac_aac,f_mp4,q_auto/').replace(/\.(webm|mov|mkv)$/i, '.mp4');
-        const id = await crearContenedorReel(bazar, mp4, b.caption);
+        const mp4 = video.replace('/video/upload/', '/video/upload/vc_h264,ac_aac,f_mp4,q_auto:good/').replace(/\.(webm|mov|mkv)$/i, '.mp4');
+        const id = await crearContenedorReel(bazar, mp4, b.caption, { portada });
         return res.status(200).json({ ok: true, id });
       }
       case 'ig-reel-estado':

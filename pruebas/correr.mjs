@@ -33,7 +33,7 @@ if (process.argv.includes('--servidor')) {
   console.log((rev.stdout + rev.stderr).trim());
   console.log(rev.status === 0 ? 'PASS paquetes al día' : 'FAIL paquetes viejos: corre npm run construir');
   if (rev.status !== 0) fallas++;
-  for (const s of ['v58-publicar.mjs', 'v57-seo.mjs', 'v56-congruencia.mjs', 'v55-conexiones.mjs', 'v54-texto.mjs', 'v53-instagram.mjs', 'v52-borradores.mjs', 'v50-agrupar.mjs', 'v49-detalles.mjs', 'v47-ahorro.mjs', 'v46-saldo.mjs', 'v45-agente.mjs', 'v44-ia.mjs', 'v43-funciones.mjs', 'v42-funciones.mjs', 'v41-funciones.mjs', 'v40-seguridad.mjs', 'v39-una-tienda.mjs', 'v36-apartado.mjs', 'v33-servidor.mjs', 'v32-pagos.mjs', 'v32-seguridad.mjs', 'v32-middleware.mjs']) {
+  for (const s of ['v59-reels.mjs', 'v58-publicar.mjs', 'v57-seo.mjs', 'v56-congruencia.mjs', 'v55-conexiones.mjs', 'v54-texto.mjs', 'v53-instagram.mjs', 'v52-borradores.mjs', 'v50-agrupar.mjs', 'v49-detalles.mjs', 'v47-ahorro.mjs', 'v46-saldo.mjs', 'v45-agente.mjs', 'v44-ia.mjs', 'v43-funciones.mjs', 'v42-funciones.mjs', 'v41-funciones.mjs', 'v40-seguridad.mjs', 'v39-una-tienda.mjs', 'v36-apartado.mjs', 'v33-servidor.mjs', 'v32-pagos.mjs', 'v32-seguridad.mjs', 'v32-middleware.mjs']) {
     console.log(`\n════════ ${s} ════════`);
     const r = spawnSync(process.execPath, ['--no-warnings', path.join(AQUI, s)], { cwd: AQUI, encoding: 'utf8' });
     const lineas = (r.stdout || '').split('\n').filter(l => /^(PASS|FAIL|──|RESULTADO)/.test(l));
