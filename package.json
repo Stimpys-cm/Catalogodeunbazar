@@ -1,9 +1,18 @@
 {
   "name": "bazar-en-linea",
   "version": "1.0.0",
-  "description": "STMP MARKET - Reynosa, Tamaulipas",
+  "description": "Stiimpys - Reynosa, Tamaulipas",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "mongodb": "^6.21.0"
+  },
+  "private": true,
+  "scripts": {
+    "construir": "node herramientas/construir.mjs",
+    "revisar": "node herramientas/construir.mjs --revisar",
+    "pruebas": "node pruebas/correr.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
   }
 }

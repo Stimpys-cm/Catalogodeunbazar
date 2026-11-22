@@ -21,6 +21,10 @@ import { getDB } from './_db.js';
 let _indexReady = false;
 
 function clientIp(req) {
+  // En Vercel, x-real-ip / x-vercel-forwarded-for los pone la plataforma y el
+  // visitante no los puede inventar; x-forwarded-for queda como respaldo.
+  const real = req.headers['x-vercel-forwarded-for'] || req.headers['x-real-ip'];
+  if (real) return String(real).split(',')[0].trim();
   const fwd = req.headers['x-forwarded-for'];
   if (fwd) return String(fwd).split(',')[0].trim();
   return req.socket?.remoteAddress || 'desconocida';

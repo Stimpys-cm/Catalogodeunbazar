@@ -1,0 +1,106 @@
+// api/_lib/correo.js
+// ─────────────────────────────────────────────────────────────
+// Mandar correo sin meter dependencias: Resend es una petición HTTPS.
+//
+// Se configura con dos variables de entorno en Vercel:
+//   RESEND_API_KEY   la llave de resend.com (su plan gratis da 3,000/mes)
+//   CORREO_DESDE     p.ej. "Stiimpys <hola@stiimpys.store>"
+//
+// Si no están puestas, enviar() devuelve { ok:false, sinConfigurar:true }
+// y quien llama decide qué decirle a la persona. El sitio funciona igual;
+// lo único que no funciona es lo que necesite correo.
+// ─────────────────────────────────────────────────────────────
+
+export const correoConfigurado = () =>
+  !!(process.env.RESEND_API_KEY && process.env.CORREO_DESDE);
+
+// v33: cada envío (o falla) queda en el Centro de actividad, con el destinatario enmascarado.
+// contexto: { tipo, pedidoId, bazarId } para relacionarlo con su pedido.
+async function anotar(contexto, para, asunto, ok, error, ms) {
+  try {
+    const { registrarEvento, enmascararCorreo, marcarSistema } = await import('./actividad.js');
+    if (ok) await marcarSistema('ultimoCorreo', null, 0);
+    await registrarEvento({ categoria: 'correo', tipo: `correo.${contexto?.tipo || 'envio'}`, resultado: ok ? 'ok' : 'error', usuario: 'resend',
+      accion: ok ? `Correo enviado: ${String(asunto || '').slice(0, 90)}` : `No salió el correo: ${String(asunto || '').slice(0, 90)}`,
+      bazarId: contexto?.bazarId, pedidoId: contexto?.pedidoId, detalle: { para: enmascararCorreo(para) }, error, ms });
+  } catch (_) {}
+}
+
+export async function enviarCorreo({ para, asunto, html, texto, contexto = null }) {
+  if (!correoConfigurado()) return { ok: false, sinConfigurar: true };
+  const t0 = Date.now();
+  const r = await enviarCorreoReal({ para, asunto, html, texto });
+  await anotar(contexto, para, asunto, r.ok, r.ok ? null : { message: r.detalle || r.error, status: r.estado }, Date.now() - t0);
+  return { ok: r.ok, ...(r.ok ? {} : { error: r.error }) };
+}
+
+async function enviarCorreoReal({ para, asunto, html, texto }) {
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: process.env.CORREO_DESDE,
+        to: [para],
+        subject: asunto,
+        html,
+        text: texto,
+      }),
+    });
+    if (!r.ok) {
+      const detalle = await r.text().catch(() => '');
+      console.error('[correo]', r.status, detalle.slice(0, 300));
+      let msg = detalle.slice(0, 200);
+      try { msg = JSON.parse(detalle).message || msg; } catch (_) {}
+      return { ok: false, error: 'El correo no salió', detalle: `Resend ${r.status}: ${msg}`, estado: r.status };
+    }
+    return { ok: true };
+  } catch (err) {
+    console.error('[correo]', err);
+    return { ok: false, error: 'El correo no salió', detalle: err?.message || String(err) };
+  }
+}
+
+// Plantilla sobria, en el tono del sitio. Sin imágenes ni CSS raro:
+// los clientes de correo se comen la mitad de lo que les mandes.
+export function plantilla({ titulo, cuerpo, boton, enlace, pie }) {
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+  return `<!doctype html>
+<html lang="es"><body style="margin:0;padding:0;background:#f7f4ef;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f4ef;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+             style="max-width:520px;background:#ffffff;border-radius:16px;padding:32px;
+                    font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+        <tr><td style="font-size:13px;letter-spacing:3px;color:#8b8578;font-weight:700;padding-bottom:24px;">
+          <img src="${(process.env.SITE_URL || 'https://stiimpys.store').replace(/\/$/, '')}/img/logo-negro-chico.png" alt="STIIMPYS" width="110" style="display:block;width:110px;height:auto;border:0;">
+        </td></tr>
+        <tr><td style="font-size:22px;font-weight:700;color:#1a1f2e;padding-bottom:14px;line-height:1.3;">
+          ${esc(titulo)}
+        </td></tr>
+        <tr><td style="font-size:15px;color:#4a4640;line-height:1.6;padding-bottom:26px;">
+          ${cuerpo}
+        </td></tr>
+        ${boton && enlace ? `
+        <tr><td style="padding-bottom:26px;">
+          <a href="${esc(enlace)}"
+             style="display:inline-block;background:#2d6be4;color:#ffffff;text-decoration:none;
+                    padding:14px 28px;border-radius:10px;font-size:14px;font-weight:700;">
+            ${esc(boton)}
+          </a>
+        </td></tr>
+        <tr><td style="font-size:12px;color:#8b8578;line-height:1.6;padding-bottom:20px;word-break:break-all;">
+          Si el botón no funciona, copia esta dirección en tu navegador:<br>${esc(enlace)}
+        </td></tr>` : ''}
+        ${pie ? `<tr><td style="font-size:12px;color:#8b8578;line-height:1.6;
+                                border-top:1px solid #ece8e0;padding-top:18px;">${pie}</td></tr>` : ''}
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#111111">
+  <title>Caja · Stiimpys</title>
+  <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="preload" href="css/fuentes/dm-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/dist/caja.css?v=b59aed525a">
+</head>
+<body class="caja">
+
+<!-- v42 · Punto de venta para bazares en persona (Barrio Chido y otros).
+     Escanea la etiqueta (QR de la prenda o SKU con lector), cobra y la prenda
+     queda vendida en la tienda en línea al momento. Sin internet, guarda la
+     venta y la manda sola en cuanto vuelve la señal. -->
+<header class="cj-top">
+  <a href="admin.html" class="cj-logo" aria-label="Volver al panel"><img src="img/logo-blanco-chico.webp" alt="Stiimpys" width="66" height="46"></a>
+  <label class="cj-evento"><span>Evento</span><input id="cjEvento" maxlength="60" placeholder="Ej. Barrio Chido" autocomplete="off"></label>
+  <div class="cj-estado" id="cjEstado" role="status"></div>
+</header>
+
+<main class="cj">
+  <section class="cj-col">
+    <form class="cj-buscar" id="cjForm" autocomplete="off">
+      <input id="cjQ" inputmode="search" placeholder="Escanea o escribe SKU, número o nombre" aria-label="Buscar prenda" autofocus>
+      <button type="button" class="cj-cam" id="cjCam" aria-label="Escanear con la cámara">📷</button>
+    </form>
+    <div class="cj-video" id="cjVideo" hidden>
+      <video id="cjVid" playsinline muted></video>
+      <div class="cj-mira"></div>
+      <button type="button" class="cj-btn" id="cjCamCerrar">Cerrar cámara</button>
+    </div>
+    <div class="cj-res" id="cjRes"></div>
+
+    <h2 class="cj-h">Ticket <small id="cjN"></small></h2>
+    <ul class="cj-ticket" id="cjTicket"></ul>
+  </section>
+
+  <section class="cj-col cj-cobro">
+    <div class="cj-totales" id="cjTotales"></div>
+    <div class="cj-fila">
+      <label>Descuento</label>
+      <input id="cjDesc" type="number" min="0" inputmode="decimal" placeholder="0">
+      <select id="cjDescTipo" aria-label="Tipo de descuento"><option value="pesos">$</option><option value="pct">%</option></select>
+    </div>
+    <div class="cj-metodos" role="radiogroup" aria-label="Cómo paga">
+      <button type="button" data-metodo="efectivo" class="on">Efectivo</button>
+      <button type="button" data-metodo="tarjeta">Tarjeta</button>
+      <button type="button" data-metodo="transferencia">Transferencia</button>
+    </div>
+    <div class="cj-fila" id="cjRecibidoFila">
+      <label>Recibido</label>
+      <input id="cjRecibido" type="number" min="0" inputmode="decimal" placeholder="0">
+      <span class="cj-cambio" id="cjCambio"></span>
+    </div>
+    <details class="cj-cliente">
+      <summary>Cliente (opcional, para mandarle su ticket)</summary>
+      <input id="cjNombre" maxlength="60" placeholder="Nombre">
+      <input id="cjTel" maxlength="14" inputmode="tel" placeholder="WhatsApp (10 dígitos)">
+    </details>
+    <button type="button" class="cj-cobrar" id="cjCobrar" disabled>Cobrar</button>
+    <button type="button" class="cj-btn ghost" id="cjVaciar">Vaciar ticket</button>
+
+    <details class="cj-resumen" id="cjResumen">
+      <summary>Ventas de hoy en este evento</summary>
+      <div id="cjResumenCuerpo"><p class="cj-nota">Ábrelo para ver el resumen.</p></div>
+    </details>
+  </section>
+</main>
+
+<dialog class="cj-dlg" id="cjDlg"></dialog>
+
+<script src="js/dist/caja.js?v=13915c4247" defer></script>
+</body>
+</html>

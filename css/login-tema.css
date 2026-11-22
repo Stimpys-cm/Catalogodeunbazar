@@ -1,0 +1,38 @@
+/* v34 · Login: campos redondeados como pide login.css (otra hoja los dejaba
+   en esquina recta) y modo oscuro. Usa la misma preferencia que el panel
+   (js/tema.js lee "stmp-tema" del mismo sitio): si el panel está en oscuro
+   o en automático con el teléfono en oscuro, el acceso también. */
+html[data-tema="oscuro"] { color-scheme: dark; background: #0c0c0e; }
+html[data-tema="oscuro"] body.stmp-login {
+  background: linear-gradient(150deg, #0c0c0e 0%, #10131c 58%, #131a2c 100%);
+  background-attachment: fixed;
+  color: #f2f2f5;
+}
+html[data-tema="oscuro"] body.stmp-login::before {
+  background: radial-gradient(ellipse at 15% 20%, rgba(55,118,236,.16) 0%, transparent 55%),
+              radial-gradient(ellipse at 85% 80%, rgba(91,147,242,.12) 0%, transparent 55%);
+}
+html[data-tema="oscuro"] .stmp-login .card {
+  background: rgba(26,26,29,.84);
+  border-color: rgba(255,255,255,.08);
+  box-shadow: 0 30px 70px -20px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.03) inset;
+}
+html[data-tema="oscuro"] .stmp-login .brand-name { color: #f2f2f5; }
+html[data-tema="oscuro"] .stmp-login .brand-sub { color: #8fb4ff; background: rgba(55,118,236,.14); border-color: rgba(91,147,242,.28); }
+html[data-tema="oscuro"] .stmp-login .form-group label { color: #a8a8b0; }
+html[data-tema="oscuro"] .stmp-login .form-group input {
+  background: #121215; border-color: #2f2f34; color: #f2f2f5;
+}
+html[data-tema="oscuro"] .stmp-login .form-group input:focus { border-color: #3776ec; box-shadow: 0 0 0 4px rgba(55,118,236,.22); }
+html[data-tema="oscuro"] .stmp-login .form-group input::placeholder { color: #6b6b73; }
+html[data-tema="oscuro"] .stmp-login input:-webkit-autofill {
+  -webkit-text-fill-color: #f2f2f5; -webkit-box-shadow: 0 0 0 40px #121215 inset; caret-color: #f2f2f5;
+}
+html[data-tema="oscuro"] .stmp-login .error { background: rgba(255,107,98,.12); border-color: rgba(255,107,98,.3); color: #ff8a82; }
+html[data-tema="oscuro"] .stmp-login .pw-toggle { color: #85858e; }
+html[data-tema="oscuro"] .stmp-login .pw-toggle:hover { color: #8fb4ff; background: rgba(55,118,236,.14); }
+html[data-tema="oscuro"] .stmp-login .back-link { color: #85858e; }
+html[data-tema="oscuro"] .stmp-login .back-link:hover { color: #f2f2f5; }
+
+/* Campos: el diseño de login.css (12 px, borde 1.5) en los dos temas */
+body.stmp-login .form-group input { border-radius: 12px; border-width: 1.5px; }

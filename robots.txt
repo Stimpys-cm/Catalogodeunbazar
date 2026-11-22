@@ -1,4 +1,4 @@
-# STMP MARKET
+# Stiimpys
 User-agent: *
 Allow: /
 Disallow: /api/

@@ -3,29 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <title>Estudio de Posts | STMP MARKET</title>
+  <!-- v37 · La animación entre páginas es adorno: si el navegador la cancela, que no cuente como error -->
+  <script>addEventListener('pagereveal',function(e){var v=e.viewTransition;if(v){[v.ready,v.finished,v.updateCallbackDone].forEach(function(p){p&&p.catch(function(){})})}});addEventListener('pageswap',function(e){var v=e.viewTransition;if(v){[v.ready,v.finished,v.updateCallbackDone].forEach(function(p){p&&p.catch(function(){})})}});addEventListener('unhandledrejection',function(e){var r=e.reason;if(r&&/^(InvalidStateError|AbortError)$/.test(r.name||'')&&/Transition was|view ?transition/i.test(r.message||''))e.preventDefault()})</script>
+  <title>Estudio de Posts | Stiimpys</title>
   <meta name="description" content="Crea posts profesionales de Instagram con tus prendas, descuentos y avisos. Listos para descargar y subir.">
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#2d6be4">
 
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/global.css">
-  <link rel="stylesheet" href="css/estetica.css">
-  <link rel="stylesheet" href="css/estudio.css">
+  <!-- Letras propias (css/fuentes): se piden antes para que el texto no cambie de letra al cargar -->
+  <link rel="preload" href="css/fuentes/dm-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="css/fuentes/bebas-neue-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/dist/estudio.css?v=980847399a">
   <style>html,body{overflow-x:hidden;max-width:100%}</style>
-  <script src="js/db.js" defer></script>
-  <script src="js/estudio.js" defer></script>
+  <script src="js/dist/estudio.js?v=e2feae1721" defer></script>
 </head>
 <body data-seccion="">
 
 <header>
   <div class="header-row">
-    <a href="inicio.html" class="logo"><span class="logo-full">STMP MARKET</span><span class="logo-short">STMP</span><span>.</span></a>
+    <a href="inicio.html" class="logo">
+      <img class="logo-img" src="img/logo-negro-chico.webp" alt="" width="69" height="48" decoding="async" fetchpriority="high"><span class="logo-txt">STIIMPYS</span>
+    </a>
     <div class="header-actions">
       <a href="inicio.html" class="h-nav-cta">Inicio</a>
     </div>
@@ -111,7 +113,13 @@
       </div>
 
       <button class="es-descargar" id="esDescargar" type="button">Descargar imagen</button>
-      <div class="es-mini es-nota">Se descarga en calidad Instagram (1080px). Súbela como publicación normal.</div>
+
+      <div class="es-ig">
+        <label class="es-lbl" for="esIgTexto">Texto para Instagram <span>(opcional)</span></label>
+        <textarea id="esIgTexto" rows="3" maxlength="2200" placeholder="Descripción del post (en historias no se usa)"></textarea>
+        <button class="es-ig-btn" id="esPublicarIG" type="button">Publicar en Instagram</button>
+        <div class="es-mini es-nota" id="esIgNota">Se publica en la cuenta de tu bazar: como post o como historia, según el formato elegido.</div>
+      </div>
 
     </aside>
 

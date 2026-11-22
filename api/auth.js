@@ -12,14 +12,16 @@
 //
 // Devuelve { id, username, role, sessionToken } si entra.
 
-import { getDB, asegurarIndicesBase } from './_db.js';
-import { verifyPassword, hashPassword, looksHashed } from './_password.js';
-import { rateLimit, resetRateLimit } from './_rateLimit.js';
-import { cabecerasSesion, cabeceraCookieBorrada, HORAS_SESION } from './_firma.js';
-import { leerAjustes, cerrada, mensajeDe } from './_ajustes.js';
-import { esGlobal } from './_bazar.js';
+import { getDB, asegurarIndicesBase } from './_lib/db.js';
+import { verifyPassword, hashPassword, looksHashed } from './_lib/password.js';
+import { rateLimit, resetRateLimit } from './_lib/rateLimit.js';
+import { cabecerasSesion, cabeceraCookieBorrada, HORAS_SESION } from './_lib/firma.js';
+import { leerAjustes, cerrada, mensajeDe } from './_lib/ajustes.js';
+import { esGlobal } from './_lib/bazar.js';
 import crypto from 'crypto';
+import { registrarEvento, registrarFalla } from './_lib/actividad.js';
 
+import { conEscudo } from './_lib/escudo.js';
 const MASTER_KEY = process.env.MASTER_KEY;
 const SESSION_TIMEOUT_MS = 45000;
 
@@ -44,11 +46,24 @@ async function sembrarAdmin(col) {
   return doc;
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   // Cerrar sesión: borra las cookies del navegador
   if (req.method === 'DELETE') {
+    // Además de borrar las cookies, el token deja de valer en el servidor:
+    // si alguien lo hubiera copiado, ya no abre el panel después de "Salir".
+    try {
+      const auth = req.headers.authorization || '';
+      const m = (req.headers.cookie || '').match(/(?:^|;\s*)sesion=([^;]+)/);
+      const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : (m ? decodeURIComponent(m[1]) : '');
+      if (token) {
+        const db = await getDB();
+        const u = await db.collection('usuarios').findOne({ sessionToken: token }, { projection: { username: 1, role: 1, bazarId: 1 } });
+        await db.collection('usuarios').updateOne({ sessionToken: token }, { $unset: { sessionToken: '', tokenExpira: '' } });
+        if (u) await registrarEvento({ categoria: 'auth', tipo: 'auth.salir', usuario: u.username, rol: u.role, bazarId: u.bazarId, accion: 'Salió del panel' }, db);
+      }
+    } catch (e) { console.error('[auth salir]', e); }
     res.setHeader('Set-Cookie', [
       'sesion=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0',
       cabeceraCookieBorrada(),
@@ -74,7 +89,24 @@ export default async function handler(req, res) {
   }
 
   // Freno a la fuerza bruta: 8 intentos fallidos por IP cada 15 minutos.
-  if (!(await rateLimit(req, res, { key: 'login', max: 8, windowSec: 900 }))) return;
+  // v40: además, máximo 20 intentos por CUENTA cada 15 minutos aunque vengan de
+  // muchas conexiones distintas (ataque repartido para adivinar la contraseña).
+  const claveCuenta = 'login-cuenta:' + crypto.createHash('sha256').update(username.toLowerCase()).digest('hex').slice(0, 16);
+  if (!(await rateLimit({ headers: {}, socket: { remoteAddress: 'cuenta' } }, res, { key: claveCuenta, max: 20, windowSec: 900 }))) {
+    await registrarEvento({ categoria: 'auth', tipo: 'auth.limite', resultado: 'rechazado', usuario: 'desconocido',
+      accion: 'Demasiados intentos de entrada a una misma cuenta (bloqueo de 15 min)', unaVezCada: { clave: 'login-cuenta-429', ms: 300e3 } });
+    return;
+  }
+  if (!(await rateLimit(req, res, { key: 'login', max: 8, windowSec: 900 }))) {
+    await registrarEvento({ categoria: 'auth', tipo: 'auth.limite', resultado: 'rechazado', usuario: 'desconocido',
+      accion: 'Demasiados intentos de entrada desde una misma conexión (bloqueo de 15 min)', unaVezCada: { clave: 'login-429', ms: 300e3 } });
+    return;
+  }
+  // v33: los intentos quedan en el Centro de actividad. Si el usuario no existe se guarda
+  // solo el inicio de lo que escribieron (por si alguien tecleó su contraseña en ese campo).
+  const anotar = (resultado, accion, u, extra = {}) => registrarEvento({ categoria: 'auth', tipo: 'auth.entrar', resultado, accion,
+    usuario: u ? u.username : 'desconocido', rol: u?.role || null, bazarId: u?.bazarId ?? null,
+    detalle: u ? null : { intento: `${username.slice(0, 2)}•••` }, ...extra });
 
   try {
     const db   = await getDB();
@@ -94,11 +126,12 @@ export default async function handler(req, res) {
       // Mismo mensaje y mismo tiempo que una contraseña equivocada:
       // así no se puede averiguar qué usuarios existen.
       await verifyPassword(password, '$2a$10$invalidoinvalidoinvalidoinvalidoinvalidoinvalidoinvalido');
+      await anotar('rechazado', 'Intento de entrada con un usuario que no existe');
       return res.status(401).json({ error: 'Credenciales incorrectas' });
     }
 
     const passOk = await verifyPassword(password, user.password);
-    if (!passOk) return res.status(401).json({ error: 'Credenciales incorrectas' });
+    if (!passOk) { await anotar('rechazado', 'Intento de entrada con contraseña incorrecta', user); return res.status(401).json({ error: 'Credenciales incorrectas' }); }
 
     // Panel en mantenimiento: los bazares no entran, el admin general sí
     // (es quien lo abre de nuevo). Un admin de bazar tampoco pasa: manda
@@ -107,6 +140,7 @@ export default async function handler(req, res) {
     if (!esGlobal(user)) {
       const ajustes = await leerAjustes();
       if (cerrada(ajustes, 'panel')) {
+        await anotar('rechazado', 'Intento de entrada con el panel en mantenimiento', user);
         return res.status(503).json({
           error: mensajeDe(ajustes, 'panel'),
           mantenimiento: true,
@@ -130,8 +164,11 @@ export default async function handler(req, res) {
                   && new Date(activity.lastActive) >= cutoff;
 
     if (isAlive) {
-      const canOverride = user.role === 'admin' && override && override === MASTER_KEY;
+      const bOver = Buffer.from(override || ''), bMaster = Buffer.from(MASTER_KEY || '');
+      const canOverride = user.role === 'admin' && bOver.length > 0 && bMaster.length > 0
+        && bOver.length === bMaster.length && crypto.timingSafeEqual(bOver, bMaster);
       if (!canOverride) {
+        await anotar('rechazado', override ? 'Intento de forzar la sesión con clave maestra incorrecta' : 'Intento de entrada con una sesión abierta en otro dispositivo', user);
         if (override) {
           return res.status(403).json({
             error: user.role === 'admin' ? 'Clave maestra incorrecta.' : 'Esta cuenta no tiene permiso para forzar el acceso.',
@@ -156,11 +193,14 @@ export default async function handler(req, res) {
       { upsert: true }
     );
 
+    await anotar('ok', isAlive ? 'Entró al panel forzando la sesión con la clave maestra' : 'Entró al panel', user, { resultado: 'ok' });
+
     // Cookie httpOnly (defensa contra robo de token por XSS)
     res.setHeader('Set-Cookie', cabecerasSesion(sessionToken, user.username, user.role));
 
     // Quien acertó no arrastra el contador de intentos
     await resetRateLimit(req, 'login');
+    await resetRateLimit({ headers: {}, socket: { remoteAddress: 'cuenta' } }, claveCuenta);
 
     return res.status(200).json({
       id: user.id, username: user.username, role: user.role, sessionToken,
@@ -173,6 +213,10 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('[auth]', err);
+    await registrarFalla(err, { origen: 'auth' });
     return res.status(500).json({ error: 'No se pudo completar la operación.' });
   }
 }
+
+// v40 · Todas las funciones pasan primero por el escudo (ver api/_lib/escudo.js)
+export default conEscudo(handler);

@@ -1,0 +1,2090 @@
+STIIMPYS v57 — SEO (AUDITORÍA DE SEOPTIMER) Y BARRIDO DE ERRORES
+================================================================
+Incluye todo lo de la v56 y anteriores. Las notas de antes están en
+docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. No hay variables nuevas.
+
+1 · LO QUE SE ARREGLÓ DE LA AUDITORÍA (calificación B-)
+-------------------------------------------------------
+- Redirección de más: stiimpys.store mandaba a /inicio.html (un salto extra,
+  ~1 s en celular según Google). Ahora la portada se abre directo en
+  stiimpys.store y esa es su dirección oficial (canónica y sitemap).
+- Título: tenía 65 letras (máx. recomendado 60). Ahora:
+  "Stiimpys | Streetwear y ropa vintage en Reynosa, México" (55).
+- Descripción: tenía 198 letras (recomendado 120–160). Ahora 154, con las
+  palabras clave (streetwear, ropa vintage, segunda mano, Reynosa, envíos).
+- Catálogo: título "Catálogo de ropa vintage y streetwear | Stiimpys".
+- Términos y pago: descripciones corregidas (la de pago hablaba solo de
+  tarjeta o PayPal).
+- Encabezados: la portada y el pago saltaban de H1 a H3; el catálogo, Mi
+  cuenta y Términos no tenían H1. Ahora cada página tiene un H1 y no hay
+  saltos. Se ven exactamente igual (se comparó estilo por estilo).
+- Poco texto: 4 preguntas frecuentes nuevas en la portada (qué ropa venden,
+  formas de pago, dónde recoger en Reynosa, cómo saber si te queda). La de
+  formas de pago sale de lo marcado en Promociones y pagos.
+- Datos para buscadores: la ficha de la tienda (ClothingStore) dice "tienda
+  de streetwear y ropa vintage de segunda mano", moneda MXN y país.
+- llms.txt (para ChatGPT, Perplexity, Gemini…): stiimpys.store/llms.txt con
+  un resumen de la tienda que sale de los mismos datos (cuántas prendas hay,
+  formas de pago, puntos de entrega, categorías y marcas con prendas). Sin
+  teléfono ni WhatsApp.
+
+2 · BARRIDO DE ERRORES (todas las páginas y todas las secciones del panel)
+--------------------------------------------------------------------------
+Se revisaron solas, en compu y celular: errores de JavaScript, links
+internos rotos, imágenes sin texto alternativo, ids repetidos, encabezados y
+peticiones fallidas. Además de lo de arriba se encontró y arregló:
+- El link "Guías" del pie dejaba de salir si cambiaban los títulos del pie.
+- Una prueba vieja (v36) fallaba a veces por esperar "red quieta"; ahora
+  espera a que cargue la página.
+Ahora esto se revisa en cada versión (pruebas/v57-navegador.py).
+
+3 · LO QUE TE TOCA A TI (la auditoría lo pide y no se puede desde el código)
+---------------------------------------------------------------------------
+- Teléfono en la página: Ventas → Promociones y pagos → Datos del vendedor
+  (sale en el pie). Solo si quieres que se vea.
+- Google Search Console: dar de alta stiimpys.store, mandar el sitemap
+  (stiimpys.store/sitemap.xml) y pedir que vuelva a revisar la portada.
+- Enlaces hacia tu página (lo más bajo de la auditoría): link en la bio de
+  Instagram, perfil de Google Business, página de Facebook si tienes.
+- Estadísticas de visitas: se puede activar Vercel Web Analytics (gratis) o
+  Google Analytics; avísame si quieres alguno.
+- Después de subir la v57, corre otra vez la auditoría: la imagen sin texto
+  alternativo y el título largo eran de la versión que tienes publicada.
+
+PRUEBAS
+-------
+pruebas/v57-seo.mjs (22) y pruebas/v57-navegador.py (83). Servidor 883 de 883;
+en navegador de la v33 a la v57 sin fallas (pruebas/RESULTADOS-v57.md).
+
+
+STIIMPYS v56 — LO QUE NO CUADRABA ENTRE INSTAGRAM, TIENDA Y PANEL
+=================================================================
+Incluye todo lo de la v55 (formas de pago, Instagram conectado) y anteriores.
+Las notas de antes están en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. No hay variables nuevas.
+
+1 · TARJETA DEL INVENTARIO
+--------------------------
+- Ya no dice "STIIMPYS" en cada prenda (solo sale en prendas de otro bazar,
+  si quedara alguna de antes).
+- "Marcar como vendido" a todo lo ancho y abajo los botones (editar,
+  Instagram, Marketplace, apartar, borrar) en una sola fila pareja. Antes
+  "borrar" quedaba solo en otra fila.
+- Apartar y la etiqueta "Apartada" usan íconos de línea, como los demás.
+
+2 · LO QUE SE ENCONTRÓ Y SE ARREGLÓ
+-----------------------------------
+a) Apartados vencidos. Antes, si un apartado vencía a las 3 pm, la tienda
+   seguía diciendo "Apartada" hasta las 9 am del día siguiente (aunque el
+   cobro ya la dejaba comprar). Ahora la tienda la muestra disponible en
+   cuanto vence, se suelta sola en menos de un minuto y te llega el aviso
+   con el WhatsApp del cliente. El panel dice "Apartado vencido".
+b) Apartar en Instagram. Al apartar una prenda que tiene post, se comenta
+   "Apartada por ahora. Si se libera, la verás disponible en
+   stiimpys.store/p/…". Al liberarla o venderla, ese comentario se borra.
+c) Rebajas hechas a mano. Antes Instagram decía "Nuevo precio $320 (antes
+   $400)" pero la tienda no tachaba nada. Ahora, al bajar el precio, la
+   tienda tacha el anterior igual que Instagram. Si fue un error de captura,
+   al editar desmarca "Mostrarla como rebaja": ni la tienda ni Instagram
+   dicen "antes". Si vuelves a subirlo, se quita lo tachado.
+d) Publicaciones programadas desde "Crear". Antes podían publicar una prenda
+   ya vendida y con el precio de cuando la programaste. Ahora no se publica
+   si ya se vendió, y el texto sale con el precio de ese día (si lo editaste
+   a mano, se respeta tu texto y solo se cambia el precio).
+e) Formas de pago y cobro. Si quitas "Tarjeta" en Promociones y pagos, ya no
+   se cobra con Clip/PayPal; si quitas "Transferencia", ya no se ofrece SPEI.
+   Los textos "¿Prefieres efectivo o transferencia?" de la ficha, el carrito
+   y el pago dicen solo lo que tengas marcado. El campo de texto libre
+   ahora se llama "Nota de pagos (opcional)".
+f) Renombrar categoría o marca. Antes solo cambiaba en el catálogo y las
+   prendas se quedaban con el nombre viejo (filtros de la tienda, páginas
+   /categoria y /marca y hashtags de Instagram no coincidían). Ahora también
+   se cambia en todas sus prendas. Al borrar una, te dice cuántas prendas la
+   usan.
+g) WhatsApp e Instagram del pie de página. Solo el inicio usaba el número de
+   la tienda; las demás páginas tenían uno fijo. Ahora todas usan el de tus
+   datos.
+
+PRUEBAS
+-------
+pruebas/v56-congruencia.mjs (34) y pruebas/v56-navegador.py (23). Servidor 861
+de 861; en navegador se volvieron a correr de la v33 a la v56: sin fallas
+(pruebas/RESULTADOS-v56.md).
+
+
+STIIMPYS v55 — FORMAS DE PAGO Y TODO CONECTADO (INSTAGRAM, TIENDA Y PANEL)
+=========================================================================
+Incluye todo lo de la v54 (texto de Instagram sin emojis) y anteriores. Las
+notas de antes están en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. No hay variables nuevas.
+
+1 · "ACEPTAMOS TARJETA, EFECTIVO Y TRANSFERENCIA"
+-------------------------------------------------
+Una sola configuración: Ventas → Promociones y pagos → "Formas de pago que
+aceptas" (vienen las tres marcadas). Lo que marques ahí sale igual en:
+  - La tienda: inicio (debajo de los botones), la ficha de cada prenda, el
+    resumen del carrito y el pie de página de todas las páginas. Con íconos
+    de línea, sin emojis.
+  - Instagram: una línea en el texto de cada post nuevo, en los drops y en
+    los Reels ("Aceptamos tarjeta, efectivo y transferencia").
+  - El panel: Instagram → Ajustes muestra qué línea se publica.
+  - La respuesta a una oferta (si no escribiste otro texto de pagos).
+Si quitas una (por ejemplo, Transferencia), desaparece de todos lados.
+
+2 · INSTAGRAM AL DÍA CON LA TIENDA Y EL PANEL
+---------------------------------------------
+Instagram no deja cambiar el texto de un post ya publicado (solo prender o
+apagar comentarios), así que lo que cambia después se avisa con un
+comentario en el mismo post. Antes había huecos; ahora:
+
+  Lo que pasa                         | Tienda       | Instagram
+  ------------------------------------+--------------+------------------------------------------
+  Venta en línea                      | Vendida      | "VENDIDA" en su post y en el drop (antes no en el drop)
+  Venta en la Caja (bazar)            | Vendida      | "VENDIDA" en su post y en el drop (ANTES NADA)
+  Venta en el panel                   | Vendida      | Lo que marques al vender (igual que antes)
+  Revertir venta / anular ticket      | Disponible   | Se BORRA el "VENDIDA" (antes se quedaba)
+  Cambias el precio en el panel       | Precio nuevo | Comentario "Nuevo precio: $X MXN (antes $Y)"; si lo
+                                      |              | vuelves a cambiar, se borra el anterior (ANTES NADA)
+  Rebaja automática                   | Precio nuevo | El mismo comentario (reemplaza el anterior)
+  Cambias nombre, talla, estado…      | Al momento   | El panel te avisa y te da "Copiar texto nuevo"
+                                      |              | para pegarlo con Editar en la app
+  Borras una prenda (papelera)        | Desaparece   | "Esta prenda ya no está disponible" (ANTES NADA)
+  La restauras                        | Regresa      | Se borra ese comentario
+
+- Si Instagram falla, la venta o el cambio se hacen igual y el error queda
+  en Sistema → Actividad.
+- Se puede apagar: Instagram → Ajustes → "Avisar cambios en el post".
+- La ficha de cada prenda con post trae "Ver esta prenda en Instagram".
+
+3 · LA TIENDA SE ACTUALIZA EN SEGUNDOS
+--------------------------------------
+Antes, una persona con la tienda abierta podía tardar hasta 5 minutos en ver
+un cambio (vendida, precio nuevo…). Ahora la tienda abierta revisa cada 8–30
+segundos, y el servidor guarda la copia 5 s (antes 15 s + hasta 2 min de
+copia vieja). Si nada cambió, la respuesta va vacía (casi no gasta). El
+panel ya se actualizaba cada 3–15 s.
+
+PRUEBAS
+-------
+pruebas/v55-conexiones.mjs (37) y pruebas/v55-navegador.py (35). Servidor 827
+de 827; en navegador v33–v43, v49, v53 y v54 sin fallas
+(pruebas/RESULTADOS-v55.md).
+
+
+STIIMPYS v54 — TEXTO DE INSTAGRAM PROFESIONAL, SIN EMOJIS
+=========================================================
+Incluye todo lo de la v53 (texto corto, sin WhatsApp, 5 hashtags, link corto)
+y anteriores. Las notas de antes están en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. No hay variables nuevas.
+
+1 · ESTILO "LIMPIO" (viene así de inicio)
+-----------------------------------------
+Los datos van con etiqueta, uno por línea, sin emojis:
+
+    Sudadera Lionel Richie All Night Long con fechas de gira
+
+    Precio: $150 MXN
+    Talla: L Hombre
+    Estado: 9/10
+    Medidas: Largo 70 cm · Ancho 58 cm
+
+    Sudadera azul grisáceo de cuello redondo con el estampado de Lionel
+    Richie y estrellitas en el frente.
+    A considerar: mancha pequeña en el puño.
+
+    Envíos a todo México · Entrega en persona en Reynosa
+    Disponible en stiimpys.store/p/160 (link en bio)
+
+    #lionelrichie #sudaderavintage #ropareynosa #allnightlong #vintagemexico
+
+- Si tu firma guardada o una descripción traen emojis, se quitan solos.
+- Rebaja: "Precio: $150 MXN (antes $220)".
+- También sin emojis: el comentario de VENDIDA ("VENDIDA / Gracias por tu
+  compra. Hay más prendas en stiimpys.store"), el aviso de rebaja en el post
+  ("Nuevo precio: $X MXN (antes $Y). Disponible en stiimpys.store/p/160"),
+  el texto de los drops y el de los Reels.
+- Drops y Reels ahora también llevan máximo 5 hashtags.
+
+2 · SI QUIERES VOLVER A LOS EMOJIS
+----------------------------------
+Instagram → Ajustes → "Estilo del texto" → "Con emojis". Ahí mismo ves cómo
+queda el texto antes de publicar.
+
+3 · POSTS QUE YA ESTÁN PUBLICADOS
+---------------------------------
+Igual que en la v53: Panel → Instagram → abre el post → "Copiar texto corto"
+(ya sale en estilo limpio) → en la app: ⋯ → Editar → pega y ✓.
+
+PRUEBAS
+-------
+pruebas/v54-texto.mjs (22) y pruebas/v54-navegador.py (20). Servidor 791 de
+791; en navegador v34, v40-xss, v43, v49 y v53 sin fallas
+(pruebas/RESULTADOS-v54.md).
+
+
+STIIMPYS v53 — TEXTO DE INSTAGRAM CORTO, SIN WHATSAPP Y CON 5 HASHTAGS
+======================================================================
+Incluye todo lo de la v52.1 (Borradores, agregar más fotos y la tarjeta de
+"Revisar" arreglada) y anteriores. Las notas de antes están en
+docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. No hay variables nuevas.
+
+1 · TEXTO CORTO EN INSTAGRAM (viene prendido)
+---------------------------------------------
+Cada post nuevo lleva solo lo importante:
+    Nombre de la prenda
+    💸 Precio (y "antes $X" si la rebajaste)
+    🏷️ Marca · 📏 Talla · ✨ Estado
+    📐 Medidas (si las tiene)
+    La primera frase de la descripción (o las dos primeras, si son cortas)
+    ⚠️ A considerar: las fallas (evitan reclamos)
+    Tu firma (envíos)
+    🛒 Apártala en stiimpys.store/p/160 (link en bio)
+    5 hashtags
+La lista de detalles (• …) ya no va en Instagram: se queda en la ficha de la
+tienda. Si algún día quieres el texto completo: Instagram → Ajustes → apaga
+"Texto corto".
+
+2 · TU WHATSAPP YA NO SALE EN LOS POSTS
+---------------------------------------
+- El número de la tienda nunca se pone en el texto de Instagram.
+- Si una descripción trae un teléfono o dice "mándame WhatsApp…", esa frase
+  no se publica (en la tienda tampoco se agrega nada nuevo).
+
+3 · MÁXIMO 5 HASHTAGS
+---------------------
+Instagram solo deja 5 por publicación desde diciembre de 2025. Se eligen los
+que más sirven: el más específico de la prenda, la marca, el tipo de prenda
+(p. ej. #sudaderavintage), tu ciudad (#ropareynosa) y uno general
+(#vintagemexico). En Ajustes puedes bajarlo a 4, 3… o ninguno. Tus "hashtags
+de la tienda" se usan solo si sobra lugar.
+
+4 · LINK CORTO
+--------------
+stiimpys.store/p/160 lleva directo a la prenda 160 (antes era
+stiimpys.store/prenda.html?id=160).
+
+5 · TUS POSTS QUE YA ESTÁN PUBLICADOS
+-------------------------------------
+Instagram no deja cambiar el texto de un post desde fuera sin volver a
+publicarlo (y se pierden likes y comentarios). Para dejarlos cortos sin perder
+nada: Panel → Instagram → abre el post → "Copiar texto corto" → en la app de
+Instagram: ⋯ → Editar → borra el texto viejo, pega y ✓.
+
+PRUEBAS
+-------
+pruebas/v53-instagram.mjs (30) y pruebas/v53-navegador.py (30). Servidor 769
+de 769; en navegador se volvieron a correr las que tocan Instagram y el panel
+(v34, v40-xss, v49): sin fallas (pruebas/RESULTADOS-v53.md).
+
+
+STIIMPYS v52.1 — BORRADORES Y AGREGAR MÁS FOTOS
+================================================
+
+v52.1: arreglo de la tarjeta en "Revisar". Los botones "＋ Fotos" y "Volver a
+analizar" se metían en la cuadrícula y mandaban el formulario abajo, apretado
+en una columna angosta. Ahora van debajo de las fotos y el formulario queda a
+la derecha como antes.
+Incluye todo lo de la v51, la v50 ("Separar con IA") y anteriores. Las notas
+de antes están en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. No hay variables nuevas. La colección
+nueva "borradores" se crea sola en MongoDB.
+
+1 · BORRADORES (nuevo en el menú, debajo de "Registrar")
+--------------------------------------------------------
+- En cuanto subes las fotos de una prenda en el Registro rápido, queda como
+  borrador en el servidor: fotos, lo que llenó la IA y lo que escribiste. Se
+  actualiza solo cada vez que cambias algo.
+- Si cierras la ventana, se va el internet o cambias de computadora/celular,
+  nada se pierde: todo está en Panel → Borradores.
+- En Borradores ves cada prenda con su foto, nombre, talla, marca, precio, de
+  qué lote es y si está "Lista para registrar", "Revisar datos" o "Falta
+  analizar con IA". El globito del menú dice cuántas hay.
+- Desde ahí:
+    · "Registrar" (una) o selecciona varias y "Registrar N": se abren en el
+      paso "Revisar" con todo lo que ya tenían (no se vuelve a pagar la IA; si
+      a alguna le faltaba, se analiza). Al guardarlas, salen de Borradores.
+    · "Borrar" (pide confirmar).
+    · "Nuevo registro rápido".
+    · Filtrar por lote si tienes varios.
+- Cada quien ve los borradores de su bazar.
+
+2 · AGREGAR MÁS FOTOS DESPUÉS
+-----------------------------
+- En "Agrupar": botón "＋ Agregar más fotos" (ZIP, fotos o HEIC). Se agregan
+  como prendas nuevas al final, sin tocar lo que ya acomodaste (si son varias
+  y vienen juntas, la IA las separa).
+- En "Revisar": botón "＋ Agregar más prendas": se suben, se separan y se
+  analizan como las demás.
+- En cada prenda de "Revisar": "＋ Fotos" para agregarle fotos (p. ej. la
+  etiqueta que faltó). No se vuelve a pagar la IA; si quieres que las vea,
+  toca "Volver a analizar".
+- Las fotos que ya estaban no se repiten.
+
+PRUEBAS
+-------
+pruebas/v52-borradores.mjs (21) y pruebas/v52-navegador.py (34). Total 1491 de
+1491 (pruebas/RESULTADOS-v52.md).
+
+
+STIIMPYS v51 — FOTOS HEIC QUE SE VEN, ELEGIR UNA CARPETA Y AVISO CON .RAR
+==========================================================================
+Incluye todo lo de la v50 (la IA separa las fotos en prendas) y anteriores.
+Las notas de la v50 y de antes están en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. No hay variables nuevas.
+OJO: si tu página tiene la v49, esta v51 trae también la v50 ("Separar con IA").
+
+QUÉ HAY DE NUEVO (Registro rápido con IA)
+-----------------------------------------
+- Fotos HEIC de iPhone: Brave/Chrome en Windows no las pueden mostrar, por eso
+  decían "HEIC". Ahora cada una aparece en cuanto termina de subir (se ve
+  desde Cloudinary convertida a JPG). En el registro con cámara, igual.
+- "Elegir una carpeta": nuevo botón en el paso 1. Escoges la carpeta del drop
+  (por ejemplo DROP_19-11-FINAL) y entran todas sus fotos. También puedes
+  arrastrar la carpeta completa al recuadro; si tiene subcarpetas, cada
+  subcarpeta es una prenda.
+- Archivos .rar: el navegador no puede abrirlos. Ahora aparecen en la ventana
+  para elegir y, si eliges uno, te dice qué hacer: "Elegir una carpeta" o
+  comprimir como ZIP (clic derecho → Enviar a → Carpeta comprimida).
+- Se ignora la basura de Mac (._IMG..., __MACOSX) y archivos que no son fotos.
+
+PRUEBAS
+-------
+pruebas/v51-navegador.py (10). Servidor 717 de 717; navegador del importador
+y panel sin fallas (pruebas/RESULTADOS-v51.md).
+
+
+STIIMPYS v50 — LA IA SEPARA LAS FOTOS EN PRENDAS (YA NO HACE FALTA UNA CARPETA POR PRENDA)
+==========================================================================================
+Incluye todo lo de la v49 (y anteriores). Las notas de la v49 y de antes están
+en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. Para regresar: Instant Rollback.
+No hay variables nuevas ni nada que prender (usa la misma ANTHROPIC_API_KEY).
+
+QUÉ HAY DE NUEVO (Registro rápido con IA)
+-----------------------------------------
+- Sube el ZIP con TODAS las fotos juntas, tomadas en orden (todas las de una
+  prenda seguidas). Ya no hace falta una carpeta por prenda.
+- En "Agrupar", la IA ve cada foto y decide dónde empieza cada prenda:
+    · Junta frente, espalda, etiqueta y fotos de cerca de la misma prenda.
+    · Separa prendas parecidas seguidas (dos playeras negras con distinto
+      estampado).
+    · Si tomaste la etiqueta después, la regresa con su prenda.
+    · Una foto que no es ropa (captura, foto en negro) queda aparte, marcada
+      "no parece ropa", para que la quites.
+    · Cada fila trae un nombre corto ("Playera Jordan negra") para revisar
+      rápido; las filas donde no estaba segura dicen "revisar".
+- Primero espera a que suban las fotos (se ve el avance). Puedes cancelar y
+  agrupar por hora en cualquier momento.
+- Después todo sigue igual: corriges con ✂, Unir, arrastrar y ▲ ▼, y le das
+  "Subir y analizar".
+- Fotos en tramos de 40 que se enciman 6: una prenda nunca se corta entre dos
+  tramos. Probado con un ZIP como el DROP 19-11 (126 fotos, 31 prendas): por
+  hora salían 13 grupos mezclados; con IA salen las 31 exactas.
+- Cuándo se usa: solo si las fotos vienen en una sola carpeta (o sueltas). Con
+  una carpeta por prenda no se usa ni se gasta. Se apaga en el paso 1 ("Separar
+  las prendas con IA") y también se puede elegir en "Agrupar de otra forma… →
+  Separar con IA".
+- Costo: unos 5 centavos de dólar por cada 100 fotos (modelo preciso; en
+  "Ahorro", con el rápido, casi nada). Las mismas fotos otra vez: gratis.
+- Si no hay saldo o la IA no contesta, avisa y agrupa por hora para que sigas.
+
+PRUEBAS
+-------
+pruebas/v50-agrupar.mjs (30) y pruebas/v50-navegador.py (37). Total 1426 de
+1426 (pruebas/RESULTADOS-v50.md).
+
+
+STIIMPYS v49 — ORDEN DE FOTOS EN TODAS PARTES, PORTADA REPETIDA EN INSTAGRAM
+Y LA IA DETECTA DETALLES
+============================================================================
+Incluye todo lo de la v48 (y anteriores). Las notas de la v48 y de antes están
+en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. Para regresar: Instant Rollback.
+No hay variables nuevas ni nada que prender.
+
+1 · CAMBIAR EL ORDEN DE LAS FOTOS (la primera es la portada)
+------------------------------------------------------------
+Ahora se puede en todos lados, igual que en "Agrupar":
+- Registro rápido → "Revisar": arrastra una foto a otro lugar. Un toque la hace
+  portada (como antes). Cada foto lleva su número.
+- Registrar prenda y Editar prenda: arrastra las fotos; ★ la hace portada y ✕
+  la quita.
+- Registro con cámara (una prenda a la vez): también se acomodan.
+- En el celular: mantén el dedo sobre la foto un momento y luego muévela (si
+  solo deslizas, la pantalla se desplaza normal). Con teclado: ← → la mueven.
+- Si acomodaste la portada tú, la IA ya no la cambia. En las prendas que no
+  tocaste, la IA sigue eligiendo la mejor foto de frente.
+- El orden que dejes es el que se guarda en la tienda y en Instagram.
+- Arreglo: en Registrar, si quitabas una foto mientras otra seguía subiendo,
+  la que subía podía guardarse como texto enorme en vez de su link. Ya no.
+
+2 · INSTAGRAM: LA FOTO DE LA PORTADA SALE TAMBIÉN SOLA
+-----------------------------------------------------
+Con la plantilla de marca, la 1ª foto del carrusel es la portada con nombre,
+talla y precio. Ahora la misma foto vuelve a salir limpia, sin textos, como 2ª
+foto, y luego las demás (máximo 10, lo que permite Instagram). Una prenda de una
+sola foto sale como carrusel de 2.
+- Viene prendido. Se apaga en Instagram → Ajustes → "Repetir la foto de la
+  portada sin textos".
+- Aplica al publicar al guardar, desde Crear (la vista previa cuenta la foto
+  extra), en programados y al "Aplicar plantilla" a posts viejos.
+
+3 · LA IA DETECTA DETALLES (Y FALLAS CON SU FOTO)
+-------------------------------------------------
+- La IA revisa de cerca cada foto y anota de 3 a 8 detalles que se ven:
+  bordado o estampado y dónde va, corte (oversize, cropped…), capucha, cierres,
+  bolsas, puños, colores, etiqueta original, single stitch… La tela o "Hecho
+  en" solo si la etiqueta lo dice. Nada inventado.
+- Las fallas (manchas, hoyos, bolitas, estampado agrietado, costuras) ahora
+  dicen en qué foto están: en la tarjeta toca "foto 3" y se resalta esa foto
+  (aunque cambies el orden, sigue apuntando a la correcta).
+- Todo va en la descripción, que se ve en la tienda y en Instagram:
+      Sudadera gruesa y cómoda.
+
+      • Logo bordado en el pecho
+      • Bolsa canguro
+
+      A considerar: mancha chica en la manga.
+- También en "Llenar datos con IA" del formulario.
+- Si el agente investiga una pieza rara y reescribe la descripción, conserva
+  los detalles y las fallas.
+- El cuadro de descripción del registro rápido ya no corta el texto a 600
+  caracteres.
+- Costo: casi igual (unas líneas más de respuesta; sigue en menos de 1 centavo
+  de dólar por prenda en modo Automático).
+
+PRUEBAS
+-------
+pruebas/v49-detalles.mjs (38) y pruebas/v49-navegador.py (46). Total 1359 de
+1359 (pruebas/RESULTADOS-v49.md).
+
+
+STIIMPYS v48 — ACOMODAR EL ORDEN DE LAS PRENDAS Y SUS FOTOS
+==========================================================
+Incluye todo lo de la v47 (y anteriores). Las notas de la v47 y de antes están
+en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. Para regresar: Instant Rollback.
+No hay variables nuevas ni nada que prender. Solo cambia el panel (no la API).
+
+QUÉ HAY DE NUEVO (Registro rápido con IA → paso 2 "Agrupar")
+-----------------------------------------------------------
+- Cambiar el orden de las prendas:
+  · Arrastra el número de la prenda (con el mouse o con el dedo) a donde la
+    quieras. Una línea negra marca dónde va a quedar.
+  · O usa ▲ ▼ para subirla o bajarla un lugar.
+  · Si la arrastras cerca de la orilla, la lista se desplaza sola (para llevar
+    la prenda 30 hasta arriba sin soltarla).
+  · La prenda que moviste se ilumina un momento para que veas dónde quedó.
+- Cambiar el orden de las fotos:
+  · La primera foto de cada prenda dice "Portada". Arrastra cualquier foto al
+    inicio para que sea la portada.
+  · Puedes pasar una foto a otra prenda arrastrándola a esa fila (si la sueltas
+    en el espacio vacío queda al final). Si una prenda se queda sin fotos, se
+    quita sola.
+  · En el celular: mantén el dedo sobre la foto un momento y luego muévela.
+    Si solo deslizas, la lista se desplaza como siempre.
+- Escape cancela un arrastre. ✂, ✕, Unir y Quitar siguen igual.
+- Al mover, unir o separar, la lista ya no regresa hasta arriba.
+- El orden que dejes es el orden en "Revisar", en que se guardan y en que se
+  publican en Instagram.
+- Una vez que empieza el análisis ya no se puede mover nada (para no revolver
+  lo que la IA está trabajando).
+
+PRUEBAS
+-------
+pruebas/v48-navegador.py (35): mouse, ▲ ▼, dedo, Escape, soltar fuera, foto a
+otra prenda, prenda vacía, orden en Revisar. Total 1275 de 1275
+(pruebas/RESULTADOS-v48.md).
+
+
+STIIMPYS v47 — LA IA GASTA MENOS, NO REPITE Y NO INVENTA
+=======================================================
+Incluye todo lo de la v46 (y anteriores). Las notas de la v46 y de antes están
+en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. Para regresar: Instant Rollback.
+No hay variables nuevas ni nada que prender.
+
+1 · LA ETIQUETA PUEDE IR EN CUALQUIER FOTO
+-----------------------------------------
+La IA ahora revisa hasta 8 fotos por prenda (antes solo las primeras 4), así
+que la etiqueta ya no tiene que ir entre las primeras. Para que no cueste más,
+con 5 a 8 fotos cada una va un poco más chica (512 px en vez de 640): el costo
+total queda casi igual. El agente investigador también ve las 8.
+
+2 · NO GASTAR A LO TONTO
+------------------------
+- Si una pieza parece rara y el agente la va a investigar, el análisis rápido
+  ya no paga además el modelo preciso (antes se pagaban los dos).
+- Lo que ya analizó "Máxima precisión" se reutiliza gratis en "Automático".
+- El agente busca en internet máximo 3 veces si la pieza no parece muy rara (5
+  si sí), no repite búsquedas parecidas y para cuando ya tiene 3 ventas
+  parecidas.
+- La memoria del agente depende solo de las fotos: si cambias el nombre o la
+  talla, no se vuelve a pagar la investigación (para eso está "Volver a
+  investigar").
+
+3 · NO HACER COSAS REPETIDAS
+---------------------------
+- Doble clic, dos pestañas o dos celulares pidiendo lo mismo al mismo tiempo:
+  se paga una sola vez y el otro espera el resultado.
+- Una prenda que ya registraste (mismo ZIP otra vez) ya no se manda a la IA.
+- Si quitas una prenda ("Guardar" sin marcar) mientras espera al agente, ya no
+  se investiga.
+- No se investigan fotos que la IA dice que no son ropa.
+
+4 · NO INVENTAR
+--------------
+- La IA tiene instrucciones claras: solo lo que se ve en las fotos. Modelo,
+  gira, año o colab solo si están escritos o impresos en la prenda.
+- Si no está segura de la marca o de la talla, las deja VACÍAS (y la marca
+  dudosa tampoco va en el nombre). La tarjeta dice "No se ve con seguridad la
+  marca: la dejé vacía para no inventarla. Revísala en la etiqueta."
+- Agente: una venta "comparable" cuyo link no salió de verdad en la búsqueda ya
+  no se muestra (antes salía con "?"). Si no pudo buscar en internet, no
+  presenta ventas de memoria.
+- Rareza con pruebas: "rara" necesita al menos una señal que se vea, "muy rara"
+  y "grial" al menos dos. Si no, se baja sola.
+- Época con pruebas: si no hay pistas que se vean (etiqueta, costura, ©), no se
+  pone época.
+
+ARCHIVOS
+--------
+api/_lib/ia.js · api/_lib/agente.js · js/panel/importar-zip.js ·
+pruebas/v47-ahorro.mjs (25) · ajustes en v44-navegador.py, v45-agente.mjs y
+v45-navegador.py
+
+
+STIIMPYS v46 — CONTADOR DEL SALDO DE LA IA
+==========================================
+Incluye todo lo de la v45 (y anteriores). Las notas de la v45 y de antes están
+en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. Para regresar: Instant Rollback.
+No hay variables obligatorias nuevas.
+
+CÓMO FUNCIONA
+-------------
+Anthropic no tiene una forma de que la página lea tu saldo directamente. Por
+eso:
+1. Una sola vez, en Registro rápido con IA, escribes el saldo que ves en
+   Anthropic (platform.claude.com → Billing). Hay un link directo.
+2. Desde ahí, cada vez que la IA trabaja se descuenta lo que costó de verdad,
+   calculado con lo que la propia Anthropic dice que se usó (tokens y
+   búsquedas). Cuenta todo: análisis rápido, agente investigador, textos de
+   Instagram y lectura de comprobantes SPEI. Lo que sale de memoria es gratis y
+   no descuenta nada.
+3. Ves cuánto te queda en dólares y en pesos (con el dólar del día), una barra,
+   para cuántas investigaciones o prendas alcanza (con lo que de verdad te ha
+   costado en promedio en los últimos 30 días) y cuánto llevas gastado desde que
+   lo pusiste.
+4. Cuando queda menos del aviso (1 dólar de inicio; lo cambias) se pone en
+   naranja y te llega UN aviso por Telegram o correo.
+5. Si Anthropic dice "sin saldo", se marca agotado, se pausa el registro y te
+   avisa. Cuando recargues, toca "Actualizar" y escribe el saldo nuevo.
+También se ve el saldo abajo mientras revisas las prendas y en el formulario
+"Registrar prenda". Solo los administradores lo ven y lo cambian.
+
+¿QUÉ TAN EXACTO ES?
+-------------------
+- Sin hacer nada más: cuenta todo lo que gasta esta página con el costo real de
+  cada uso. Solo se desfasa si usas tu misma cuenta de Anthropic para otras
+  cosas (otra app, pruebas en la Consola): eso no lo ve. Si pasa, "Actualizar".
+- Exacto (opcional): si tu cuenta de Anthropic es de organización, crea una
+  llave de administrador en la Consola (Settings → Admin keys; empieza con
+  sk-ant-admin) y ponla en Vercel como ANTHROPIC_ADMIN_KEY. Así el gasto sale
+  del reporte oficial de costos de Anthropic e incluye todo lo de la cuenta.
+  Ese reporte tarda unos 5 minutos en reflejar el gasto; mientras, se usa el
+  conteo propio, así que nunca muestra de menos. Las cuentas individuales no
+  tienen llave de administrador hasta que crean una organización en la Consola.
+
+SEGURIDAD
+---------
+- Solo un administrador ve y cambia el saldo; un vendedor no lo ve.
+- Ninguna llave (ni la de la IA ni la de administrador) sale al panel.
+- Cambiar el saldo queda en el Centro de actividad.
+
+ARCHIVOS
+--------
+api/_lib/saldo.js (nuevo) · api/_lib/ia.js (descuenta cada uso, ia-estado con
+saldo y promedios, op ia-saldo) · api/_lib/agente.js y api/_lib/comprobante.js
+(también cuentan) · js/panel/importar-zip.js · css/panel/importar-zip.css ·
+pruebas/v46-saldo.mjs (30) · pruebas/v46-navegador.py (13)
+
+STIIMPYS v45 — EL AGENTE QUE INVESTIGA CADA PIEZA (TIPO TASADOR)
+===============================================================
+Incluye todo lo de la v44 (y anteriores). Las notas de la v44 y de antes están
+en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. Para regresar: Instant Rollback.
+No hay variables nuevas en Vercel. Usa tu misma ANTHROPIC_API_KEY.
+La búsqueda en internet de la IA tiene que estar activada en tu cuenta de
+Anthropic: entra a la Consola (platform.claude.com) y, en la configuración de tu
+organización, activa "Web search". Cuesta 1 centavo de dólar por búsqueda. Si
+no está activada, el agente investiga igual sin buscar y la tarjeta lo dice.
+
+QUÉ HACE EL AGENTE
+------------------
+Como Bidstitch: por cada pieza te da un informe con
+- Qué es: marca, modelo, colab o gira, país y material.
+- De qué época es y CÓMO lo supo (etiqueta, single stitch, © del estampado…).
+- Qué tan rara es, de 1 a 5 estrellas (Común, Buscada, Rara, Muy rara, Grial),
+  con las señales que vio.
+- Si se ve auténtica o si hay que revisarla (posible réplica o reimpresión).
+- Comparables reales: ventas en eBay, Grailed, Depop, Vinted y Mercado Libre
+  México, con su link. Solo cuentan los links que de verdad salieron en la
+  búsqueda (✓); si la IA inventa uno, sale con "?" y no se usa para el precio.
+- Tres precios en pesos: RÁPIDO (se vende en días), JUSTO (recomendado) y
+  MÁXIMO (para esperar al comprador indicado), y por qué.
+- Su nivel de confianza.
+
+CÓMO PONE EL PRECIO (NO REGALAR, PERO PRECIO DE MÉXICO)
+------------------------------------------------------
+El precio lo calcula el servidor, no la IA a ojo:
+1. Mediana de lo que se VENDIÓ en EE.UU. (en dólares) × dólar del día.
+2. Para México se toma un porcentaje según la rareza: común 40 %, buscada 50 %,
+   rara 60 %, muy rara 70 %, grial 80 %; y se ajusta por el estado (9/10, 7/10…).
+3. Se mezcla con lo que propone la IA y con lo que tú sueles cobrar por esa
+   marca (si ya tienes 2 o más de esa marca).
+4. Una pieza rara nunca baja del 55 % de lo que se paga en EE.UU.
+Si le pones un precio más bajo que el "rápido", la tarjeta te avisa en rojo:
+"La estás dando barata". Con un toque en Rápido / Justo / Máximo se pone ese
+precio.
+
+CUÁNDO INVESTIGA
+----------------
+- En el Registro rápido con IA (ZIP o sesión de fotos), el análisis rápido de
+  siempre ahora también calcula la rareza. Las que salen Rara o más (3+) las
+  investiga el agente solo, una por una, sin frenar a las demás. Se apaga en
+  el paso "Agrupar": "Investigar a fondo las piezas raras".
+- Cualquier tarjeta tiene "Investigar a fondo", y en "Aplicar a todas" está
+  "Investigar todas a fondo".
+- En el formulario "Registrar prenda", junto a "Llenar datos con IA", hay
+  "Investigar a fondo".
+- Lo que el agente encuentra reemplaza lo de la IA rápida (nombre, precio,
+  descripción…), pero NUNCA lo que tú ya escribiste a mano.
+- No deja guardar una prenda mientras el agente la sigue investigando.
+- La misma prenda otra vez sale de memoria (gratis) durante 7 días; "Volver a
+  investigar" pregunta de nuevo.
+- Costo aproximado: 5 a 15 centavos de dólar (unos $1 a $3 pesos) por pieza
+  investigada: modelo preciso + hasta 5 búsquedas a 1 centavo cada una + el
+  texto de los resultados que lee. Tarda de 20 a 40 segundos. El análisis
+  rápido de siempre cuesta menos de 1 centavo de dólar por prenda.
+
+MARCAS Y CATEGORÍAS NUEVAS
+--------------------------
+Si la IA encuentra una marca que no tienes (Stüssy, BAPE, Reebok…) o un tipo de
+prenda que no está en tus categorías (Jerseys…), la tarjeta lo dice ("Marca
+nueva: Stüssy — se agrega a tu catálogo al guardar") y al guardar se crea sola.
+En el formulario se crea al llenar. No se duplican: "stussy", "Stussy" y
+"Stüssy" son la misma. No crea categorías vagas ("Ropa", "Otros"). Si la IA
+dice un tipo concreto que no tienes (ej. "Jersey"), propone la categoría nueva
+en vez de meterla a la fuerza en otra parecida.
+Se apaga en el paso "Agrupar": "Crear marcas y categorías nuevas".
+
+SEGURIDAD
+---------
+- Crear marcas/categorías: solo con sesión del panel; un vendedor necesita el
+  permiso "gestionar catálogo"; nombres limpios (sin código); con candado para
+  que dos prendas a la vez no creen la misma marca dos veces.
+- Todo lo que llega de la IA o de internet se muestra como texto: títulos,
+  señales o links con código no se ejecutan, y solo se abren links https.
+
+ARCHIVOS
+--------
+api/_lib/agente.js (nuevo: investigación, precio para México, comparables
+verificados, crear marca/categoría) · api/_lib/ia.js (rareza y catálogo nuevo en
+el análisis rápido; ops ia-agente e ia-catalogo) · js/panel/importar-zip.js ·
+css/panel/importar-zip.css · pruebas/v45-agente.mjs (53) · pruebas/v45-navegador.py (36)
+
+LO QUE NO SE PUDO PROBAR CON CUENTAS REALES
+-------------------------------------------
+La IA y la búsqueda en internet se probaron con respuestas simuladas (incluidos
+pausas de la búsqueda, errores y links inventados). En la vista previa, prueba
+con 3 o 4 piezas que ya sepas cuánto valen (una común y una rara) y compara.
+
+STIIMPYS v44 — REGISTRO DE PRENDAS CON IA A PRUEBA DE FALLAS
+===========================================================
+Incluye todo lo de la v43 (y anteriores). Las notas de la v43 y de antes están
+en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. Para regresar: Instant Rollback.
+No hay variables nuevas en Vercel. No cambia nada que tengas que prender.
+
+QUÉ SE PROBÓ
+------------
+Se simularon las fallas que pasan en la vida real con la IA (Anthropic), con
+Cloudinary y con el internet. Antes de esta versión, 25 de esas pruebas
+tronaban: con un solo error, la prenda se quedaba en "error" y había que
+reintentarla a mano. Ahora:
+
+LA IA (en el servidor)
+- Si la IA está saturada (429, 500, 503, 529), se cae la red o tarda, se
+  reintenta sola con espera creciente. Nunca pasa de ~50 s, para que Vercel no
+  la corte a los 60.
+- Si un modelo no puede, lo intenta el otro: "Máxima precisión" usa el rápido si
+  el grande está saturado o mal escrito en IA_MODELO. En "Automático", si el
+  grande falla, se queda con lo que dijo el rápido.
+- Lee la respuesta aunque venga con texto de más, dentro de ```json, cortada a
+  la mitad, con comas de más o partida en pedazos por la búsqueda de precios en
+  internet (esto último antes tronaba siempre que se usaba la búsqueda).
+- Si la IA no puede bajar las fotos de Cloudinary, el servidor las baja y se las
+  manda. Si una foto está rota, se salta y analiza las demás.
+- Talla, estado y categoría se acomodan a tus listas:
+  "Hoodie"/"Crewneck" → Sudaderas, "Jeans" → Pantalones, "Sneakers" → Tenis,
+  "W32 L30" o "32x30" → 32, "US 9.5" → 27.5, "2XL" → XXL Hombre,
+  "M (dama)" → M Mujer, "One size" → Unitalla, "Excelente" → 9/10,
+  "NWT" → Nueva con etiqueta.
+- Precio "$450 MXN" o "1,200" se lee bien; precios absurdos se ignoran;
+  hashtags sin # o en lista, y fallas escritas como texto, se arreglan.
+- Nunca deja una prenda sin nombre ni precio: si la IA no los da, arma el
+  nombre con tipo + marca y sugiere el precio con tu historial. Esa tarjeta
+  dice "revisa sobre todo el nombre y el precio". Lo incompleto no se guarda en
+  la memoria: la siguiente vez se vuelve a preguntar.
+- Sin saldo o con la clave mala no gasta más intentos y te dice qué hacer.
+  Todos los errores salen en español.
+- Los textos de Instagram (captions, respuestas) también reintentan una vez.
+
+EL IMPORTADOR (en el panel)
+- Las fotos que fallan al subir se reintentan solas, hasta 4 veces.
+- Si una prenda falla por algo pasajero, se reintenta sola hasta 3 veces (a
+  los 4 s, 12 s y 30 s). En la tarjeta dice "Se vuelve a intentar sola (1 de 3)…"
+  y abajo "N reintentando solas".
+- Si se va el internet, no marca error: espera, abajo dice "sin internet: sigue
+  sola cuando vuelva" y continúa cuando regresa.
+- Si aun así falla, el mensaje dice qué pasó en español (antes podía salir
+  "Bad Gateway" o "Unexpected token"), y abajo hay un botón "Reintentar las que
+  fallaron".
+- Si subes el mismo ZIP dos veces, cada tarjeta dice "Ya registraste esta
+  prenda" con su nombre y número, y no se guarda otra vez a menos que la
+  marques. Las fotos ya subidas no se vuelven a subir.
+- Al guardar no se duplican prendas aunque se corte el internet a la mitad.
+- Antes, con más de 120 fotos en una hora las subidas se bloqueaban; ahora el
+  panel puede subir hasta 1,500 por hora.
+- Fotos HEIC de iPhone: se aceptan .heif, y las HEIC que Windows manda sin tipo
+  ya no se rechazan. Si una foto pesa más de lo que Vercel deja pasar (por
+  ejemplo, HEIC de 48 MP), se sube directo a Cloudinary con una firma segura que
+  solo vale para tu carpeta y solo para imágenes.
+- ZIP con fotos dañadas o con contraseña: se saltan y te dice cuántas.
+- Con el importador abierto, los avisos salen arriba. Antes tapaban el botón
+  "Guardar" unos segundos y el clic se perdía.
+- "Llenar datos con IA" (formulario de una prenda) también reintenta solo.
+
+ARCHIVOS
+--------
+api/_lib/ia.js (reintentos, respaldo entre modelos, lectura del JSON, acomodo de
+tallas/estados/categorías) · api/upload.js (HEIF, cupo del panel, firma para
+subir directo) · js/panel/importar-zip.js · js/panel/admin.js (uploadToCloud) ·
+css/panel/importar-zip.css · pruebas/v44-ia.mjs (86) · pruebas/v44-navegador.py (20)
+
+LO QUE NO SE PUDO PROBAR CON CUENTAS REALES
+-------------------------------------------
+La IA, Cloudinary y Vercel se probaron con respuestas simuladas, incluyendo sus
+errores. Para probarlo de verdad en la vista previa, sube un ZIP con 10–20
+prendas: si alguna tarjeta dice "reintentando sola", es esto funcionando.
+
+STIIMPYS v43 — 13 MEJORAS, CADA UNA CON SU INTERRUPTOR
+=======================================================
+Incluye todo lo de la v42 (y anteriores). Las notas de la v42 y de antes están
+en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. Para regresar: Instant Rollback.
+No hay variables nuevas en Vercel.
+
+DÓNDE SE PRENDE Y APAGA TODO
+----------------------------
+Panel → Ventas → Módulos. Hay grupos nuevos: "Para vender más", "Para trabajar
+menos", "Para que te encuentren" y "Para dar más confianza". TODO LO NUEVO VIENE
+APAGADO: prende solo lo que quieras. Apagar algo no borra datos. También ahí
+quedaron los interruptores de lo de la v42 (SPEI, cliente frecuente, páginas
+por marca y medir de dónde vienen las ventas).
+Los porcentajes y links se ajustan en Ventas → Promociones y pagos.
+
+PARA VENDER MÁS
+---------------
+1. Revisar comprobantes solo (IA + Banxico): cuando el cliente sube su
+   comprobante SPEI, la IA lee monto, banco, clave de rastreo y fecha, y se le
+   pregunta a Banxico (comprobante CEP) si el dinero llegó a tu CLABE. En Pedidos
+   → Sin pagar ves en verde/ámbar/rojo qué encontró, y hay un botón "Revisar con
+   IA y Banxico". Usa tu ANTHROPIC_API_KEY.
+   · "Aprobar sola si Banxico confirma" (otro interruptor, apagado): si Banxico
+     confirma monto y cuenta, el pedido queda pagado sin que toques nada. Si algo
+     no cuadra (monto, cuenta, no parece comprobante), NUNCA se aprueba solo.
+   · Banxico puede tardar unos minutos en tener el CEP; si no lo encuentra o su
+     página no contesta, queda en ámbar y lo revisas a mano como antes.
+2. Carritos olvidados por WhatsApp: cada día, clientes con cuenta y WhatsApp que
+   dejaron prendas disponibles en su carrito aparecen en Pendientes con el
+   mensaje listo. Una vez por semana por cliente; respeta a quien apagó avisos.
+3. Página del drop: stiimpys.store/drop/<id> con cuenta regresiva, fotos borrosas
+   de adelanto y "Avísame por WhatsApp". El aviso del catálogo lleva a ella.
+   Cuando sale, la misma página muestra las prendas.
+4. Arma tu outfit: en cada prenda, "Completa el outfit" con prendas de otro tipo
+   (arriba, abajo, tenis, accesorio) y un % extra al combinar 2 tipos (5 % de
+   inicio; se cambia en Promociones y pagos). Se suma al de volumen.
+5. Invita a tus amigos: cada cliente ve en su recibo su código REF-XXXXX y un
+   botón para mandarlo por WhatsApp. El amigo tiene 10 % en su primera compra; al
+   pagar, a quien invitó se le crea un cupón REGALO-XXXXXX (10 %, 60 días, solo
+   para su WhatsApp) y a ti te llega en Pendientes el mensaje listo para mandarle.
+
+PARA TRABAJAR MENOS
+-------------------
+6. Resumen de cada lunes: ventas de la semana (y contra la anterior), qué red te
+   vendió más, pedidos por entregar, prendas con más de 45 días sin venderse y
+   las muy vistas sin vender. Llega a tu Telegram o correo de avisos. En Métricas
+   hay "Ver resumen ahora" y "Mandármelo al celular".
+7. Ticket de la Caja con extras: si el cliente deja su WhatsApp, el ticket lleva
+   su avance de cliente frecuente, su código para invitar y el link a la tienda.
+8. Envíos desde el panel: "Cancelar guía" en cada pedido con guía de envia.com
+   (te regresan el saldo si la paquetería no la usó; el pedido vuelve a "Por
+   enviar") y "Pedir recolección" arriba de Pedidos → Por entregar (eliges
+   paquetería, día y horario; manda todas las guías que esperan).
+
+PARA QUE TE ENCUENTREN
+----------------------
+9. Catálogo para Google Shopping: en Promociones y pagos → Google está el link
+   para merchants.google.com (Productos → Feed programado). Tus prendas salen
+   gratis en la pestaña de compras de Google.
+10. Páginas por talla y precio: /talla/m, /talla/32, /precio/menos-de-500 (300,
+    500, 800, 1000). La talla en cada ficha lleva a su página. Entran al sitemap.
+11. Guías: /guias con 4 artículos escritos para Google: cómo saber si una prenda
+    Nike es original, tallas vintage vs actuales, cómo cuidar ropa vintage y cómo
+    comprar en Stiimpys. Cada una muestra prendas relacionadas. Link "Guías" en
+    el pie. Para agregar una guía: api/_lib/guias.js.
+12. Google Maps: crea tu perfil gratis en business.google.com (los pasos están en
+    Promociones y pagos → Google) y pega el link de tu perfil y el de "pedir
+    reseñas". El inicio muestra "Encuéntranos en Google Maps", le da a Google los
+    datos de tu negocio, y al cliente con pedido entregado le aparece "Déjanos tu
+    reseña en Google".
+
+PARA DAR MÁS CONFIANZA
+----------------------
+13. Sello "Revisada a mano" y medidas: al registrar o editar una prenda hay un
+    apartado "Medidas en cm y revisión" (largo, ancho, hombros, manga, cintura,
+    cadera, tiro, entrepierna y la casilla "Revisada a mano"). En la ficha salen
+    el sello verde y las medidas.
+
+SEGURIDAD
+---------
+- Todo lo nuevo que cambia dinero o pedidos (aprobar, cancelar guías, pedir
+  recolección, resumen) es solo para administradores.
+- Los cupones REGALO y CUMPLE son personales (solo los usa su WhatsApp). El
+  código de amigo solo sirve en la primera compra y no con el propio teléfono.
+- Las medidas solo aceptan números razonables; los links de Google solo de Google.
+- Las páginas nuevas escapan todo lo que viene de la base (nombres de marcas,
+  drops, prendas).
+
+ARREGLOS DE PASO
+----------------
+- Cambiar un interruptor dos veces seguidas (prender/apagar/prender) ya no da el
+  error de "operación repetida".
+- El tipo de prenda para el outfit se toma primero del nombre (si la categoría
+  está mal puesta, igual acierta).
+
+PRUEBAS
+-------
+- npm run pruebas: servidor (v32 a v43). Nuevas: pruebas/v43-funciones.mjs (85).
+- Navegador: pruebas/v43-navegador.py (42) + las de siempre.
+- Resultados: pruebas/RESULTADOS-v43.md.
+
+STIIMPYS v42 — VENDER MÁS: CAJA PARA BAZARES, SPEI, CLIENTES QUE REGRESAN
+==========================================================================
+Incluye todo lo de la v41 (y anteriores). Las notas de la v41 y de antes están
+en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. Para regresar: Instant Rollback.
+Todo lo nuevo viene APAGADO hasta que lo prendas en el panel.
+
+1 · LOGO DE STIIMPYS EN TODA LA PÁGINA
+--------------------------------------
+- Encabezado y pie de todas las páginas, el ícono de la pestaña, el ícono al
+  "Agregar a inicio" del celular, la imagen al compartir el link por WhatsApp,
+  los correos, el login y el panel (versión blanca en modo oscuro).
+
+2 · CAJA PARA BAZARES EN PERSONA (Barrio Chido y otros)
+-------------------------------------------------------
+- Etiquetas y SKU: Ventas → "Etiquetas y SKU". Cada prenda tiene su SKU
+  (STI-00012) y su QR. Imprime en hoja carta (3 por fila, para recortar) o en
+  impresora térmica de 50 × 30 mm. El QR abre la prenda en la tienda (y cuenta
+  como venta "de QR" en las métricas).
+- La Caja: botón "Caja (bazar)" en el panel o "Abrir la Caja" en Etiquetas.
+  Pensada para el celular:
+    · escribe el nombre del evento ("Barrio Chido") una vez;
+    · escanea la etiqueta con la cámara, con un lector de códigos USB/Bluetooth,
+      o escribe el SKU/nombre;
+    · descuento en $ o %, efectivo (te calcula el cambio), tarjeta o transferencia;
+    · nombre y WhatsApp del cliente opcionales (cuentan para "cliente frecuente");
+    · si se va el internet, la venta se guarda y se manda sola al volver;
+    · "Resumen del día" con lo vendido por evento y por forma de pago;
+    · anular un ticket regresa las prendas a la tienda (vendedores: hasta 12 h).
+  La prenda vendida desaparece de la tienda en línea al momento.
+
+3 · PAGO POR TRANSFERENCIA SPEI
+-------------------------------
+- Prender: Ventas → Promociones y pagos → "Transferencia SPEI": CLABE (se revisa
+  el dígito verificador: una CLABE mal copiada no se guarda), banco, titular y
+  horas para transferir (de 1 a 48).
+- El cliente elige "Transferencia SPEI", la prenda queda apartada esas horas y
+  su recibo le muestra monto, CLABE y concepto con botones "Copiar". Sube la
+  captura del comprobante ahí mismo; mientras lo revisas, la prenda se aparta
+  48 h más.
+- Te llega el aviso (Pendientes, y Telegram/correo si los tienes). En Pedidos →
+  Sin pagar abres el comprobante y tocas "Ya me llegó" (queda pagado, se
+  registra la venta y te deja el WhatsApp listo) o "No llegó" (se cancela y la
+  prenda vuelve a la tienda).
+  IMPORTANTE: confirma en la app de tu banco antes de tocar "Ya me llegó". Solo
+  un administrador puede hacerlo; un vendedor no.
+- La CLABE solo la ve quien tiene el link de su recibo; nunca sale en la tienda.
+- El resto de un apartado se sigue pagando con tarjeta/PayPal o en persona.
+
+4 · CLIENTE FRECUENTE Y CUMPLEAÑOS
+----------------------------------
+- Promociones y pagos → "Cliente frecuente": cada N compras pagadas, la
+  siguiente lleva X % (por número de WhatsApp; cuentan compras en línea y en la
+  Caja). Al pagar, en cuanto el cliente escribe su WhatsApp le aparece el
+  descuento. Lo calcula el servidor; no se junta con cupones.
+- El recibo le muestra su avance ("Llevas 2 de 3").
+- Cupón de cumpleaños (necesita Resend): el cliente deja día y mes en su recibo
+  pagado; ese día le llega un correo con un código personal de un solo uso
+  (CUMPLE-XXXXXX) que vale 7 días. Un correo por año.
+
+5 · RESEÑAS CON FOTO
+--------------------
+- Al calificar su compra, el cliente puede subir hasta 3 fotos (se achican en
+  su celular antes de subir).
+- Las fotos NO se publican solas: te llegan a Pendientes con "Publicar con
+  fotos", "Publicar sin fotos" u "Ocultar reseña".
+- Nueva sección "Lo que dicen nuestros clientes" en Inicio y en la ficha de cada
+  prenda (primero las que traen foto; se abren en grande al tocarlas).
+
+6 · RASTREO AUTOMÁTICO
+----------------------
+- Una vez al día se le pregunta a envia.com por las guías generadas ahí:
+    · entregado → el pedido pasa a "Entregado" y al cliente le llega un correo
+      que le pide su reseña;
+    · recolectado/en camino → pasa a "Enviado" (si seguía "por enviar");
+    · en oficina de la paquetería → correo al cliente y aviso para ti;
+    · devuelto o cancelado → aviso urgente para ti.
+- Botón "Revisar rastreo" en Pedidos en línea para hacerlo en ese momento.
+- Solo funciona con guías hechas con envia.com (su API no rastrea otras).
+
+7 · PARA QUE TE ENCUENTREN
+--------------------------
+- Páginas por marca y por categoría: stiimpys.store/marca/nike,
+  /categoria/sudaderas… Las arma el servidor (Google las lee completas), con
+  logo, prendas disponibles, precio desde, datos para Google y enlaces a otras
+  marcas. Se agregan solas al sitemap (las que tienen 2 o más prendas). En la
+  ficha, el nombre de la marca ya lleva a su página.
+  Tip: comparte /marca/carhartt en tus historias cuando subas varias de esa marca.
+- De dónde vienen tus ventas: Ventas → Métricas → "De dónde vienen tus ventas"
+  (30 días): visitas, ventas, conversión y dinero por Instagram, TikTok,
+  Facebook, WhatsApp, Google, QR de etiquetas, correos, bazar en persona…
+  Abajo vienen links listos para tu bio y tus historias (ya llevan la etiqueta
+  de la red). Usa esos links y sabrás qué red te vende más.
+  Sin datos personales: solo se cuenta fuente y día.
+
+8 · SEGURIDAD DE LO NUEVO
+-------------------------
+- Comprobantes y fotos: solo imágenes (JPG/PNG/WEBP/HEIC; nada de SVG ni HTML),
+  máximo 3 MB, subida firmada desde el servidor y nombre de archivo al azar
+  (no se puede adivinar la dirección de un comprobante).
+- Confirmar transferencias, moderar reseñas y revisar el rastreo: solo
+  administradores. Todo queda en el Centro de actividad.
+- Descuentos de cliente frecuente y cupones personales: los calcula el
+  servidor. La cotización no dice cuántas compras lleva un teléfono.
+- Freno de intentos en todo lo público nuevo (comprobantes, cumpleaños,
+  cliente frecuente).
+
+9 · LO QUE TE TOCA
+------------------
+- Panel → Promociones y pagos: prender SPEI (CLABE) y cliente frecuente.
+- Probar en la vista previa: una compra con SPEI de punta a punta y una venta
+  en la Caja desde tu celular.
+- Pendientes de antes: RUTA_PANEL nueva, confirmar SESSION_SECRET, datos legales,
+  Resend/Telegram/Turnstile si los quieres.
+
+10 · PRUEBAS
+------------
+- npm run pruebas: servidor (v32 a v42). Nuevas: pruebas/v42-funciones.mjs (85).
+- Navegador: pruebas/v42-navegador.py (57) + las de siempre.
+- Resultados: pruebas/RESULTADOS-v42.md.
+
+
+STIIMPYS v41 — AVISOS, GUÍAS, PANTALLA "HOY" Y MÁS
+===================================================
+Incluye todo lo de la v40 (y anteriores). Las notas de la v40 y de antes están
+en docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que la v40: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. Para regresar: Instant Rollback.
+Todo lo nuevo que depende de claves viene APAGADO hasta que las pongas.
+
+1 · PARA VENDER MÁS
+-------------------
+- Avisos del carrito en la tienda: cuando alguien vuelve a entrar y algo de su
+  carrito bajó de precio, se liberó o se vendió, se lo dice una sola vez.
+- Avisos del carrito por correo (clientes con cuenta): la tarea diaria manda UN
+  correo con todos los cambios. Trae un enlace para dejar de recibirlos y se
+  apagan/prenden en Mi cuenta → Mi Carrito. Necesita Resend (ver punto 6).
+- Guía de envío con envia.com desde el panel: en Ventas → Pedidos en línea, cada
+  pedido con envío pagado tiene "Generar guía con envia.com". Usa la paquetería
+  y el servicio que eligió el cliente, llena sola la paquetería y el número de
+  guía, deja el pedido como "Enviado", te da la etiqueta en PDF para imprimir,
+  manda el correo de "va en camino" y te deja listo el WhatsApp con el rastreo.
+  El cliente ve "Rastrear" en su recibo.
+  OJO: envia.com cobra la guía de tu saldo. Solo un administrador puede
+  generarla, pide confirmación y no genera una segunda por accidente.
+  Con ENVIA_SANDBOX=1 son guías de prueba (no cobran).
+
+2 · PARA TRABAJAR MÁS FÁCIL
+---------------------------
+- Pantalla "Hoy": arriba del Inventario (con lo que abre el panel). Por enviar,
+  por entregar, pagando ahora, apartados que vencen, ofertas sin responder,
+  avisos pendientes, interesados y lo vendido hoy. Cada cuadro lleva a su
+  sección. Se puede ocultar.
+- Buscador: Ctrl+K (⌘K en Mac) o el botón "Buscar" de "Hoy". Busca a la vez
+  pedidos (número, nombre, teléfono, correo), prendas (nombre, marca, número) y
+  clientes con cuenta (estos solo los ve un administrador).
+- Minutos del apartado ajustables: Ventas → Promociones y pagos → "Apartado
+  mientras pagan" (de 5 a 30; antes fijo en 10). El link de Clip vence a la
+  misma hora y la tienda y los términos dicen los minutos que pongas.
+- Marca Stiimpys en el panel, el login y el Estudio (ya no dice STMP MARKET).
+
+3 · AVISOS A TU CELULAR CUANDO ALGO FALLA
+-----------------------------------------
+El monitor (Panel → Sistema) y la tarea diaria revisan MongoDB, Clip, Resend,
+Cloudinary y PayPal. Si alguno se cae te avisa, y te vuelve a avisar cuando se
+arregla. También te avisa si un cliente quiso pagar y Clip/PayPal no abrió el
+pago, y si la tarea diaria dejó de correr. Máximo un aviso cada 3 horas por cosa.
+Canales (pon uno o los dos en Vercel):
+  · Telegram (llega como notificación):
+      1. En Telegram abre @BotFather → /newbot → ponle nombre → te da un token.
+      2. En Vercel: TELEGRAM_BOT_TOKEN = ese token. Vuelve a desplegar.
+      3. Mándale "hola" a tu bot. En Panel → Sistema toca "Probar aviso":
+         te dice tu número de chat. Ponlo en TELEGRAM_CHAT_ID y despliega.
+  · Correo: AVISOS_CORREO = tu correo (necesita Resend configurado).
+Para probar sin el botón: la op v-avisos-prueba (POST, solo administradores).
+
+4 · SEGURIDAD
+-------------
+- Freno para robots (Cloudflare Turnstile) en crear cuenta, "olvidé mi
+  contraseña", ofertas y "Avísame". Invisible casi siempre para la gente.
+  Para prenderlo: dash.cloudflare.com → Turnstile → Add widget → dominio
+  stiimpys.store, modo Managed → en Vercel TURNSTILE_SITE_KEY y
+  TURNSTILE_SECRET_KEY. Si Cloudflare se cae, la tienda sigue funcionando.
+- Un vendedor (no administrador) ya no recibe costos ni ganancias en ningún
+  lado: ni en el inventario, ni al editar, ni en el corte de caja. Tampoco
+  puede cambiar el costo de una prenda ya registrada (sí ponerlo al registrar).
+  Generar guías y cambiar la configuración también es solo de administradores.
+
+5 · LEY Y LIMPIEZA
+------------------
+- Datos del vendedor (LFPC art. 76 Bis): Ventas → Promociones y pagos → "Datos
+  del vendedor". Nombre, domicilio físico, teléfono, correo para reclamaciones
+  y horario. Salen en el pie de todas las páginas y en los términos ("Quién
+  vende" y "Contacto"). Lo que dejes vacío no se muestra. PENDIENTE: llénalos.
+- redes.html y vender.html (de cuando eran varios bazares) se archivaron en
+  docs/archivo/multi-bazar con su código. /redes y /vender llevan al inicio.
+  El servidor de varios bazares sigue ahí (MULTI_BAZAR), pero sin esas páginas.
+- No se quitó el panel lateral viejo del carrito: no estorba y las pruebas
+  automáticas lo usan para revisar el carrito.
+
+6 · LO QUE TE TOCA EN VERCEL (todo opcional; sin esto funciona igual que la v40)
+------------------------------------------------------------------------------
+- RESEND_API_KEY y CORREO_DESDE: recibos y avisos del carrito por correo.
+- TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID y/o AVISOS_CORREO: avisos a tu celular.
+- TURNSTILE_SITE_KEY y TURNSTILE_SECRET_KEY: freno para robots.
+- Siguen pendientes de la v40: RUTA_PANEL nueva y confirmar SESSION_SECRET.
+
+7 · PRUEBAS
+-----------
+- npm run pruebas: servidor (v32 a v41). Nuevas: pruebas/v41-funciones.mjs (51).
+- Navegador: pruebas/v41-navegador.py (21) + las de siempre.
+- Resultados: pruebas/RESULTADOS-v41.md.
+
+
+STIIMPYS v40 — PROYECTO ORDENADO, MÁS RÁPIDO Y MÁS SEGURO
+===========================================================
+Incluye todo lo de la v39 (y anteriores). No cambia cómo se ve ni lo que hace
+la tienda o el panel: cambia cómo está acomodado, cuánto pesa y qué tan
+protegido está.
+
+CÓMO SUBIRLO
+------------
+Las carpetas cambiaron, así que NO se copia encima de lo que tienes:
+  1. En tu carpeta del proyecto deja solo .git y .vercel (si los tienes).
+  2. Borra todo lo demás y pega el contenido de este paquete.
+  3. git add -A  →  commit  →  push a una rama  →  revisa la vista previa de Vercel.
+  4. Si todo bien, a producción. Para regresar: Instant Rollback en Vercel.
+No hay variables nuevas obligatorias, pero revisa RUTA_PANEL (abajo).
+
+1 · ORDEN
+---------
+- Raíz: solo las páginas (.html) y la configuración de Vercel.
+- api/: las 12 funciones. api/_lib/: los ayudantes (antes api/_*.js sueltos).
+- css/ y js/ divididos en comun/, tienda/ y panel/.
+- Archivos que ninguna página usaba se movieron a docs/archivo (no se borró
+  nada): js/prenda.js viejo (lo reemplazó ficha.js), js/utils.js, css/utils.css,
+  css/adminstmp.css e index.html (la vieja puerta de verificación; /index.html
+  ya llevaba al inicio).
+- Los estilos que estaban escritos dentro de admin.html ahora viven en
+  css/panel/admin-modales.css.
+- Notas viejas: docs/HISTORIAL-VERSIONES.txt y docs/INSTAGRAM.txt.
+- README.md explica el mapa de carpetas y cómo hacer cambios.
+
+2 · VELOCIDAD
+-------------
+- Cada página carga 1 archivo de estilos y 1 de código, comprimidos
+  (antes hasta 25 archivos sueltos). Inicio: 25 archivos/143 KB → 2/82 KB;
+  catálogo: 23/154 KB → 2/90 KB; panel: 38/332 KB → 3/241 KB (comprimido).
+- Se arman con "npm run construir" (herramientas/construir.mjs) a partir de
+  herramientas/paquetes.json, respetando el orden exacto de antes. Cada uno
+  lleva su versión (?v=…): el navegador lo guarda un año y baja el nuevo en
+  cuanto cambia. Traen mapa (.map) para depurar con los archivos originales.
+- Letras propias (css/fuentes): ya no se piden a Google. Antes la letra
+  llegaba en cadena (página → global.css → Google → archivo de letra).
+  Ahora se precarga desde el inicio.
+- Arreglo: en inicio, catálogo, ficha, cuenta y términos solo se cargaban los
+  grosores 400/500/700 de DM Sans, así que lo que estaba en 600 y 800 se veía
+  en 700. Ahora todas las páginas tienen todos los grosores (como ya pasaba en
+  carrito y pago). Es el único cambio que se puede notar a simple vista.
+- El Estudio pedía Poppins a Google; ahora también es propia.
+
+ARREGLOS QUE SALIERON AL PROBAR CON LAS LETRAS REALES
+- Inicio en tableta (≤900 px): el título del hero quedaba centrado y no en el
+  margen como todo lo demás (a 768 px empezaba en 120 px y no en 24). Pasaba
+  también en la página en vivo; las pruebas no lo veían porque corrían sin la
+  letra Bebas. Arreglo en css/tienda/limpio.css.
+- Al ir de la ficha al carrito y regresar, el navegador a veces cancelaba la
+  animación entre páginas y eso contaba como error antes de que cargara el
+  filtro de db.js. Ahora el filtro va desde el primer instante de cada página
+  (el mismo <script> corto del <head>).
+
+3 · SEGURIDAD
+-------------
+- api/_lib/escudo.js envuelve las 12 funciones:
+  · quita operadores de MongoDB ($ne, $gt, $where…) y __proto__ de todo lo que
+    llega (inyección NoSQL y contaminación de prototipos);
+  · rechaza JSON de más de 12 niveles y métodos que el sitio no usa;
+  · bloquea escrituras que vienen de otra página web aunque el navegador
+    tenga tu sesión abierta (CSRF). Los avisos de Clip y la tarea diaria sí pasan;
+  · respuestas con nosniff, sin caché compartida y sin poder incrustarse;
+  · si algo truena, el visitante ve un mensaje genérico, nunca el detalle.
+- Acaparar prendas: máximo 3 pagos abiertos (sin terminar) a la vez por
+  WhatsApp y por conexión. Antes un robot podía abrir pagos sin pagar y dejar
+  la tienda "apartada". El pedido guarda una huella de la conexión, no la IP.
+- Contraseñas: además del límite por conexión, máximo 20 intentos por cuenta
+  cada 15 min (panel y cuentas de clientes), para frenar ataques repartidos.
+  Las contraseñas viejas en texto plano se comparan en tiempo constante, y si
+  faltara bcrypt el sistema se niega a guardar una sin cifrar.
+- Lo público ya no trae la configuración interna del bazar (automatización de
+  Instagram, permisos del panel).
+- Ganancias (con costos): solo administradores, también en el servidor (el
+  panel ya lo escondía, pero el servidor se las daba a un vendedor que las pidiera).
+- Recibo sin su clave: ya no muestra el nombre del cliente.
+- Si Clip o PayPal fallan al abrir un pago, el cliente ya no ve el mensaje
+  técnico del error (queda en el historial del pedido).
+- middleware.js:
+  · /estudio.html y el código del panel (js/panel, css/panel, js/dist/admin.js,
+    css/dist/admin.css y los del Estudio) responden 404 sin sesión;
+  · middleware.js, package.json, vercel.json, los .md, LEEME.txt, .env, .git,
+    .vercel, pruebas/, docs/ y herramientas/ responden 404.
+- CSP sin Google Fonts (ya no hace falta).
+
+4 · PENDIENTE PARA LA DUEÑA
+---------------------------
+- Define RUTA_PANEL en Vercel con una dirección nueva y difícil (letras y
+  números). La de respaldo está escrita en el código; si el repositorio de
+  GitHub es público, cualquiera la puede leer.
+- Confirma que SESSION_SECRET esté puesta en Vercel (larga y al azar).
+- El README viejo decía una contraseña por defecto del panel: si alguna vez la
+  usaste, cámbiala.
+- Lo que un vendedor (no administrador) del equipo sigue viendo, porque lo usa
+  para trabajar: los pedidos con teléfono y dirección para entregar, y el
+  corte de caja del día. Si quieres que no vea la ganancia del corte, se
+  puede quitar en otra versión.
+
+5 · PRUEBAS
+-----------
+- npm run pruebas: servidor (v32 a v40), seguridad v40 (54) y "¿están al día
+  los paquetes?".
+- Navegador: pruebas/v40-xss.py (24) mete código malicioso en nombre,
+  oferta, aviso y pedido y abre la tienda, el recibo y todas las secciones
+  del panel: nada se ejecuta. Más v33 a v39 de siempre.
+- Resultados: pruebas/RESULTADOS-v40.md.
+
+6 · CÓMO SE TRABAJA AHORA
+-------------------------
+- Se editan los originales (css/tienda, js/panel…), nunca css/dist ni js/dist.
+- Después: npm install (la primera vez) y npm run construir.
+- Si se olvida, npm run pruebas lo avisa.
+
+
+===========================================================
+
+STIIMPYS — PAQUETE COMPLETO (todo lo hecho hasta hoy)
+====================================================
+Copia estos archivos encima de los de tu proyecto (respetando las
+carpetas) y vuelve a publicar en Vercel (Redeploy). Reemplaza a TODOS los
+zips anteriores: no hace falta subir ninguno de ellos.
+
+Raíz:  admin.html · estudio.html · inicio.html · vercel.json
+api/:  _bazar.js · _instagram.js · _instagramPanel.js · acciones.js · inventario-item.js
+css/:  admin-inventory-responsive.css · estudio.css · inicio-premium.css
+       instagram-panel.css · marketplace.css (nuevo)
+js/:   admin.js · estudio.js · inicio-premium.js · inicio.js
+       instagram-panel.js · marketplace.js (nuevo)
+
+Incluye:
+ • Panel de Instagram editorial (resumen, publicaciones, comentarios,
+   mensajes, crear, historias, programados, ajustes).
+ • Portadas e historias con diseño editorial; fotos completas con fondo
+   difuminado (sin franjas blancas).
+ • Republicar (uno o todo el perfil, del más viejo al más nuevo) con barra
+   de progreso, contadores y tiempo restante; respeta el límite diario de
+   Instagram.
+ • Importar prendas desde tus posts viejos.
+ • Hashtags automáticos por prenda + campo "Hashtags de esta prenda".
+ • Asistente de Facebook Marketplace (pestaña nueva en el menú).
+ • Página de inicio como página oficial de Stiimpys + "Forma parte".
+
+Variables de Vercel que ya tienes y siguen igual: IG_STIIMPYS_USER_ID,
+IG_STIIMPYS_TOKEN, IG_STIIMPYS_MODO, CRON_SECRET, CLOUDINARY_*.
+
+── v13 (automático) ─────────────────────────────
+Archivos nuevos: api/_automatico.js, js/automatico.js, css/automatico.css
+Archivos tocados además: js/prenda.js, js/tienda.js, css/prenda.css, css/global.css
+Panel de Instagram → "Automático" (rebajas, respuestas a comentarios, historias
+de nuevos ingresos, verificar posts, horas de apartado) y "Reporte".
+Inventario → botón ⏳ para apartar con fecha límite.
+Drops → botón "📸 Instagram" para programar el carrusel y las historias.
+Las tareas diarias corren con el cron de Vercel (9:00 a.m.) y al abrir el panel.
+Para responder comentarios más seguido, agrega en cron-job.org cada 10 min:
+  https://stiimpys.store/api/acciones?op=ig-cron&key=TU_CRON_SECRET
+
+── v14 (importar ZIP con IA) ─────────────────────
+Archivos nuevos: api/_ia.js, js/importar-zip.js, css/importar-zip.css
+Botón "Importar ZIP con IA" en Inventario y en Registrar Prenda.
+Variable nueva en Vercel: ANTHROPIC_API_KEY (console.anthropic.com → API Keys).
+Opcional: IA_MODELO (por defecto claude-sonnet-5-5).
+
+── v15 (IA que ahorra y aprende) ─────────────────
+Sin archivos nuevos. Opcional en Vercel: IA_MODELO_RAPIDO (def. claude-haiku-5-5).
+- Calidad: Ahorro / Automático (recomendado) / Máxima precisión.
+- Memoria: mismas fotos = respuesta gratis; fotos ya subidas no se vuelven a subir.
+- Aprende de tus correcciones (marcas, nombres, estado y precio).
+- "Llenar datos con IA" en Registrar Prenda.
+- "Completar con IA" para prendas que ya tienes sin marca/talla/estado/descripción.
+
+── v16 (borradores de Instagram) ─────────────────
+Archivos nuevos: js/ig-borradores.js, css/ig-borradores.css
+- Crear se guarda solo (navegador + servidor) · sección Borradores.
+- Programados → "Editar" los regresa a borrador.
+- Respuestas a comentarios, DMs y edición de texto se guardan mientras escribes.
+- ✦ IA: escribir descripción, sugerir respuesta a comentarios y DMs (modelo rápido).
+- Mejores horas para programar y contador de hashtags (máx. 30).
+── v16.1 ─ Importar desde Instagram guarda tus correcciones mientras escribes
+(si cierras la ventana o la página, al volver siguen ahí). También Ajustes y Automático.
+
+── v17 (Registro rápido con IA = función estrella) ─
+- Tarjeta grande en Registrar Prenda e Inventario; arrastra ZIP/fotos en cualquier parte.
+- Sesión de fotos desde el celular (prenda por prenda, la IA trabaja mientras fotografías).
+- Las fotos suben en segundo plano desde que las eliges.
+- "Aplicar a todas": categoría, estado, costo, costo del lote (se reparte), ±10%, redondear.
+- Revisar dudosas con IA precisa.
+- Al guardar: programar en Instagram escalonado (sin noche), publicar ya, solo tienda o meter a un drop.
+
+── v18 (vender más) ───────────────────────────────
+Archivos nuevos: api/_crecer.js, js/tienda-plus.js, css/tienda-plus.css,
+  js/ventas-panel.js, css/ventas-panel.css, js/ig-crecer.js, css/ig-crecer.css,
+  js/vendor/qrcode.js (MIT, Kazuhiko Arase)
+Tocados además: api/sync.js, js/db.js, js/ficha.js, tienda.html, prenda.html, vercel.json
+
+Variables nuevas en Vercel (opcionales):
+  MP_ACCESS_TOKEN   → pago en línea con Mercado Pago (Credenciales de producción)
+  SITE_URL          → https://stiimpys.store (ya es el valor por defecto)
+
+Tienda: bolsa con descuento por volumen + cupones + total, pagar en línea,
+  hacer oferta, avísame (apartada/vendida/drop/mi talla), mi talla, banner del
+  próximo drop con cuenta regresiva, "N personas la vieron hoy", modo vendedor.
+Panel → Ventas: pendientes, ofertas, interesados, corte de caja, métricas,
+  etiquetas QR, promociones y pagos, catálogo para Meta/Google, equipo, respaldo.
+Instagram: Reels automáticos, sorteos, 💸 ofrecer por DM, mejorar fotos.
+IA: medidas con cinta, fallas visibles, precio según qué tan rápido vendes.
+
+── v19 (precios en dólares) ───────────────────────
+Tocados: api/_crecer.js, js/tienda-plus.js, css/tienda-plus.css, js/ventas-panel.js
+- Botón MXN | USD arriba en la tienda, la ficha y el inicio (se recuerda por cliente).
+- Dólares por defecto solo a quien tiene el celular en inglés y está fuera de México.
+- Tipo de cambio del día (Frankfurter; respaldo open.er-api.com), se renueva cada 12 h.
+  Si ninguna fuente contesta, usa el último guardado y no vuelve a intentar en 30 min.
+- Panel → Ventas → Promociones y pagos → "Precios en dólares": apagar, usar el del día o fijo.
+- Se cobra siempre en pesos: la pantalla de pago queda en MXN con "≈ US$" abajo;
+  las ofertas se escriben en pesos (muestra el equivalente); WhatsApp y Mercado Pago en MXN.
+Sin variables nuevas.
+
+── v20 (cobrar con Clip) ──────────────────────────
+Tocados: api/_crecer.js, api/_automatico.js, js/tienda-plus.js, js/ventas-panel.js, css/ventas-panel.css
+Variables nuevas en Vercel:
+  CLIP_API_KEY      → Clave API (Clip → Panel de desarrolladores → Crear credencial)
+  CLIP_SECRET_KEY   → Clave secreta de esa misma credencial
+  (para otro bazar: CLIP_API_KEY_2 / CLIP_SECRET_KEY_2, etc.)
+En Clip → Panel de desarrolladores → Postback Webhook pega:
+  https://stiimpys.store/api/acciones?op=v-clip-webhook   y activa la recepción.
+- Si Clip está conectado, "Pagar en línea" cobra con Clip (link de pago de Clip).
+  Si también tienes Mercado Pago, eliges cuál en Ventas → Promociones y pagos.
+- El pago se confirma consultando a Clip con tus claves (el aviso solo despierta la
+  revisión), se compara el monto, y no se registra dos veces.
+- Pago que llega tarde: si la prenda sigue libre se vende igual; si ya se vendió,
+  te llega a Pendientes "devuélvele $X" con el mensaje de WhatsApp listo.
+- Corte de caja separa "Pago en línea (Clip)" y "(Mercado Pago)".
+
+── v21 (página de pago profesional) ───────────────
+Nuevos: pagar.html, js/checkout.js, css/checkout.css
+Tocados: api/_crecer.js, js/tienda-plus.js, js/ventas-panel.js, css/ventas-panel.css
+Sin variables nuevas.
+- "Pagar en línea" en la bolsa abre pagar.html: contacto, entrega (en persona o
+  envío con dirección completa), cupón, resumen con fotos y total exacto del servidor,
+  y el botón "Pagar $X MXN" que lleva a la página segura de Clip (o Mercado Pago).
+- Al regresar: página de confirmación con recibo (sello PAGADO), datos de entrega,
+  botón para coordinar por WhatsApp e imprimir/guardar recibo.
+- Pago rechazado o vencido: pantalla clara con "Intentar de nuevo"; el cliente puede
+  reintentar con sus mismas prendas apartadas (el intento anterior se reemplaza).
+- Cada pedido tiene una clave privada en el link: sin ella no se ven nombre completo,
+  teléfono ni dirección.
+- La dirección de envío llega a Pendientes junto con el aviso de la venta.
+
+── v22 (más ventas por pedido y seguimiento) ──────
+Tocados: api/_crecer.js, api/_ventas.js, js/checkout.js, css/checkout.css,
+         js/tienda-plus.js, css/tienda-plus.css, js/ventas-panel.js, css/ventas-panel.css
+Sin variables nuevas.
+- "Comprar ahora" en la ficha de cada prenda: va directo a la página de pago con esa prenda.
+- En la página de pago, si le falta 1 o 2 prendas para el siguiente descuento, se le
+  sugieren prendas de su talla (hasta el doble del precio de lo que lleva) para agregar
+  con un toque; el descuento se recalcula al momento.
+- Pago sin terminar: cuando vence el apartado de un pago en línea, llega a Pendientes
+  "🛒 X no terminó de pagar" con un WhatsApp listo y el link para retomar la compra.
+- Ventas → Pedidos en línea: por entregar / entregados / sin pagar. Marcar enviado
+  (paquetería + guía) o entregado, con el WhatsApp para el cliente ya escrito.
+- La página del pedido del cliente muestra el seguimiento (Pagado → Enviado → Entregado)
+  con su número de guía.
+- Ya entregado (o 5 días después de pagar), el cliente califica desde su página:
+  la reseña aparece en la tienda como compra verificada y te llega a Pendientes.
+
+── v23 (envíos cotizados con envia.com) ───────────
+Nuevo: api/_envios.js
+Tocados: api/_crecer.js, js/checkout.js, css/checkout.css, js/tienda-plus.js,
+         css/tienda-plus.css, js/ventas-panel.js, css/ventas-panel.css
+Variables nuevas en Vercel:
+  ENVIA_TOKEN     → envia.com → Desarrolladores → API Keys (clave de producción)
+  ENVIA_SANDBOX=1 → (opcional) solo para probar con una clave del ambiente de pruebas
+Después: Panel → Ventas → Promociones y pagos → "Envíos con envia.com":
+  escribe la dirección de donde salen los paquetes, guarda y usa "Probar".
+- Página de pago: el cliente escribe su código postal, se llenan ciudad, estado y
+  colonias, y ve 3 opciones reales (más barata, más rápida y otra) con días de entrega.
+  Se cobra exactamente la opción elegida (el servidor guarda la cotización).
+- Ficha de cada prenda: "¿Cuánto cuesta el envío a tu casa?" con su código postal.
+- Peso y caja estimados por tipo de prenda; varias prendas van en un solo paquete.
+- Margen opcional (% y/o pesos) y envío gratis desde un monto.
+- Pedidos en línea muestra la paquetería elegida, lo que cobraste y lo que te cuesta.
+
+── v24 (puntos de entrega en persona) ─────────────
+Tocados: api/_crecer.js, js/checkout.js, css/checkout.css, js/tienda-plus.js, js/ventas-panel.js
+Sin variables nuevas.
+- Entrega en persona con punto a elegir:
+    Zona Morelos  gratis
+    UTTN          gratis
+    Plaza Real    $50
+    Periférico    $50
+  y en compras de más de $550 (después de descuentos) la entrega es gratis en cualquier punto.
+- Página de pago: el cliente elige el punto; si le falta poco para los $550 se lo dice
+  ("Te faltan $71"). El punto es obligatorio y su costo lo calcula el servidor.
+- Ficha de cada prenda: "Entrega en persona: Zona Morelos y UTTN gratis; Plaza Real y
+  Periférico $50 (gratis en compras de más de $550)."
+- Panel → Ventas → Promociones y pagos → "Entrega en persona": agregar, quitar o cambiar
+  puntos y precios, y el monto para que sea gratis.
+- Pedidos en línea, Pendientes, WhatsApp y el recibo del cliente muestran el punto elegido.
+
+── v25 (Zona Centro y recibos que no se pierden) ──
+Tocados: api/_crecer.js, pagar.html, js/checkout.js, css/checkout.css, js/tienda-plus.js, css/tienda-plus.css
+Sin variables nuevas.
+- Nuevo punto de entrega: Zona Centro (gratis). Se cambia en Ventas → Promociones y pagos.
+  (Si ya habías guardado puntos en el panel, agrégalo ahí.)
+- Recibo de cada compra:
+  · Se guarda solo en el celular del cliente ("Mis pedidos", botón en el encabezado de la tienda
+    y en el pie de la página de pago).
+  · En el recibo: "Mandármelo por WhatsApp" (a su propio chat), "Compartir / Copiar link" y "Guardar en PDF".
+  · El WhatsApp de "Recibimos tu pago" que mandas desde Pendientes ya trae el link del recibo,
+    igual que el botón WhatsApp de cada pedido en Pedidos en línea.
+  · Si cambió de celular o borró datos: en Mis pedidos escribe su WhatsApp + número de pedido
+    (bastan los últimos 6 caracteres) o el correo que usó, y recupera sus recibos.
+- La página de pago recuerda si eligió entrega en persona o envío.
+
+── v26 (solo Clip, con su color, y PayPal) ────────
+Nuevo: api/_paypal.js
+Tocados: api/_crecer.js, api/_automatico.js, js/checkout.js, css/checkout.css,
+         js/tienda-plus.js, css/tienda-plus.css, js/ventas-panel.js, css/ventas-panel.css
+- Se quitó Mercado Pago por completo (cobro, aviso de pago y opciones del panel).
+  Si tenías MP_ACCESS_TOKEN en Vercel, ya puedes borrarla.
+- Clip es el cobro principal y se ve con su naranja: opción de pago, botón "Pagar" y
+  el botón "Pagar en línea" de la bolsa.
+- PayPal (opcional): aparece como segunda opción, en amarillo, cuando pones en Vercel
+    PAYPAL_CLIENT_ID y PAYPAL_CLIENT_SECRET   (developer.paypal.com → Apps & Credentials → Live)
+    PAYPAL_SANDBOX=1                          (solo para probar con credenciales de prueba)
+  Se cobra en pesos; al regresar de PayPal el servidor cobra y revisa el monto.
+  Se puede apagar en Ventas → Promociones y pagos → "Ofrecer PayPal además de Clip".
+- Corte de caja, Pedidos en línea, recibo y Pendientes dicen "Clip" o "PayPal".
+
+── v27 (iconos, módulos y menú a tu gusto) ────────
+Nuevos: js/iconos.js, js/panel-prefs.js, css/panel-prefs.css
+Tocados: admin.html, tienda.html, prenda.html, inicio.html, api/_crecer.js, js/admin.js,
+         js/ventas-panel.js, css/ventas-panel.css, js/tienda-plus.js, css/tienda-plus.css,
+         js/checkout.js, js/instagram-panel.js, js/automatico.js, js/importar-zip.js, js/ig-crecer.js
+Sin variables nuevas.
+- Iconos de línea en lugar de emojis en el panel y en la tienda (menús, avisos, botones,
+  Mis pedidos, Avísame, calculadora de envío…). Los mensajes que mandas por WhatsApp y los
+  textos de Instagram conservan sus emojis, porque ahí sí se ven bien.
+- Ventas → Módulos: prende o apaga cada función con un interruptor (Comprar ahora, Hacer una
+  oferta, Avísame, "N personas la vieron hoy", Mi talla, aviso de drop, barra de promoción,
+  Más en tu talla, calculadora de envío, Mis pedidos, dólares, pago en línea, PayPal, cupones,
+  sugerencias, puntos de entrega, envia.com, recuperar pagos y reseñas). Se aplica en la tienda
+  al momento; apagar no borra nada (tus puntos, cupones y reseñas siguen guardados).
+- Menú a tu gusto (se guarda en tu usuario, igual en compu y celular):
+  · Estrella junto a cada apartado = favorito; los favoritos quedan fijos arriba.
+  · "Personalizar menú" (arriba del menú lateral): arrastra o usa las flechas para el orden,
+    el ojo para ocultar lo que no usas, y "Restablecer" para volver al orden original.
+  · Lo mismo dentro de Ventas e Instagram con el botón "Ordenar".
+- Arreglo: los interruptores de Equipo (permisos) ahora responden al tocar el interruptor.
+
+── v28 (avisos con diseño profesional) ────────────
+Tocados: js/db.js, js/admin.js, js/ventas-panel.js, css/ventas-panel.css, js/tienda.js, js/ficha.js,
+         js/prenda.js, js/mi-cuenta.js, api/_crecer.js, api/_automatico.js
+Sin variables nuevas.
+- Mensajes emergentes nuevos en todo el sitio (panel y tienda):
+  · Tarjeta oscura con icono y color según lo que pasó: verde (listo), rojo (no se pudo),
+    ámbar (falta algo), azul (información) y círculo girando mientras sube o publica.
+  · Texto normal en lugar de mayúsculas; cuando hay detalle, va en una segunda línea.
+  · Barra de tiempo, botón para cerrar, se pausa al pasar el mouse y se desliza para quitar en celular.
+  · En computadora salen abajo a la derecha; en celular salen arriba, sin tapar la barra de abajo
+    ni el botón de comprar.
+  · "Subiendo…" se convierte en "Listo" en el mismo lugar; si el mismo mensaje se repite, muestra ×2.
+  · En la tienda, guardar en la wishlist muestra un corazón.
+- Ventas → Pendientes rediseñado:
+  · Cada aviso dice qué pasó (Pago recibido, Pago sin terminar, Devolver dinero, Reseña nueva…),
+    el nombre del cliente, el monto y si fue con Clip o PayPal, cómo se entrega y qué prendas son.
+  · Se agrupan por día (Hoy, Ayer…). Lo urgente, como devolver dinero, va hasta arriba en rojo.
+  · Botón "Ver pedido" que te lleva al pedido y lo marca.
+  · Al tocar "Listo" o mandar el WhatsApp, puedes "Deshacer" si fue sin querer.
+  · Los avisos que ya tenías también se ven con el diseño nuevo.
+
+── v29 (sistema de notificaciones completo) ───────
+Nuevos: js/avisos-centro.js, css/avisos-centro.css
+Tocados: admin.html, js/db.js, js/admin.js, js/ventas-panel.js, css/ventas-panel.css, js/instagram-panel.js,
+         js/tienda.js, js/ficha.js, js/prenda.js, js/wishlist.js, api/acciones.js, api/_crecer.js
+Sin variables nuevas. Colecciones nuevas en MongoDB (se crean solas): papelera, erroresCliente.
+Todo vive en un solo servicio (Avisos, en js/db.js); la campana solo lo muestra.
+- Avisos:
+  · Máximo 3 a la vista; los demás esperan su turno ("2 avisos más en espera").
+  · Sin repetidos: el mismo aviso suma ×2, ×3. Lo que pasa varias veces se agrupa
+    ("5 fotografías subidas correctamente") con "Ver detalles".
+  · Errores importantes (sesión vencida, token de Instagram, sin internet, dinero por devolver)
+    se quedan hasta que los cierres o se resuelvan. Los demás se van solos con su barra de tiempo.
+  · Botones según el caso: Reintentar, Ver detalles, Reconectar cuenta, Deshacer, Ver pedido,
+    Ver en la tienda, Ver en Instagram.
+  · Mismo diseño en computadora y celular, con márgenes iguales a ambos lados.
+- Campana (en el perfil del menú y en la barra del celular):
+  · Historial con fecha y hora, tipo, de dónde vino y su acción.
+  · Filtros Todas / Sin leer / Errores; punto azul = sin leer (tócalo para marcarla leída);
+    "Marcar todo como leído" y "Limpiar historial" (pide confirmar).
+  · Se guarda por usuario en este navegador.
+- Integrado en:
+  · Fotos: un solo aviso por lote; si alguna falla, Reintentar solo esa. (Arreglo: si fallaba una
+    foto mientras subían varias, se podía quitar la equivocada.)
+  · Prendas: al eliminar puedes Deshacer (se guarda 30 días en la papelera); Reintentar al fallar
+    guardar; "Ver en la tienda" al publicar o editar.
+  · Instagram: Reintentar al fallar, "Ver en Instagram" al publicar, aviso fijo con "Reconectar
+    cuenta" si el token venció, aviso cuando faltan 7 días o menos para que venza.
+  · Automático y publicaciones programadas: resumen con detalles.
+  · Pedidos: Deshacer al marcar enviado/entregado; aviso de pagos nuevos, pagos sin terminar y
+    reseñas aunque estés en otra sección (se revisa cada 2½ minutos).
+  · Sesión vencida: un solo aviso con "Iniciar sesión". Sin internet: aviso que se quita solo al volver.
+  · Tienda: "Eliminado de tu wishlist" con Deshacer; copiar links agrupado.
+- Registro de errores: se guarda en el navegador (campana → Errores → "Copiar registro técnico")
+  y en el servidor (erroresCliente, 30 días, máximo 40 por usuario cada 10 min).
+- Arreglo: la tarjeta de inventario decía "Costo: $undefined" cuando la prenda no tenía costo.
+
+── v30 (todo alineado y en su lugar) ──────────────
+Tocados: js/ventas-panel.js, css/ventas-panel.css, js/panel-prefs.js, css/panel-prefs.css, js/avisos-centro.js,
+         css/avisos-centro.css, js/tienda-plus.js, css/tienda-plus.css, js/checkout.js, css/checkout.css
+Sin variables nuevas. Solo acomodo: nada cambia de cómo funciona.
+- Menú del panel: "Personalizar menú" a la izquierda y la campana a la derecha en la misma fila
+  (la etiqueta "ADMIN · STMP MARKET" ya no se parte); "Favoritos" con el mismo estilo que los demás
+  títulos; "Ver tienda" y "Salir" del mismo tamaño y en un renglón. En celular solo queda la campana de arriba.
+- Promociones y pagos: una tarjeta por tema en orden (Vender más → Cobro y entrega → Tienda);
+  envia.com en su propia tarjeta a lo ancho; "Guardar cambios" siempre visible abajo.
+- Corte de caja: cuadros parejos; Clip, PayPal y Efectivo con su nombre y monto en recuadros iguales.
+- Tablas: números alineados a la derecha; interruptores de Equipo centrados bajo su título.
+- Métricas: botón "Actualizar" con icono. Pedidos: filtros del mismo ancho en celular.
+- Pendientes: sin la franja de color de un solo lado; en celular "Ver pedido" y "Listo" a la mitad cada uno.
+- Tienda en celular: el encabezado ya no corta "Catálogo"; MXN/USD es un solo botón que cambia de moneda;
+  la lupa va junto a los demás botones. "Llévate 2 prendas…" con el enlace alineado al texto.
+- Página de pago: "Ver tu pedido" con el número en una pastilla; "Guarda tu recibo" con WhatsApp
+  arriba y "Copiar link" / "Guardar en PDF" parejos; Mis pedidos centrado en computadora.
+
+── v31 (apartar con anticipo: paga la mitad y aparta) ──────────────
+Tocados: api/_crecer.js, api/_automatico.js, js/checkout.js, css/checkout.css, js/tienda-plus.js,
+         css/tienda-plus.css, js/ventas-panel.js, css/ventas-panel.css
+Sin variables nuevas: usa las mismas llaves de Clip y PayPal. Siguen siendo 12 funciones en Vercel.
+- Al pagar, el cliente elige "Pagar todo ahora" o "Apartar con el 50%". Paga la mitad con Clip o
+  PayPal y la prenda queda apartada a su nombre (no se suelta sola ni la puede comprar nadie más).
+- El resto lo paga antes de la fecha límite (7 días): en línea desde su recibo, con tarjeta o PayPal,
+  o en persona al recogerla. Su recibo muestra cuánto le falta, la fecha y la barra de avance.
+- En la página de cada prenda, junto a "Comprar ahora": "Apártala con $X y paga el resto en 7 días".
+- Panel → Ventas → Pedidos en línea → "Apartados": cuánto pagó y cuánto falta, en orden de fecha límite.
+  Botones: "Cobré el resto" (pago en persona; antes revisa que no lo haya pagado ya en línea),
+  "3 días más", "Liberar" (cancela y la prenda vuelve a la venta) y "Recordar por WhatsApp".
+- Si vence sin liquidar, la prenda NO se suelta sola: te llega un aviso en Pendientes para decidir.
+- Cuando paga el resto en línea te llega "Apartado liquidado" y el pedido pasa a "Por entregar".
+  No se puede entregar ni marcar enviado un apartado sin liquidar.
+- Promociones y pagos → "Apartar con anticipo": porcentaje (10 a 90%), días para liquidar (1 a 30)
+  y desde qué monto se ofrece. Módulos → "Apartar con anticipo" lo apaga por completo.
+- Corte de caja: tabla "Anticipos de apartados" con lo que entró ese día por anticipos. La venta
+  cuenta completa el día que se liquida. Los cupones se cuentan una sola vez.
+- Panel en celular: los botones de cada pedido van en una cuadrícula pareja; "Entrega en persona"
+  usa dos columnas en pantallas anchas.
+
+── v32 (revisión completa: errores, seguridad y detalles profesionales) ──────────────
+Tocados: api/_crecer.js, api/_bazar.js, api/_instagramPanel.js, api/_rateLimit.js, api/auth.js,
+         api/inventario-item.js, api/inventario.js, api/prenda.js, api/sync.js, middleware.js,
+         vercel.json, js/tienda.js, js/tienda-plus.js, js/admin.js y los .html públicos.
+Nuevos:  manifest.webmanifest, favicon.ico, icons/ (4 imágenes)
+Siguen siendo 12 funciones en Vercel. Variables nuevas OPCIONALES:
+  RESEND_API_KEY + CORREO_DESDE  → recibo por correo automático (resend.com, plan gratis 3,000/mes)
+  SITE_URL                       → solo si algún día cambia el dominio (por defecto https://stiimpys.store)
+
+Errores corregidos
+- Instagram → "Rehacer post" tronaba siempre que el post tenía prenda (variable que no existía).
+- Dos personas podían pagar la misma prenda al mismo tiempo: ahora la prenda se aparta en una sola
+  operación ANTES de abrir el pago; la segunda persona ve "la acaba de apartar alguien más".
+  Si Clip/PayPal falla al abrir el pago, la prenda vuelve a quedar como estaba.
+- Un cupón de porcentaje podía pasar de 100 %. Ahora el tope es 100 %, y si el pedido queda en $0
+  se le pide al cliente escribir por WhatsApp (Clip y PayPal no cobran $0).
+- El conteo de usos de cupones se suma de forma atómica (dos pagos a la vez ya no se pisan).
+- Aceptar una oferta ya no le quita el apartado a otra persona que pagó anticipo o estaba pagando.
+- La página pedía archivos que no existen (js/experiencia.js, css/premium.css, css/admin-stmp.css):
+  eran errores 404 en cada página. Se quitaron. (css/adminstmp.css existe pero nunca se cargó;
+  se dejó así para no cambiar cómo se ve el panel.)
+- Los filtros de categoría, marca y talla de la tienda se rompían si el nombre llevaba apóstrofo (').
+- Más margen para clientes que comparten internet (datos móviles): el límite de intentos de pago
+  sube de 12 a 30 por hora y la revisión del recibo de 60 a 300.
+
+Seguridad
+- Lo que escribe cualquier bazar (nombre, marca, talla, fotos…) se limpia en el servidor: sin
+  etiquetas HTML, cada dato con su tipo y fotos solo https. Evita que un texto malicioso se
+  ejecute en la tienda o en tu panel. También se escapan esos datos al mostrarlos.
+- Un bazar ya no puede reemplazar prendas de otro bazar mandando su número (PUT /api/inventario).
+- Un vendedor ya no puede borrar interesados de otro bazar ni descargar respaldos (traen costos y
+  teléfonos): solo administradores.
+- Los datos del panel ya no se marcan "public" en caché (un proxy podía guardarlos).
+- "Vendido a" en la tienda pública muestra solo nombre e inicial (antes salía el nombre completo
+  que el cliente escribió al pagar). En el panel se sigue viendo completo.
+- Las prendas ocultas ya no salen en la API pública, el sitemap ni los previews.
+- "Salir" invalida la sesión también en el servidor. Clave maestra comparada de forma segura.
+
+Profesional
+- stiimpys.store abre directo la página de inicio (antes pasaba por una casilla de verificación
+  que no protegía nada: la revisión no se validaba en el servidor y solo frenaba a los clientes y
+  a Google). La verificación sigue en /index.html; para regresarla, borra el bloque "redirects"
+  de vercel.json.
+- Google y WhatsApp leen la ficha de cada prenda en su propia dirección (sin redirecciones en
+  círculo): mejor indexación y previews con foto, precio y disponibilidad. Datos estructurados de
+  producto más completos. El sitemap ya no lista la portada como "/" (que no se podía indexar).
+- Se puede instalar como app en el celular ("Agregar a pantalla de inicio") con ícono propio;
+  el ícono de iPhone ahora es PNG (iOS no usaba el SVG).
+- Recibo por correo automático si el cliente dejó su correo: al pagar, al apartar, al liquidar y
+  cuando se marca "enviado" (con paquetería y guía). Solo funciona con RESEND_API_KEY y
+  CORREO_DESDE; sin ellas todo sigue igual.
+- Métricas lee solo los últimos 30 días de la base (antes leía todo el historial).
+- Cabeceras de seguridad extra (COOP y upgrade-insecure-requests). Textos de la portada y de la
+  página de pago mencionan el pago en línea.
+
+── v33 (panel profesional: monitor, actividad y pedidos con historial) ──────────────
+ESTA VERSIÓN ES PARA REVISAR Y PROBAR ANTES DE PUBLICARLA (ver "Cómo actualizar" abajo).
+Siguen siendo 12 funciones en Vercel: todo lo nuevo vive dentro de /api/acciones y en
+archivos que empiezan con "_" (no cuentan).
+
+Archivos nuevos
+  api/_actividad.js    registro central de eventos, limpieza de datos sensibles, candados anti-duplicado
+  api/_auditoria.js    registra solo cada operación del panel (quién, qué, resultado) sin cambiar su lógica
+  api/_sistema.js      monitor, centro de actividad, reparaciones e historial de pedidos
+  js/sistema-panel.js  pantallas Monitor y Actividad + ventana "Historial del pedido"
+  css/sistema-panel.css
+  .vercelignore        para que la carpeta pruebas/ no se suba a Vercel
+  pruebas/             pruebas automáticas (no son parte del sitio)
+Archivos modificados
+  api/_crecer.js       historial por pedido, cancelar, revisar pago, alertas, eventos de pagos/cupones/apartados
+  api/acciones.js      rutas nuevas, auditoría, candados por prenda, validaciones (ver Seguridad)
+  api/_auth.js         una sola consulta de sesión por petición
+  api/_correo.js       cada correo (o falla) queda registrado con el destinatario enmascarado
+  api/_paypal.js       consulta sin cobrar (para pedidos cancelados) y prueba de credenciales
+  api/auth.js          entradas, salidas e intentos fallidos registrados
+  api/sync.js          marca la última sincronización; el registro del panel se filtra por bazar
+  api/inventario-item.js, api/inventario.js, api/config.js, api/change-password.js, api/upload.js
+                       operaciones auditadas; no se puede soltar/vender una prenda con pago en curso
+  api/cuenta.js        el enlace para cambiar contraseña usa SITE_URL, no la cabecera Host
+  api/activos.js, api/session-check.js, api/prenda.js   errores registrados
+  admin.html           Sistema con pestañas: Monitor · Actividad · Mantenimiento · Datos del panel
+  js/ventas-panel.js   Pedidos en línea: búsqueda, "Mostrar más", Cancelados, alertas, Historial, Cancelar, Revisar pago
+  js/admin.js          reactivar una prenda pagada en línea pide confirmar que se devolvió el dinero
+  js/db.js             los errores del servidor traen todos sus datos al panel
+La tienda pública (inicio, tienda, prenda, pagar, cuenta, términos, vender, redes) no cambió.
+
+Qué hay de nuevo
+1. Centro de actividad (Sistema → Actividad). Lo escribe solo el servidor, así que nadie lo puede
+   falsear desde el navegador. Cada evento guarda: tipo, fecha y hora, usuario, prenda o pedido,
+   acción, resultado (Correcto / Informativo / Rechazado / Error) y el detalle del error.
+   Se registran: pagos de Clip (cada aviso, cada consulta que falla, montos que no coinciden),
+   PayPal, pedidos creados/expirados/cancelados/reemplazados, choques de dos clientes por la misma
+   prenda, apartados (anticipo, resto, vencido, más días, liberado), cupones (aplicado, uso,
+   creado, cambiado, quitado), correos de Resend, publicaciones y republicaciones de Instagram,
+   errores de MongoDB, entradas y salidas del panel, la tarea diaria y toda operación del panel.
+   Filtros por fecha, área, resultado, usuario y búsqueda libre; indicadores; 25/50/100 por
+   página; detalle de cada evento; exportar a CSV (hasta 2,000). En celular la tabla se vuelve
+   tarjetas y los filtros se abren con un botón.
+   Nunca guarda contraseñas, tokens, claves de pedido, direcciones, fotos ni textos de mensajes;
+   teléfonos y correos van enmascarados (•••4567, an•••@gmail.com). Se borra solo a los 90 días.
+   El "Registro del panel" de antes sigue igual en "Datos del panel".
+2. Monitor (Sistema → Monitor). Estado general y de cada servicio: MongoDB (ping y lentitud),
+   Clip (credenciales y errores recientes; solo consulta, nunca crea cobros), Resend (clave y
+   dominio verificado, y si el último correo falló), Cloudinary (ping) y PayPal si está conectado.
+   Cada uno: Operativo / Degradado / No disponible / Sin configurar. Además: errores en 24 h,
+   pagando ahora, apartados, por entregar; operaciones pendientes; últimos movimientos (sync del
+   panel y de la tienda, tarea diaria, último aviso de Clip, último pago, último correo, última
+   actividad); pedidos que necesitan atención; errores recientes. Se actualiza solo cada minuto.
+3. Consistencia pedidos ↔ pagos ↔ inventario: el monitor detecta prendas apartadas para pedidos
+   cerrados, anticipos pagados sin la prenda apartada, pedidos pagados con la prenda todavía a la
+   venta, etc. Botones seguros "Soltar apartado", "Volver a apartar" y "Revisar pago" (siempre
+   se vuelve a comprobar antes de tocar algo; nunca suelta una prenda con anticipo o pago en curso).
+4. Pedidos en línea:
+   - Historial de cada pedido (botón "Historial"): cada cambio de estado con fecha, quién y de qué
+     estado a cuál; estado real de cada prenda (y si coincide); eventos relacionados. Los pedidos
+     de antes de la v33 muestran un historial armado con sus fechas.
+   - Cancelar pedido (solo sin pago confirmado): antes se le pregunta a Clip/PayPal. Si ya pagó o
+     está pagando, no se cancela. Motivo opcional. Las prendas vuelven a la tienda.
+     Si aun así llega un pago después de cancelar, NO se vende nada y llega "Devolver dinero".
+   - "Revisar pago": consulta el estado real con Clip/PayPal de un pago que se quedó abierto.
+   - Alertas: pago abierto de más, apartado vencido o por vencer, pagado hace días sin entregar,
+     enviado hace mucho, dinero por devolver. Búsqueda, "Mostrar más" y pestaña "Cancelados".
+   - "Liberar" un apartado ahora revisa antes si ya pagó el resto en línea (si sí, no libera).
+   - No se repite: "Marcar enviado" dos veces, "Entregado" dos veces, cancelar dos veces.
+
+Seguridad
+- Candados contra operaciones duplicadas: la misma petición repetida en segundos (doble clic,
+  reintento) se bloquea con aviso; una sola operación a la vez por pedido y por prenda; el mismo
+  cliente tocando dos veces "Pagar" crea un solo pedido.
+- No se puede borrar, vender en persona, editar el apartado ni "Quitar apartado" de una prenda
+  con anticipo pagado o que alguien está pagando en ese momento.
+- Reactivar una prenda vendida en línea pide confirmar que ya se devolvió el dinero, y queda en
+  el historial del pedido. Una venta en línea no se puede reasignar a otro comprador.
+- El registro del panel (logs) ya no es público: antes cualquiera podía leerlo sin sesión.
+- Las solicitudes de bazar (con WhatsApp) solo las ve el admin principal.
+- El registro del panel que viene en /api/sync se filtra por bazar.
+- Restaurar desde la papelera exige el permiso de publicar prendas.
+- Actividad, monitor y reparaciones: solo administradores; cada admin de bazar ve solo su bazar.
+  El historial de un pedido lo ve cualquier usuario del mismo bazar.
+
+Variables de entorno: NINGUNA obligatoria. Opcional: ACTIVIDAD_DIAS (días que se guarda la
+actividad; 90 por defecto, de 7 a 365). Siguen funcionando RESEND_API_KEY, CORREO_DESDE y SITE_URL.
+Colecciones nuevas en MongoDB (se crean solas): actividad, bloqueos, sistema. Los pedidos ganan
+el campo "historial". Nada de lo anterior se borra ni se cambia de formato.
+
+Cómo actualizar (sin publicar directo)
+ 1. Respalda: Panel → Ventas → Respaldo → descarga "todo". Guarda también el zip de la v32.
+ 2. Copia los archivos de la v33 encima del proyecto (o usa stiimpys-v33-completo.zip).
+ 3. Sube a una rama nueva (p. ej. "v33") en lugar de la principal: Vercel arma una vista previa
+    (Preview) con su propio link sin tocar stiimpys.store. Si despliegas con la CLI, usa
+    "vercel" (sin --prod). Las variables deben estar también en el entorno Preview de Vercel.
+    Ojo: la vista previa usa la misma base de datos; no hagas pagos ni cancelaciones de prueba con
+    pedidos reales de clientes.
+ 4. Revisa en la vista previa: Sistema → Monitor (servicios en verde), Sistema → Actividad,
+    Ventas → Pedidos en línea → Historial. Haz una compra chica con Clip y mira su historial.
+ 5. Si todo está bien, une la rama a la principal (o "Promote to Production" en Vercel).
+Cómo regresar a la v32
+ - En Vercel → Deployments, elige el último despliegue de la v32 → "Instant Rollback" (o
+   "Promote to Production"). Es inmediato.
+ - O vuelve a subir los archivos de la v32 y borra los nuevos (los de "Archivos nuevos").
+ - Los datos son compatibles en ambos sentidos: la v32 ignora "historial" y las colecciones
+   actividad/bloqueos/sistema; si quieres, se pueden borrar desde MongoDB Atlas sin afectar nada.
+
+Pruebas (carpeta pruebas/, no se sube a Vercel): npm install; npm i --no-save mingo@6;
+node pruebas/correr.mjs. Resultados en pruebas/RESULTADOS-v33.md.
+
+── v34 (rediseño del panel: temas claro/oscuro y app de iPhone) ──────────────
+ESTA VERSIÓN ES PARA REVISAR Y PROBAR ANTES DE PUBLICARLA (mismos pasos que la v33, abajo).
+Solo cambia cómo se VE el panel: ninguna función, permiso, pago ni dato cambió. La tienda
+pública no se tocó. Siguen siendo 12 funciones en Vercel (no hay archivos nuevos en api/).
+No hay variables de entorno nuevas ni dependencias nuevas.
+
+Archivos nuevos
+  css/tema.css         colores del panel (claro y oscuro) y los 5 colores de acento
+  css/tema-auto.css    pasa al tema los ~1,200 colores fijos de las hojas de antes (se genera solo)
+  css/panel-pro.css    el diseño nuevo: menú, encabezados, tarjetas, campos, botones, ventanas
+                       y, en celular, la app tipo iPhone
+  js/tema.js           pone el tema antes de pintar (sin destello blanco) y lo recuerda
+  js/panel-app.js      barra de pestañas, hoja "Más", títulos grandes, selector de tema
+  css/login-tema.css   el acceso al panel también en oscuro (y campos redondeados como su diseño)
+  herramientas/generar-tema.py   regenera css/tema-auto.css (no se sube a Vercel)
+  pruebas/v34-navegador.py       38 pruebas del rediseño en Chrome
+Archivos modificados
+  admin.html     carga los 5 archivos de arriba; tarjeta "Apariencia" en Mi cuenta; ícono para
+                 pantalla de inicio del iPhone
+  login.html     carga js/tema.js y css/login-tema.css
+  .vercelignore  agrega herramientas/
+Ningún CSS o JS que ya existía se modificó: todo lo nuevo va encima y se puede quitar.
+
+Qué hay de nuevo
+1. Temas: Automático (sigue al teléfono/computadora y cambia solo al anochecer si el
+   dispositivo lo hace), Claro (fondo cálido, menos blanco puro) y Oscuro (negro suave,
+   menos brillo). Se elige en tres lugares: el selector del pie del menú lateral, Mi cuenta →
+   Apariencia, o en celular en "Más" → Apariencia. Se guarda en ese dispositivo.
+   Colores de acento: Azul STMP (el de siempre), Grafito, Esmeralda, Violeta y Coral.
+2. Rediseño en computadora: menú lateral más limpio con la sección activa resaltada,
+   encabezado de cada sección que se queda arriba translúcido al hacer scroll, tarjetas con
+   esquinas y sombras suaves, campos con anillo de enfoque, interruptores estilo iPhone,
+   filtros tipo pastilla, ventanas con fondo desenfocado, botón de borrar en rojo legible.
+3. En celular, como app nativa de iPhone:
+   - Barra de pestañas abajo: Inventario, Registrar, Ventas, Instagram y "Más" (con globos de
+     avisos). Si marcas secciones como Favoritas en "Personalizar menú", esas van en la barra.
+   - "Más": tu perfil, todas las secciones agrupadas como en Ajustes, Apariencia, Ver tienda y
+     Cerrar sesión. Respeta permisos: un vendedor no ve secciones de admin.
+   - Títulos grandes que al bajar pasan a la barra de arriba (translúcida, con desenfoque).
+   - Las ventanas (editar prenda, registrar venta, confirmaciones) suben desde abajo como hojas
+     y se cierran deslizando hacia abajo desde la rayita.
+   - Campos de 16 px (el iPhone ya no hace zoom al escribir), márgenes de la isla/notch y de la
+     barra de inicio respetados, botones que responden al toque.
+4. Contraste revisado automáticamente en las 14 secciones, en claro y oscuro, en computadora y
+   celular (ningún texto por debajo de 3:1). De paso se corrigieron textos que ya venían con
+   poco contraste: botones ámbar Reactivar/Calificar, botón rojo de borrar y globos de avisos.
+
+Sobre "Agregar a pantalla de inicio" en iPhone: a propósito NO se activó el modo app sin barra
+de Safari. El panel vive detrás de la dirección secreta (middleware.js); una app de pantalla de
+inicio abriría /admin.html sin barra de direcciones y, al vencer la sesión, quedaría atrapada en
+el 404 sin forma de volver a la puerta. Puedes agregarla igual: abre en Safari con su barra.
+
+Si cambias colores en alguna hoja vieja (admin.css, ventas, etc.), vuelve a generar el tema:
+  python3 herramientas/generar-tema.py      (necesita: pip install tinycss2)
+
+Cómo actualizar: como en la v33 (rama nueva → vista previa de Vercel → revisar → Promote).
+  Revisa en la vista previa: los dos temas en tu compu y en tu iPhone, Mi cuenta → Apariencia,
+  y en el celular la barra de abajo y "Más".
+Cómo regresar a la v33
+  - Vercel → Deployments → último despliegue de la v33 → "Instant Rollback".
+  - O sin redeploy de archivos viejos: en admin.html quita las 3 líneas <link> de tema-auto.css,
+    tema.css y panel-pro.css y los <script> de js/tema.js y js/panel-app.js; el panel queda
+    exactamente como en la v33. No hay datos que migrar ni que borrar.
+
+Pruebas: con el servidor de pruebas corriendo (node pruebas/correr.mjs --servidor) →
+  python3 pruebas/v34-navegador.py. Resultados en pruebas/RESULTADOS-v34.md.
+
+── v35 (carrito de compras, pagos por intermediarios y arreglo del panel) ──────────────
+ESTA VERSIÓN ES PARA REVISAR Y PROBAR ANTES DE PUBLICARLA (mismos pasos que la v33).
+Siguen siendo 12 funciones en Vercel. Sin variables de entorno nuevas ni dependencias nuevas.
+
+Error corregido (el de la captura)
+  En el panel de la lista, las prendas con nombre largo se salían del recuadro del bazar,
+  el botón de quitar quedaba fuera de la pantalla y aparecía una barra para desplazarse a los
+  lados. La columna de prendas crecía al ancho del nombre completo; ahora se queda del ancho
+  del panel y el nombre se corta con "…". Además, en el catálogo el botón "Vaciar" estaba
+  dentro de la barra de filtros en lugar del panel; ya está en su lugar.
+
+La wishlist ahora es un carrito de compras
+  - Ícono de carrito en el encabezado y en la barra de abajo del celular ("Carrito"), con contador.
+  - En cada prenda del catálogo, botón de carrito (con "+" para agregar y "✓" si ya está).
+    Las vendidas, apartadas y en subasta ya no muestran el botón.
+  - En la ficha: botón "Agregar al carrito". Si ya está, dice "En tu carrito · Ver carrito"
+    y al tocarlo abre el carrito (se quita desde el carrito).
+  - Aviso "Agregada a tu carrito" con botón "Ver carrito".
+  - Panel "Mi carrito": prendas por bazar, descuento por volumen, cupón, total, "Pagar en
+    línea" y "Apartar por WhatsApp". Nota: el carrito no aparta (es de quien pague primero)
+    y los pagos se procesan por Clip y PayPal como intermediarios.
+  - Mi cuenta → "Mi carrito" (antes Favoritos) con botón "Ir a pagar" por bazar.
+  - Lo que cada cliente ya tenía guardado aparece en su carrito: se usa la misma llave de
+    siempre (bazar_wishlist), en el navegador y en las cuentas. No se pierde nada.
+  - Textos del panel de admin: métricas "al carrito" en lugar de "a la bolsa".
+
+Giro de la página y pagos por intermediarios
+  - El sitio ya no se presenta como "solo un catálogo" (eso decían los términos aunque ya
+    había carrito, cuentas y pago en línea). Ahora: "Tienda en línea de bazares independientes.
+    Cada prenda la vende el bazar que la publica y los pagos en línea se procesan a través de
+    intermediarios de pago (Clip y PayPal)". En el pie de todas las páginas, en "Vende con
+    nosotros", en preguntas frecuentes del inicio y en las descripciones para Google.
+  - Términos y condiciones reescritos (noviembre de 2026), 15 secciones. Nueva sección 8
+    "Pagos a través de intermediarios": STMP MARKET no cobra ni retiene el dinero; Clip/PayPal
+    procesan el cobro y depositan en la cuenta del bazar; nadie más ve los datos de la tarjeta;
+    qué datos se le pasan al intermediario; aclaraciones y contracargos.
+    También: cómo se compra (carrito, pagar en línea, apartar con anticipo, WhatsApp), el
+    comprobante no es factura (CFDI), cuándo sí se devuelve el dinero (prenda que ya se había
+    vendido, pago después de cancelar, el bazar no puede entregar), aviso de privacidad al día
+    (pedidos, cuentas, intermediarios, proveedores) y los derechos ante Profeco.
+  - En la página de pago: "Clip/PayPal procesa este pago como intermediario…" y enlace a la
+    sección de pagos.
+  Revísenlo con un abogado antes de publicarlo: es texto de referencia, no asesoría legal.
+
+Archivos nuevos: css/carrito.css, pruebas/v35-carrito.py (49 pruebas)
+Archivos modificados: tienda.html, prenda.html, inicio.html, redes.html, cuenta.html,
+  terminos.html, vender.html, js/wishlist.js, js/tienda.js, js/ficha.js, js/tienda-plus.js,
+  js/checkout.js, js/mi-cuenta.js, js/db.js, js/ventas-panel.js, api/_crecer.js (solo textos)
+Cómo regresar a la v34: Instant Rollback en Vercel. No hay datos que migrar: el carrito usa
+  la misma llave que la wishlist.
+
+── v36 (apartado de 10 minutos al pagar, con contador) ──────────────
+ESTA VERSIÓN ES PARA REVISAR Y PROBAR ANTES DE PUBLICARLA (mismos pasos que la v33).
+Siguen siendo 12 funciones en Vercel. Sin variables de entorno nuevas.
+
+Qué cambió
+  - Cuando alguien toca "Pagar", sus prendas se apartan 10 minutos (antes 30). El link de
+    Clip vence a la misma hora, así que después ya no se puede pagar con ese link y la prenda
+    vuelve sola a la tienda.
+  - Contador en vivo (m:ss):
+      · Catálogo: la tarjeta dice "Apartada · 9:41".
+      · Ficha: "Alguien la está pagando en este momento. Si no completa su pago en 9:41,
+        vuelve a estar disponible aquí mismo." Al llegar a cero, la ficha se actualiza sola y
+        vuelven "Comprar ahora" y "Agregar al carrito", sin recargar.
+      · Carrito: "Apartada 9:41" sobre la foto (no la cuenta en el total mientras tanto).
+      · A quien está pagando: si regresa sin terminar, ve "Tus prendas siguen apartadas para
+        ti: 9:41" con "Intentar de nuevo". La página de pago avisa "te la apartamos 10 minutos".
+      · Panel → Inventario: "⏳ Pagando en línea: Ana · 9:41".
+  - La tienda solo recibe la hora en que termina el apartado (campo pagandoHasta). Nunca el
+    nombre ni el teléfono de quien paga.
+  - Un apartado de pago vencido ya no se ve como "Apartada" en la tienda mientras llega la
+    limpieza automática (antes podía quedarse así hasta que corría la tarea diaria).
+  - PayPal no vence solo como Clip. Si alguien aprueba en PayPal después de los 10 minutos y
+    mientras tanto otra persona ya apartó o compró la prenda, la orden NO se cobra (antes se
+    cobraba y había que devolver el dinero). Queda en el historial del pedido.
+  - Los apartados con anticipo (días) y los apartados por WhatsApp desde el panel no cambian.
+  - Términos (punto 7 y punto 8) y textos del carrito mencionan los 10 minutos.
+  - Si quieres otro tiempo: api/_crecer.js → MINUTOS_PAGO (y el texto "10 minutos" de
+    js/checkout.js, js/wishlist.js, js/mi-cuenta.js y terminos.html).
+
+Archivos modificados: api/_crecer.js, api/_bazar.js, js/db.js, js/tienda.js, js/ficha.js,
+  js/wishlist.js, js/checkout.js, js/automatico.js, js/mi-cuenta.js, terminos.html,
+  css/carrito.css, css/checkout.css, css/panel-pro.css, pruebas/correr.mjs
+Archivos nuevos: pruebas/v36-apartado.mjs (24 pruebas del servidor),
+  pruebas/v36-navegador.py (22 pruebas en Chrome)
+Cómo regresar a la v35: Instant Rollback en Vercel. Los datos no cambian de formato.
+
+── v37 (carrito y pago estilo Mercado Libre / Amazon) ───────────────
+ESTA VERSIÓN ES PARA REVISAR Y PROBAR ANTES DE PUBLICARLA (mismos pasos que la v33).
+Siguen siendo 12 funciones en Vercel. Sin variables de entorno nuevas. Sin dependencias nuevas.
+
+Qué cambió
+  - Página nueva carrito.html ("Carrito"): como la de Mercado Libre.
+      · Pasos arriba: 1 Carrito · 2 Entrega y pago · 3 Confirmación.
+      · Prendas agrupadas por bazar, con "Eliminar" (se puede deshacer) y "Comprar solo esta".
+      · Barra de avance del descuento por volumen ("Agrega 1 prenda más y ahorra 15%") y de la
+        entrega gratis en persona.
+      · "Resumen de compra" a la derecha (abajo en celular): Productos (n), descuento por
+        volumen, cupón, entrega y Total. Los montos los calcula el servidor (v-cotizar), igual
+        que en el pago: lo que ves en el carrito es lo que se cobra.
+      · Campo "Código de descuento" (se guarda y pasa solo a la página de pago).
+      · "No disponibles ahora": las que se vendieron o retiraron, y las que otra persona está
+        pagando con su contador ("se libera en 9:41"). Botón "Quitarlas".
+      · "También te puede gustar": prendas del mismo bazar (primero de tu talla), con "Agregar".
+      · En celular, barra fija abajo con el total, lo que ahorras y "Continuar compra".
+      · Si el bazar no cobra en línea, "Continuar" abre WhatsApp como antes.
+  - Al tocar "Agregar al carrito" sale una hoja "Agregaste a tu carrito" (como Amazon): foto,
+    precio, subtotal del carrito con el descuento que ya ganó, y botones "Ir a pagar",
+    "Ver carrito" y "Seguir comprando". En celular sube desde abajo y se cierra deslizando.
+  - El ícono del carrito del encabezado y de la barra de abajo ahora abren carrito.html (el
+    panel lateral sigue en el código, sin usarse).
+  - Ficha en celular: la barra fija de abajo trae el carrito y "Comprar ahora" (si el bazar
+    cobra en línea y la prenda está disponible; si no, queda WhatsApp como antes).
+  - Página de pago por pasos: secciones numeradas (1 Tus datos · 2 Entrega · 3 Pago), botón de
+    pagar también en el resumen, "Modificar carrito", y barra fija con el total en celular que
+    se esconde cuando ya se ve el botón principal. La confirmación muestra los 3 pasos listos.
+  - Mi cuenta → Mi Carrito: enlace "Ver carrito completo".
+  - Si el navegador cancela la animación entre páginas (pasa en algunos celulares), ya no
+    queda como error en el registro del panel.
+  - vercel.json: carrito.html no se indexa en buscadores (igual que pagar y cuenta).
+  - Nada cambió en cómo se cobra: Clip y PayPal, apartado de 10 minutos y confirmación del
+    servicio de pago antes de dar algo por pagado.
+
+Archivos nuevos: carrito.html, css/carrito-pagina.css, js/carrito-pagina.js,
+  pruebas/v37-checkout.py (42 pruebas en Chrome)
+Archivos modificados: js/wishlist.js, js/ficha.js, js/checkout.js, js/mi-cuenta.js, js/db.js,
+  css/carrito.css, css/checkout.css, api/_crecer.js (v-cotizar devuelve la hora en que se
+  libera una prenda en pago), vercel.json, pagar.html y las páginas con animación entre
+  páginas (admin, estudio, cuenta, index, login, inicio, prenda, redes, terminos, tienda,
+  vender: una línea en <head>), pruebas/v35-carrito.py, pruebas/v36-navegador.py,
+  pruebas/v36-apartado.mjs
+Cómo regresar a la v36: Instant Rollback en Vercel. Los datos no cambian de formato
+  (el carrito sigue en la misma llave del navegador y de la cuenta).
+
+── v38 (todo alineado: un solo ancho, margen, espacio y esquinas) ───────
+ESTA VERSIÓN ES PARA REVISAR Y PROBAR ANTES DE PUBLICARLA (mismos pasos que la v33).
+Siguen siendo 12 funciones en Vercel. Sin variables nuevas. No cambia nada del servidor.
+
+Qué cambió
+  - css/limpio.css (nuevo): una sola regla de acomodo que se carga AL FINAL de inicio,
+    tienda, prenda, cuenta, redes, vender, términos y carrito. Antes cada hoja ponía sus
+    márgenes: a 1280 px el encabezado empezaba a 40 px, las secciones a 20 y los banners
+    a 60; a 1440 px, a 40, 100 y 140. Ahora todo mide 1200 px como máximo con el mismo
+    margen (40 px en compu, 24 en tableta, 16 en celular, 14 en celulares muy chicos):
+    encabezado, hero, secciones, banners, cuadrícula del catálogo, ficha y pie empiezan y
+    terminan en la misma línea. Términos conserva su columna de lectura angosta.
+  - Mismo espacio entre secciones del inicio (72 / 60 / 48 px) y mismas esquinas:
+    16 px en tarjetas (prendas, categorías, pasos, preguntas, estadísticas, tarjeta de
+    Stiimpys) y 24 px en los bloques grandes (Sobre Stiimpys y los dos banners).
+  - Hero del inicio: dos columnas iguales y centradas. Se quitaron los botones
+    "Explorar / Catálogo" del hero porque repetían "Ver todas las prendas" y el botón del
+    encabezado.
+  - Logo: "STIIMPYS." sin espacio antes del punto y siempre en una línea.
+  - Celular: "Página oficial · Reynosa, México" alineado a la izquierda; los dos botones
+    del hero del mismo ancho; a 320 px el inicio quita "Ver catálogo" del encabezado
+    (ya no cabía). La cuadrícula del catálogo ya no se mete 10 px más que el resto.
+  - Carrito: encabezado y pie del mismo ancho que el contenido. Pago en celular: todo a
+    16 px del borde (antes 14 y 20).
+  - Números del inicio: había DOS animaciones contando las mismas estadísticas
+    (js/motion-pro.js y js/inicio-premium.js). Una tomaba como meta un número a medio
+    contar de la otra y la estadística podía quedarse en "3 prendas" mientras la tarjeta
+    del hero decía 9. Ahora cuenta solo una, y si llega el inventario nuevo mientras
+    cuenta, se queda con el número real.
+  - El año del pie ya se pone solo desde la v32 (js/legal.js); en la página publicada
+    dice 2024 porque todavía es la v31.
+
+Si en tu sitio publicado agregaste a mano un limpio.css de otra conversación, este lo
+reemplaza: no lo cargues dos veces ni dejes otra copia con otro nombre.
+
+Archivos nuevos: css/limpio.css, pruebas/v38-acomodo.py (105 pruebas en Chrome)
+Archivos modificados: inicio.html, tienda.html, prenda.html, cuenta.html, redes.html,
+  vender.html, terminos.html, carrito.html (una línea que carga limpio.css; inicio.html
+  además sin los botones Explorar/Catálogo), css/checkout.css, js/inicio-premium.js,
+  js/motion-pro.js
+Cómo regresar a la v37: Instant Rollback en Vercel, o quitar la línea de limpio.css de
+  cada página.
+
+── v39 (solo Stiimpys, misma estética del inicio y sin transparencias) ───
+ESTA VERSIÓN ES PARA REVISAR Y PROBAR ANTES DE PUBLICARLA (mismos pasos que la v33).
+Siguen siendo 12 funciones en Vercel. Sin dependencias nuevas.
+Variables NUEVAS opcionales (no hace falta ponerlas):
+  MULTI_BAZAR=1       vuelve a abrir la página a otros bazares como antes.
+  BAZAR_PRINCIPAL=n   solo si Stiimpys no es el bazar con @stiimpys ni el bazar 1.
+
+Qué cambió
+  - La página es solo de Stiimpys (sin otros bazares). Nada se borra:
+      · Lo público (catálogo, ficha, carrito, pago, sitemap, feed y reseñas) muestra y cobra
+        solo las prendas de Stiimpys. Si hay otros bazares o prendas suyas en la base, siguen
+        en el panel pero no salen en la tienda ni se pueden pagar, ofertar ni pedir aviso.
+      · "Vende con nosotros" ya no recibe solicitudes (responde "Stiimpys ya no está
+        recibiendo bazares nuevos"). Las solicitudes viejas se siguen viendo en el panel.
+      · /redes.html ("Los bazares"), /vender.html y la vieja puerta /index.html llevan al
+        inicio (middleware.js).
+      · Del inicio se quitaron "¿Vendes ropa? Forma parte de Stiimpys", la sección "Súmate a
+        Stiimpys" y la pregunta "¿Puedo vender mis prendas?". En el catálogo ya no sale la
+        etiqueta "@stiimpys" en cada tarjeta, y la barra de abajo del celular dice Inicio ·
+        Carrito · Cuenta (antes "Bazares").
+      · Un carrito viejo con prendas de otro bazar las muestra como "Ya no está en la tienda".
+  - Marca Stiimpys en todo lo público: logo, títulos, pie, textos, correos, recibos, la vista
+    para WhatsApp/Google y la imagen al compartir el catálogo (antes "STMP MARKET").
+  - Términos reescritos: Stiimpys vende directamente todas las prendas; los pagos siguen
+    pasando por intermediarios (Clip y PayPal) y el dinero llega a la cuenta de Stiimpys.
+  - Todas las páginas públicas con la estética del inicio: la misma cinta negra de arriba,
+    el mismo encabezado (logo STIIMPYS. que lleva al inicio, buscador, carrito, cuenta,
+    botón negro e Instagram), el mismo pie oscuro, el mismo fondo de papel con rejilla en
+    el título de cada página y "Volver al inicio" con la ceja azul del inicio. Incluye el
+    carrito, la página de pago y el 404. En el catálogo el botón negro dice "Inicio".
+  - Nada se transparenta al pasar el mouse: los botones que bajaban su opacidad ahora se
+    oscurecen un poco, el sello de subasta ya no desaparece y las tarjetas ya no se cubren
+    con un brillo blanco.
+  - El recibo impreso (Guardar en PDF) no lleva el encabezado ni el pie de la tienda.
+
+Archivos nuevos: pruebas/v39-una-tienda.mjs (28 pruebas del servidor),
+  pruebas/v39-estetica.py (80 pruebas en Chrome)
+Archivos modificados: api/_bazar.js, api/sync.js, api/_crecer.js, api/prenda.js,
+  api/acciones.js, api/cuenta.js, api/_correo.js, middleware.js, inicio.html, tienda.html,
+  prenda.html, cuenta.html, terminos.html, carrito.html, pagar.html, redes.html,
+  vender.html, index.html, 404.html, css/limpio.css, css/checkout.css, js/db.js,
+  js/carrito-pagina.js, js/checkout.js, js/ficha.js, js/prenda.js, js/tienda.js,
+  js/mi-cuenta.js, js/mantenimiento.js, js/motion-pro.js, package.json, robots.txt,
+  pruebas (v35, v38, correr.mjs)
+Cómo regresar a la v38: Instant Rollback en Vercel. Para solo reabrir otros bazares sin
+  regresar de versión: MULTI_BAZAR=1 (los enlaces del inicio a "Vende con nosotros" no
+  vuelven solos; están en la v38).

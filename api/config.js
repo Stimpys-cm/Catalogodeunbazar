@@ -7,10 +7,13 @@
 //  - usuarios                     → ADMIN completo; un vendedor solo puede
 //    cambiar SU PROPIO avatar (bloquea escalación de privilegios).
 
-import { getDB, invalidarSyncCache } from './_db.js';
-import { requireAuth } from './_auth.js';
-import { esGlobal, puede, normalizarPermisos, PERMISOS_DEFAULT } from './_bazar.js';
+import { getDB, invalidarSyncCache } from './_lib/db.js';
+import { requireAuth, getUser } from './_lib/auth.js';
+import { esGlobal, puede, normalizarPermisos, PERMISOS_DEFAULT, bazarTienda } from './_lib/bazar.js';
+import { conAuditoria } from './_lib/auditoria.js';
+import { registrarFalla } from './_lib/actividad.js';
 
+import { conEscudo } from './_lib/escudo.js';
 const COLS = ['categorias', 'marcas', 'usuarios', 'drops', 'bazares'];
 
 const DEFAULTS = {
@@ -29,7 +32,13 @@ const DEFAULTS = {
   ],
 };
 
-export default async function handler(req, res) {
+// v33: cambios a categorías, marcas, usuarios, drops y bazares quedan registrados
+const auditado = conAuditoria(handler, req => req.method === 'PUT'
+  ? { op: `config-${String(req.body?.col || '').slice(0, 20)}`, categoria: 'admin', accion: `Guardó ${String(req.body?.col || 'configuración').slice(0, 20)}`,
+      detalle: { col: String(req.body?.col || '').slice(0, 20), elementos: Array.isArray(req.body?.list) ? req.body.list.length : 0 } }
+  : null);
+
+async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
@@ -56,6 +65,8 @@ export default async function handler(req, res) {
       const count = await col.countDocuments();
       if (count === 0 && DEFAULTS[colName]) await col.insertMany(DEFAULTS[colName]);
       const items = await col.find({}).sort({ id: 1 }).toArray();
+      // v40: sin sesión, de los bazares solo sale su ficha pública (nada de la configuración interna)
+      if (colName === 'bazares' && !(await getUser(req))) return res.status(200).json(items.map(bazarTienda));
       return res.status(200).json(items.map(sinSecretos));
     }
 
@@ -259,6 +270,7 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('[config]', err);
+    await registrarFalla(err, { origen: 'config', op: req.method });
     return res.status(500).json({ error: 'No se pudo completar la operación.' });
   }
 }
@@ -281,3 +293,6 @@ function sinMongoId({ _id, ...rest }) { return rest; }
 // Nada de contraseñas ni tokens sale de aquí, ni siquiera para un admin:
 // el panel no los necesita y así no pueden filtrarse por accidente.
 function sinSecretos({ _id, password, sessionToken, ...rest }) { return rest; }
+
+// v40 · Todas las funciones pasan primero por el escudo (ver api/_lib/escudo.js)
+export default conEscudo(auditado);

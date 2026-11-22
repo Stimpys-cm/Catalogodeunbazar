@@ -3,31 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Página no encontrada</title>
+<title>Página no encontrada | Stiimpys</title>
 <meta name="robots" content="noindex">
+<meta name="theme-color" content="#f5f2ec">
+<link rel="stylesheet" href="/css/comun/fuentes.css">
 <style>
+/* Misma estética del inicio (v39): papel, rejilla tenue, brillo azul y Bebas */
 *{margin:0;padding:0;box-sizing:border-box}
-body{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:2rem;
-background:linear-gradient(135deg,#f7f4ef 0%,#eef2fb 50%,#e8e2d8 100%);
-font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;color:#1a1f2e;text-align:center}
-.n{font-size:clamp(4rem,18vw,9rem);font-weight:800;line-height:.9;letter-spacing:-.04em;color:#2d6be4;opacity:.16}
-h1{font-size:1.4rem;font-weight:700;letter-spacing:.02em;margin:-.4rem 0 .6rem}
-p{font-size:.95rem;line-height:1.6;color:#5c5750;max-width:34ch;margin:0 auto 1.8rem}
-a{display:inline-block;text-decoration:none;font-size:.75rem;font-weight:700;letter-spacing:.14em;
-text-transform:uppercase;color:#fff;background:linear-gradient(135deg,#2d6be4,#4a90d9);
-padding:14px 26px;border-radius:40px;box-shadow:0 6px 20px rgba(45,107,228,.26)}
-.m{margin-top:2.4rem;font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;color:#8a8178}
+body{min-height:100dvh;display:flex;flex-direction:column;font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;color:#15171d;
+background:radial-gradient(120% 90% at 88% 0%,rgba(45,107,228,.10) 0%,transparent 55%),radial-gradient(90% 70% at 0% 100%,rgba(21,23,29,.05) 0%,transparent 60%),#f5f2ec}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.5;
+background-image:linear-gradient(rgba(21,23,29,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(21,23,29,.10) 1px,transparent 1px);background-size:64px 64px;
+-webkit-mask-image:radial-gradient(120% 80% at 70% 10%,#000 0%,transparent 70%);mask-image:radial-gradient(120% 80% at 70% 10%,#000 0%,transparent 70%)}
+.cinta{background:#15171d;color:rgba(255,255,255,.72);font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:9px 16px}
+.barra{position:relative;max-width:1280px;width:100%;margin:0 auto;padding:16px max(16px,min(40px,4vw));display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(21,23,29,.10)}
+.logo{font:400 27px/1 'Bebas Neue',sans-serif;letter-spacing:.01em;color:#1a1f2e;text-decoration:none}
+.logo span{color:#2d6be4}
+.cta{font-size:11px;font-weight:700;letter-spacing:.01em;text-transform:uppercase;text-decoration:none;color:#fff;background:#15171d;border-radius:40px;padding:10px 16px}
+main{position:relative;flex:1;display:grid;place-items:center;padding:3rem 1rem;text-align:center}
+.ceja{font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#2d6be4;margin-bottom:.8rem}
+.n{font:400 clamp(6rem,22vw,11rem)/.85 'Bebas Neue',sans-serif;color:#15171d}
+.n em{font-style:normal;color:#2d6be4}
+h1{font:400 clamp(1.8rem,5vw,2.6rem)/1 'Bebas Neue',sans-serif;letter-spacing:.01em;margin:.6rem 0 .7rem}
+p{font-size:15px;line-height:1.6;color:#3a3d47;max-width:36ch;margin:0 auto 1.8rem}
+.btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-block;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;border-radius:40px;padding:15px 28px}
+.btn-1{color:#fff;background:#2d6be4}
+.btn-2{color:#15171d;background:#fff;border:1px solid rgba(21,23,29,.16)}
+.btn-1:hover{background:#1c48a0}.btn-2:hover{border-color:#15171d}
 </style>
-  <link rel="stylesheet" href="css/motionsites.css">
 </head>
 <body>
+<div class="cinta">Stiimpys · Página oficial</div>
+<div class="barra"><a class="logo" href="/inicio.html" aria-label="Stiimpys, ir al inicio"><img src="/img/logo-negro-chico.webp" alt="" width="69" height="48" style="display:block;height:48px;width:auto"></a><a class="cta" href="/tienda.html">Ver catálogo</a></div>
+<main>
 <div>
-<div class="n">404</div>
+<div class="ceja">Página no encontrada</div>
+<div class="n">4<em>0</em>4</div>
 <h1>Esta página no existe</h1>
 <p>El enlace puede estar mal escrito o la página ya no está disponible.</p>
-<a href="/inicio.html">Ir al inicio</a>
-<div class="m">STMP MARKET</div>
+<div class="btns"><a class="btn btn-1" href="/inicio.html">Ir al inicio</a><a class="btn btn-2" href="/tienda.html">Ver catálogo</a></div>
 </div>
-  <script src="js/motion-pro.js" defer></script>
+</main>
 </body>
 </html>

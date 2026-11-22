@@ -1,0 +1,137 @@
+
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --black:#1a1f2e;
+  --white:#f7f4ef;
+  --accent:#2d6be4;
+  --accent2:#4a90d9;
+  --gray:#f0ece4;
+  --mid:#e8e2d8;
+  --card:#faf8f4;
+  --border:#d4cfc6;
+  --muted:#8a8178;
+  --text2:#6b6560;
+  --text-dark:#1a1f2e;
+  --danger:#e05c5c;
+  --success:#2e8b57;
+  --bg-gradient:linear-gradient(135deg,#f7f4ef 0%,#edf2fb 50%,#e8e2d8 100%);
+  --hero-gradient:linear-gradient(160deg,#1a1f2e 0%,#2d4a7a 60%,#4a90d9 100%);
+  --card-gradient:linear-gradient(145deg,#faf8f4 0%,#edf2fb 100%);
+  --accent-gradient:linear-gradient(135deg,#2d6be4 0%,#4a90d9 100%);
+}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg-gradient);
+  background-attachment:fixed;
+  color:var(--text-dark);
+  min-height:100vh;
+  min-height:100dvh;   /* iOS: 100vh incluye la franja de la barra del navegador */
+  overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+button{font-family:'DM Sans',sans-serif}
+
+.hidden{display:none!important}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--black);border:1px solid rgba(45,107,228,.3);color:var(--white);
+  padding:12px 20px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:6px;z-index:9999;opacity:0;transition:opacity .25s;pointer-events:none;
+  box-shadow:0 4px 20px rgba(45,107,228,.2);
+}
+.toast.show{opacity:1}
+
+/* Modal imágenes */
+.modal-overlay{
+  display:none;position:fixed;inset:0;z-index:1000;
+  background:rgba(26,31,46,.96);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;
+}
+.modal-overlay.active{display:flex}
+.modal-inner{max-width:600px;max-height:90vh;width:90%;position:relative}
+.modal-inner img{width:100%;max-height:88vh;object-fit:contain;border-radius:4px}
+.m-close{
+  position:fixed;top:18px;right:18px;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  color:#f7f4ef;cursor:pointer;width:38px;height:38px;border-radius:50%;font-size:16px;
+  display:flex;align-items:center;justify-content:center;transition:background .2s;
+}
+.m-close:hover{background:rgba(255,255,255,.2)}
+.m-nav{
+  position:fixed;top:50%;transform:translateY(-50%);
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
+  color:#f7f4ef;border:none;cursor:pointer;
+  width:42px;height:42px;border-radius:50%;font-size:22px;
+  display:flex;align-items:center;justify-content:center;transition:background .2s;
+}
+.m-nav:hover{background:rgba(255,255,255,.16)}
+#mPrev,#modalPrev{left:14px}
+#mNext,#modalNext{right:14px}
+
+/* ═══════════════════════════════════════════════════════════
+   Ofertas — precio anterior tachado + precio nuevo + % descuento
+   Se usa en portada, tienda, ficha y wishlist.
+   ═══════════════════════════════════════════════════════════ */
+.of-antes {
+  text-decoration: line-through;
+  color: #9a938a;
+  font-weight: 600;
+  font-size: .78em;
+  margin-right: 7px;
+  white-space: nowrap;
+}
+.of-ahora { color: #e0483c; font-weight: inherit; }
+.of-badge {
+  display: inline-block;
+  margin-left: 7px;
+  background: #e0483c;
+  color: #fff;
+  font-size: .62em;
+  font-weight: 800;
+  letter-spacing: .02em;
+  padding: 2px 7px;
+  border-radius: 40px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.tiene-oferta { display: inline-flex; align-items: baseline; flex-wrap: wrap; row-gap: 2px; }
+.tiene-oferta .of-badge { align-self: center; }
+
+/* Cintas sobre la foto: descuento (abajo-izq) y "Nuevo" (abajo-der).
+   Van abajo para no chocar con la marca (arriba-izq) ni el corazón
+   (arriba-der); al pasar el mouse el botón de compra las cubre. */
+.of-corner, .nuevo-corner {
+  position: absolute;
+  bottom: 10px;
+  z-index: 1;
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: .02em;
+  padding: 4px 10px;
+  border-radius: 40px;
+  pointer-events: none;
+}
+.of-corner {
+  left: 10px;
+  background: #e0483c;
+  box-shadow: 0 4px 12px rgba(224, 72, 60, .38);
+}
+.nuevo-corner {
+  right: 10px;
+  background: var(--accent, #2d6be4);
+  box-shadow: 0 4px 12px rgba(45, 107, 228, .4);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: .06em;
+}
+
+/* Prenda apartada (fecha límite) */
+.apartada-corner {
+  position: absolute; top: 10px; left: 10px; z-index: 2;
+  background: rgba(17,17,17,.82); color: #f6c86b; backdrop-filter: blur(6px);
+  font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+  padding: 5px 10px; border-radius: 40px; pointer-events: none;
+}

@@ -3,7 +3,8 @@
 // de 12 en el plan gratis de Vercel). Enruta por ?op=
 //
 //   /api/acciones?op=logs               (GET lista / POST agrega)
-//   /api/acciones?op=borrar-prenda      (POST)
+//   /api/acciones?op=borrar-prenda      (POST)  → la guarda 30 días en la papelera
+//   /api/acciones?op=restaurar-prenda   (POST)  → "Deshacer": la regresa de la papelera
 //   /api/acciones?op=gestionar-usuario  (POST)
 //   /api/acciones?op=marcar-vendido     (POST)  → registra la venta
 //   /api/acciones?op=revertir-venta     (POST)  → deshace la venta
@@ -15,34 +16,118 @@
 //   /api/acciones?op=subasta-vendedor   (GET)   → ofertas y contacto del ganador
 //   /api/acciones?op=mis-subastas       (GET)   → todas las del bazar, con
 //                                                  sus participantes
+//   /api/acciones?op=ig-*               → panel de Instagram (ver _instagramPanel.js)
+//   /api/acciones?op=ia-*               → reconocer prendas por foto (ver _ia.js)
+//   /api/acciones?op=v-*                → ventas: ofertas, bolsa, pagos, métricas (ver _crecer.js)
 
-import { getDB, invalidarSyncCache } from './_db.js';
-import { requireAuth } from './_auth.js';
-import { rateLimit } from './_rateLimit.js';
-import { hashPassword } from './_password.js';
-import { puede, esGlobal, mismoBazar } from './_bazar.js';
+import { getDB, invalidarSyncCache } from './_lib/db.js';
+import { requireAuth } from './_lib/auth.js';
+import { rateLimit } from './_lib/rateLimit.js';
+import { hashPassword } from './_lib/password.js';
+import { puede, esGlobal, mismoBazar, multiBazar } from './_lib/bazar.js';
 import {
   normalizarUsername, usernameValido, siguienteId,
   instantaneaPrenda, asegurarIndices, ETIQUETAS_COMPRADOR, ETIQUETAS_COMPRADOR_MALAS,
-} from './_ventas.js';
-import { calcularEstadisticas } from './_estadisticas.js';
-import { leerAjustes, guardarAjustes, SECCIONES } from './_ajustes.js';
+} from './_lib/ventas.js';
+import { calcularEstadisticas } from './_lib/estadisticas.js';
+import { leerAjustes, guardarAjustes, SECCIONES } from './_lib/ajustes.js';
 import {
   guardarSubasta, quitarSubasta, leerSubasta, historial,
   subastaPublica, ofertaPublica, contactoGanador, asegurarIndicesSubasta,
   subastasDeBazares, contactosDe, PUESTOS_CON_CONTACTO,
-} from './_subastas.js';
+} from './_lib/subastas.js';
+import { handleInstagram } from './_lib/instagramPanel.js';
+import { handleIA } from './_lib/ia.js';
+import { handleCrecer, permisosDe, reservaActiva, historialPedido } from './_lib/crecer.js';
+import { handleSistema, OPS_SISTEMA } from './_lib/sistema.js';
+import { OPS_CAJA, handleCaja } from './_lib/caja.js';
+import { handleBorradores, OPS_BORRADORES } from './_lib/borradores.js';   // v52 · borradores de prendas
+import { conAuditoria, detalleDe } from './_lib/auditoria.js';
+import { registrarEvento, registrarFalla, marcarSistema, conBloqueo } from './_lib/actividad.js';
 
-export default async function handler(req, res) {
+import { conEscudo } from './_lib/escudo.js';
+// ── v33 · Qué se registra en el Centro de actividad ─────────────────────
+// Las operaciones públicas de la tienda (cotizar, pagar, ver un recibo…) no
+// pasan por aquí: dejan sus propios eventos más detallados en _crecer.js.
+const OPS_PUBLICAS = new Set(['v-oferta', 'v-espera', 'v-evento', 'v-cupon', 'v-cotizar', 'v-envio-cp', 'v-envio-cotizar',
+  'v-mis-pedidos', 'v-pagar-resto', 'v-resena', 'v-spei-comprobante', 'v-cumple', 'v-spei-verificar', 'v-pagar', 'v-pedido', 'v-clip-webhook', 'v-feed']);
+const OPS_SIN_REGISTRO = new Set(['logs', 'v-error-log', 'v-prefs', 'v-panel', 'v-pedidos', 'v-hoy', 'v-buscar', 'v-pos-resumen', 'v-corte', 'v-metricas',
+  ...OPS_SISTEMA.filter(o => o !== 'v-sistema-reparar')]);
+// Instagram: guardados automáticos y consultas que se repiten mientras se escribe → solo errores, sin candado
+const IG_SILENCIO = new Set(['ig-borrador', 'ig-img', 'ig-plantilla', 'ig-firma-video', 'ig-reel-estado', 'ig-cuota', 'ig-procesar', 'ig-config', 'ig-programado-a-borrador']);
+const ACCIONES = {
+  'borrar-prenda': ['inventario', 'Borró una prenda (a la papelera)'], 'restaurar-prenda': ['inventario', 'Restauró una prenda de la papelera'],
+  'marcar-vendido': ['inventario', 'Marcó una prenda como vendida'], 'catalogo-renombrar': ['inventario', 'Renombró una categoría o marca en sus prendas'], 'revertir-venta': ['inventario', 'Revirtió una venta'],
+  'gestionar-usuario': ['admin', 'Gestionó una cuenta del equipo'], 'resena-comprador': ['admin', 'Calificó a un comprador'],
+  'mantenimiento': ['admin', 'Cambió el mantenimiento del sitio'], 'configurar-subasta': ['inventario', 'Configuró una subasta'],
+  'quitar-subasta': ['inventario', 'Quitó una subasta'], 'solicitud-bazar': ['admin', 'Actualizó una solicitud de bazar'],
+  'anuncios': ['admin', 'Cambió un anuncio'], 'v-config': ['admin', 'Cambió promociones y pagos'],
+  'v-pedido-estado': ['pedido', 'Cambió el estado de un pedido'], 'v-oferta-responder': ['pedido', 'Respondió una oferta'],
+  'v-pendiente-hecho': ['admin', 'Marcó un pendiente'], 'v-espera-borrar': ['admin', 'Quitó a un interesado'],
+  'v-permisos-usuario': ['admin', 'Cambió permisos de un vendedor'], 'v-envio-prueba': ['admin', 'Probó una cotización de envío'],
+  'v-spei-revisar': ['pedido', 'Revisó una transferencia SPEI'], 'v-rastreo-revisar': ['pedido', 'Revisó el rastreo de envíos'],
+  'v-resena-moderar': ['admin', 'Moderó una reseña'],
+  'v-respaldo': ['admin', 'Descargó un respaldo'], 'v-respaldos': ['admin', 'Descargó una copia semanal'],
+  'v-sistema-reparar': ['admin', 'Reparó una inconsistencia'],
+  'ig-borrar-post': ['instagram', 'Borró un post de Instagram'], 'ig-editar-post': ['instagram', 'Editó el texto de un post'],
+  'ig-rehacer': ['instagram', 'Rehízo un post de Instagram'], 'ig-republicar': ['instagram', 'Republicó en Instagram'],
+  'ig-comentar-vendido': ['instagram', 'Comentó VENDIDA en Instagram'], 'ig-publicar': ['instagram', 'Publicó en Instagram'],
+  'ig-importar': ['instagram', 'Importó prendas desde Instagram'], 'ig-historias': ['instagram', 'Publicó historias'],
+  'ig-historia-prenda': ['instagram', 'Publicó una historia de prenda'], 'ig-programar': ['instagram', 'Programó una publicación'], 'ig-destrabar': ['instagram', 'Destrabó una publicación atorada'], 'ig-descartar-error': ['instagram', 'Descartó un error de publicación'], 'ig-programado-reintentar': ['instagram', 'Reintentó un programado con error'],
+  'ig-programar-prendas': ['instagram', 'Programó publicaciones de prendas'], 'ig-reel-publicar': ['instagram', 'Publicó un Reel'],
+  'ig-dm-enviar': ['instagram', 'Envió un mensaje directo'], 'ig-responder': ['instagram', 'Respondió un comentario'],
+  'ig-drop': ['instagram', 'Programó el anuncio de un drop'], 'ig-correr-automatico': ['instagram', 'Corrió las tareas automáticas'],
+};
+// Solo estas llaves del cuerpo pasan al detalle (lo demás —textos, fotos, contraseñas— no se guarda)
+const LLAVES_DETALLE = ['id', 'prendaId', 'accion', 'estado', 'dias', 'monto', 'bazarId', 'media', 'dropId', 'username', 'rol', 'role',
+  'permisos', 'confirmar', 'confirmarReembolso', 'motivo', 'tipo', 'paqueteria', 'borrar', 'secciones', 'destacado', 'cantidad', 'pedidoId', 'aprobar'];
+
+function reglasAcciones(req) {
+  const op = String(req.query?.op || ''), metodo = req.method;
+  if (!op || OPS_PUBLICAS.has(op) || OPS_SIN_REGISTRO.has(op)) return null;
+  if (op === 'ig-cron') return null;                                   // deja su propio evento (ver abajo)
+  if (op === 'v-recuperar-pedido') return { op, categoria: 'pedido', accion: 'Un cliente pidió recuperar sus recibos', usuario: 'cliente', duplicados: false,
+    detalle: { codigo: String(req.body?.codigo || '').slice(-6) || null, conCorreo: !!req.body?.email } };
+  const lectura = metodo === 'GET' || metodo === 'HEAD';
+  if (lectura && !['v-respaldo', 'v-respaldos', 'subasta-vendedor', 'solicitud-bazar'].includes(op)) return null;
+  if (op === 'solicitud-bazar' && metodo === 'POST') return null;       // formulario público "Vende con nosotros"
+  if (op === 'anuncios' && lectura) return null;
+  if (op.startsWith('ia-')) return { op, categoria: 'inventario', accion: 'Reconocimiento con IA', soloErrores: true, duplicados: false };
+  if (op === 'b-guardar') return { op, categoria: 'inventario', accion: 'Guardó borradores', soloErrores: true, duplicados: false };
+  if (op === 'b-borrar') return { op, categoria: 'inventario', accion: 'Borró borradores', duplicados: false, detalle: { cantidad: Array.isArray(req.body?.ids) ? req.body.ids.length : 0 } };
+  const [categoria, accion] = ACCIONES[op] || [op.startsWith('ig-') ? 'instagram' : 'admin', `Operación ${op}`];
+  const silencio = IG_SILENCIO.has(op);
+  const b = req.body || {};
+  return {
+    op, categoria, accion: op === 'v-pedido-estado' && b.accion ? `Pedido: ${b.accion}` : lectura && op === 'subasta-vendedor' ? 'Consultó el contacto de un ganador de subasta' : lectura && op === 'solicitud-bazar' ? 'Consultó las solicitudes de bazar' : accion,
+    soloErrores: silencio, duplicados: !silencio && !lectura,
+    prendaId: b.prendaId ?? (['borrar-prenda', 'restaurar-prenda', 'marcar-vendido', 'revertir-venta'].includes(op) ? b.id : req.query?.prendaId) ?? null,
+    pedidoId: ['v-pedido-estado', 'v-spei-revisar'].includes(op) ? String(b.id || '') || null : null,
+    detalle: detalleDe(b, LLAVES_DETALLE),
+  };
+}
+
+const auditado = conAuditoria(handler, reglasAcciones);
+
+async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   const op = req.query.op;
 
   try {
     if (op === 'logs')              return await handleLogs(req, res);
+    if (['borrar-prenda', 'marcar-vendido', 'revertir-venta'].includes(op) && req.body?.id != null) {
+      // v33: una sola operación a la vez sobre la misma prenda (dos personas del equipo, o doble clic)
+      const db = await getDB();
+      const fn = { 'borrar-prenda': handleBorrarPrenda, 'marcar-vendido': handleMarcarVendido, 'revertir-venta': handleRevertirVenta }[op];
+      return await conBloqueo(db, res, `prenda:${Number(req.body.id)}`, 20, () => fn(req, res),
+        'Alguien más está cambiando esta prenda en este momento. Espera unos segundos y vuelve a intentar.');
+    }
     if (op === 'borrar-prenda')     return await handleBorrarPrenda(req, res);
+    if (op === 'restaurar-prenda')  return await handleRestaurarPrenda(req, res);
     if (op === 'gestionar-usuario') return await handleGestionarUsuario(req, res);
     if (op === 'marcar-vendido')    return await handleMarcarVendido(req, res);
     if (op === 'revertir-venta')    return await handleRevertirVenta(req, res);
+    if (op === 'catalogo-renombrar') return await handleRenombrarCatalogo(req, res);   // v56
     if (op === 'resena-comprador')  return await handleResenaComprador(req, res);
     if (op === 'estadisticas')      return await handleEstadisticas(req, res);
     if (op === 'mantenimiento')     return await handleMantenimiento(req, res);
@@ -52,11 +137,50 @@ export default async function handler(req, res) {
     if (op === 'mis-subastas')       return await handleMisSubastas(req, res);
     if (op === 'solicitud-bazar')    return await handleSolicitudBazar(req, res);
     if (op === 'anuncios')           return await handleAnuncios(req, res);
+    if (OPS_SISTEMA.includes(op))    return await handleSistema(req, res, op);
+    if (OPS_CAJA.includes(op))       return await handleCaja(req, res, op);   // v42 · punto de venta
+    if (OPS_BORRADORES.includes(op)) return await handleBorradores(req, res, op);   // v52 · borradores
+    if (op === 'ig-cron')            return await cronConRegistro(req, res);
+    if (typeof op === 'string' && op.startsWith('ig-')) return await handleInstagram(req, res, op);
+    if (typeof op === 'string' && op.startsWith('ia-')) return await handleIA(req, res, op);
+    if (typeof op === 'string' && op.startsWith('v-')) return await handleCrecer(req, res, op);
     return res.status(400).json({ error: 'op no reconocida' });
   } catch (err) {
     console.error('[acciones:' + op + ']', err);
+    await registrarFalla(err, { origen: 'acciones', op });
     return res.status(500).json({ error: 'No se pudo completar la operación.' });
   }
+}
+
+// La tarea diaria de Vercel: se anota cuándo corrió y cómo le fue
+async function cronConRegistro(req, res) {
+  const t0 = Date.now();
+  const json = res.json.bind(res);
+  let cuerpo = null;
+  res.json = b => { cuerpo = b; return res; };
+  try { await handleInstagram(req, res, 'ig-cron'); }
+  finally { res.json = json; }
+  const ok = Number(res.statusCode) < 400;
+  if (ok) {
+    const db = await getDB();
+    await marcarSistema('cron', db, 0);
+    // v41 · Avisos del carrito por correo y revisión de servicios (cada uno por su lado: si uno falla, el otro sigue)
+    if (cuerpo && typeof cuerpo === 'object') {
+      try { const { avisosCarrito } = await import('./_lib/carrito-avisos.js'); cuerpo.carrito = await avisosCarrito(db); }
+      catch (e) { cuerpo.carrito = { error: e?.message || 'error' }; }
+      try { const { revisarServiciosYAvisar } = await import('./_lib/sistema.js'); cuerpo.alertas = await revisarServiciosYAvisar(db); }
+      catch (e) { cuerpo.alertas = { error: e?.message || 'error' }; }
+    }
+    const errores = (cuerpo?.automatico || []).filter(t => /error|falló|no se pudo/i.test(String(t)));
+    await registrarEvento({ categoria: 'sistema', tipo: 'cron', usuario: 'cron', resultado: errores.length ? 'error' : 'ok',
+      accion: `Tarea automática: ${(cuerpo?.publicados?.length ?? cuerpo?.publicados ?? 0) || 0} publicación(es), ${(cuerpo?.automatico || []).length} acción(es)`,
+      detalle: { automatico: (cuerpo?.automatico || []).slice(0, 10) }, error: errores.length ? { message: errores.slice(0, 3).join(' · ') } : null,
+      ms: Date.now() - t0 }, db);
+  } else if (Number(res.statusCode) === 401) {
+    await registrarEvento({ categoria: 'sistema', tipo: 'cron', resultado: 'rechazado', usuario: 'desconocido', accion: 'Alguien llamó la tarea automática sin la clave',
+      unaVezCada: { clave: 'cron-401', ms: 600e3 } });
+  }
+  return json(cuerpo ?? {});
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -138,6 +262,8 @@ async function handleMisSubastas(req, res) {
 
   const user = await requireAuth(req, res);
   if (!user) return;
+  // v40: las ganancias (con costos) son solo para administradores, igual que en el panel
+  if (user.role !== 'admin') return res.status(403).json({ error: 'Solo un administrador ve las ganancias.' });
 
   const db = await getDB();
   const todos = await db.collection('bazares').find({}).sort({ id: 1 }).toArray();
@@ -224,6 +350,19 @@ async function handleLogs(req, res) {
   const db  = await getDB();
   const col = db.collection('logs');
   const arch = db.collection('logs_archivados');
+
+  // v33: leer el registro (y sus respaldos) ya no es público. Antes cualquiera
+  // podía ver quién hizo qué en el panel, incluidas las solicitudes de bazar
+  // con su WhatsApp. El panel lo pide con la cookie de sesión, así que sigue igual.
+  if (req.method === 'GET') {
+    const quien = await requireAuth(req, res);
+    if (!quien) return;
+    if (quien.role !== 'admin') return res.status(403).json({ error: 'Solo un administrador ve el registro.' });
+    if (!esGlobal(quien)) {   // el registro del panel es de toda la plataforma: solo el admin principal
+      if (req.query.modo === 'archivo') { res.setHeader('Content-Type', 'text/plain; charset=utf-8'); return res.status(200).send('(Sin registros)\n'); }
+      return res.status(200).json([]);
+    }
+  }
 
   // Listar tandas archivadas (GET, público: se usa con fetch crudo)
   if (req.method === 'GET' && req.query.modo === 'lotes') {
@@ -372,10 +511,55 @@ async function handleBorrarPrenda(req, res) {
   if (!esGlobal(user) && !(await puede(user, 'borrarPrendas'))) {
     return res.status(403).json({ error: 'Tu bazar no tiene permitido borrar prendas.' });
   }
+  if (!(await permisosDe(db, user)).borrar) {
+    return res.status(403).json({ error: 'Tu usuario no tiene permiso para borrar prendas. Pídeselo al administrador.' });
+  }
 
+  // v33: no borrar una prenda que alguien está pagando o que tiene anticipo pagado
+  const activa = await reservaActiva(db, prenda);
+  if (activa) return res.status(409).json({ error: activa.mensaje, pedido: activa.pedido.id });
+
+  // Papelera: se guarda una copia 30 días para poder deshacer el borrado
+  const papelera = db.collection('papelera');
+  const { _id, ...copia } = prenda;
+  // v55 · Si tenía post en Instagram y seguía a la venta, se avisa ahí que ya no está disponible
+  // (al restaurarla de la papelera se borra ese comentario)
+  if (copia.instagramId && !copia.vendido) {
+    try {
+      const { igAvisarBaja } = await import('./_lib/igSync.js');
+      const cid = await igAvisarBaja(db, copia, await db.collection('bazares').findOne({ id: Number(prenda.bazarId || 1) }));
+      if (cid) copia.instagramBaja = { comentario: cid, en: new Date().toISOString() };
+    } catch {}
+  }
+  await papelera.insertOne({ id, bazarId: Number(prenda.bazarId || 1), prenda: copia, borradoEn: new Date().toISOString(), borradoPor: usuario });
   const r = await inv.deleteOne({ id });
   invalidarSyncCache();
-  return res.status(200).json({ ok: true, borrado: r.deletedCount });
+  papelera.deleteMany({ borradoEn: { $lt: new Date(Date.now() - 30 * 864e5).toISOString() } }).catch(() => {});
+  return res.status(200).json({ ok: true, borrado: r.deletedCount, restaurable: true });
+}
+
+async function handleRestaurarPrenda(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
+  const user = await requireAuth(req, res);
+  if (!user) return;
+  const id = req.body?.id;
+  if (id == null) return res.status(400).json({ error: 'Falta id' });
+  const db = await getDB();
+  const papelera = db.collection('papelera'), inv = db.collection('inventario');
+  const doc = (await papelera.find({ id }).sort({ borradoEn: -1 }).limit(1).toArray())[0];
+  if (!doc) return res.status(404).json({ error: 'Esa prenda ya no está en la papelera.' });
+  if (!mismoBazar(user, doc.bazarId)) return res.status(403).json({ error: 'Esa prenda pertenece a otro bazar.' });
+  if (!esGlobal(user) && !(await puede(user, 'crearPrendas'))) return res.status(403).json({ error: 'Tu bazar no tiene permitido publicar prendas.' });
+  if (await inv.findOne({ id })) return res.status(409).json({ error: 'Esa prenda ya está en el inventario.' });
+  const { instagramBaja, ...restaurada } = doc.prenda;
+  await inv.insertOne(restaurada);
+  await papelera.deleteOne({ id, borradoEn: doc.borradoEn });
+  invalidarSyncCache();
+  // v55 · Otra vez a la venta: se borra el "ya no está disponible" de Instagram
+  if (instagramBaja?.comentario) {
+    try { const { igQuitarBaja } = await import('./_lib/igSync.js'); await igQuitarBaja(db, doc.prenda, await db.collection('bazares').findOne({ id: Number(doc.bazarId || 1) })); } catch {}
+  }
+  return res.status(200).json({ ok: true, prenda: restaurada });
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -526,10 +710,18 @@ async function handleMarcarVendido(req, res) {
     return res.status(403).json({ error: 'Tu bazar no tiene permitido marcar ventas.' });
   }
 
+  // v33: consistencia con los pedidos en línea
+  const activa = await reservaActiva(db, prenda);
+  if (activa) return res.status(409).json({ error: activa.mensaje, pedido: activa.pedido.id });
+  const ventaEnLinea = await ventas.findOne({ prendaId: Number(id), pedido: { $exists: true, $ne: null } });
+  if (ventaEnLinea && prenda.vendido) {
+    return res.status(409).json({ error: `Esta prenda se vendió en línea (pedido ${ventaEnLinea.pedido}). No se puede reasignar a otro comprador desde aquí.`, pedido: ventaEnLinea.pedido });
+  }
+
   // El @username tiene que existir: si no, la compra no le llegaría a nadie
   const cliente = await db.collection('clientes').findOne({ username: comprador });
   if (!cliente) {
-    return res.status(404).json({ error: `No hay ninguna cuenta con @${comprador} en STMP MARKET.` });
+    return res.status(404).json({ error: `No hay ninguna cuenta con @${comprador} en Stiimpys.` });
   }
 
   // Si la prenda ya estaba vendida se reutiliza el registro: cambiar de
@@ -574,11 +766,41 @@ async function handleMarcarVendido(req, res) {
   }
 
   await inv.updateOne({ id: Number(id) }, { $set: {
-    vendido: true, vendidoA: comprador, vendidoEn: fecha, ventaId,
-  } });
+    vendido: true, vendidoA: comprador, vendidoEn: fecha, ventaId, apartada: false,
+  }, $unset: { reservedUntil: '', reservedBy: '' } });
 
   invalidarSyncCache();
   return res.status(200).json({ ok: true, ventaId, comprador });
+}
+
+// v56 · Renombrar una categoría o marca también cambia las prendas que la usan. Antes solo
+// cambiaba el catálogo: las prendas se quedaban con el nombre viejo y la tienda (filtros,
+// /categoria y /marca), los hashtags de Instagram y el panel mostraban cosas distintas.
+//   POST { tipo: 'categoria' | 'marca', de, a }
+async function handleRenombrarCatalogo(req, res) {
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
+  const user = await requireAuth(req, res);
+  if (!user) return;
+  const { tipo } = req.body || {};
+  const limpio = v => String(v ?? '').replace(/[<>{}\[\]"\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40);
+  const de = limpio(req.body?.de), a = limpio(req.body?.a);
+  if (!['categoria', 'marca'].includes(tipo) || !de || !a) return res.status(400).json({ error: 'Faltan datos para renombrar.' });
+  const global = esGlobal(user);
+  if (!global && !(await puede(user, 'gestionarCatalogo'))) return res.status(403).json({ error: 'Tu bazar no tiene permitido gestionar el catálogo.' });
+  if (de === a) return res.status(200).json({ ok: true, prendas: 0 });
+  const db = await getDB(), inv = db.collection('inventario');
+  const igual = x => String(x ?? '').trim().toLowerCase() === de.toLowerCase();
+  const filtro = global ? {} : { bazarId: Number(user.bazarId) };
+  let n = 0;
+  for (const p of await inv.find(filtro).toArray()) {
+    if (tipo === 'marca' && igual(p.marca)) { await inv.updateOne({ id: p.id }, { $set: { marca: a } }); n++; }
+    if (tipo === 'categoria' && Array.isArray(p.categorias) && p.categorias.some(igual)) {
+      await inv.updateOne({ id: p.id }, { $set: { categorias: [...new Set(p.categorias.map(c => (igual(c) ? a : c)))] } }); n++;
+    }
+  }
+  if (n) invalidarSyncCache();
+  req._evento = { detalle: { tipo, de, a, prendas: n } };
+  return res.status(200).json({ ok: true, prendas: n });
 }
 
 async function handleRevertirVenta(req, res) {
@@ -603,9 +825,23 @@ async function handleRevertirVenta(req, res) {
   }
 
   const venta = await db.collection('ventas').findOne({ prendaId: Number(id) });
+  // v33: una venta pagada en línea tiene dinero confirmado en Clip/PayPal. Reactivar la
+  // prenda sin devolverlo dejaría el pedido "pagado" con la prenda otra vez a la venta.
+  const pedido = venta?.pedido ? await db.collection('pedidos').findOne({ id: venta.pedido }) : null;
+  if (pedido && pedido.estado === 'pagado' && req.body?.confirmarReembolso !== true) {
+    return res.status(409).json({
+      error: `Esta prenda se pagó en línea (pedido ${pedido.id}, ${pedido.nombre ? String(pedido.nombre).split(' ')[0] + ', ' : ''}${'$' + Math.round(Number(venta.precio) || 0).toLocaleString('es-MX')} con ${pedido.proveedor === 'paypal' ? 'PayPal' : 'Clip'}). Reactívala solo si ya le devolviste ese dinero.`,
+      requiereConfirmar: true, pedido: pedido.id,
+    });
+  }
   if (venta) {
     await db.collection('resenas').deleteMany({ ventaId: venta.id });
     await db.collection('ventas').deleteOne({ id: venta.id });
+  }
+  if (pedido) {
+    await historialPedido(db, pedido, { accion: `Se reactivó "${prenda.nombre}" (venta revertida${req.body?.confirmarReembolso ? '; confirmaron que se devolvió el dinero' : ''})`,
+      por: user.username, categoria: 'pedido', tipo: 'pedido.venta-revertida', resultado: 'info', detalle: { prendaId: Number(id), monto: Number(venta.precio) || 0 } });
+    req._evento = { pedidoId: pedido.id, bazarId: pedido.bazarId };
   }
 
   await inv.updateOne({ id: Number(id) }, {
@@ -614,7 +850,15 @@ async function handleRevertirVenta(req, res) {
   });
 
   invalidarSyncCache();
-  return res.status(200).json({ ok: true });
+  // v55 · Vuelve a la venta: se quita el "VENDIDA" que se había comentado en Instagram
+  let instagram = null;
+  if (prenda.instagramVendido) {
+    try {
+      const { igQuitarVenta } = await import('./_lib/igSync.js');
+      instagram = await igQuitarVenta(db, { ...prenda, vendido: false }, await db.collection('bazares').findOne({ id: Number(prenda.bazarId || 1) }));
+    } catch {}
+  }
+  return res.status(200).json({ ok: true, instagram });
 }
 
 
@@ -701,6 +945,8 @@ async function handleEstadisticas(req, res) {
 
   const user = await requireAuth(req, res);
   if (!user) return;
+  // v40: las ganancias (con costos) son solo para administradores, igual que en el panel
+  if (user.role !== 'admin') return res.status(403).json({ error: 'Solo un administrador ve las ganancias.' });
 
   const db = await getDB();
   const todos = await db.collection('bazares').find({}).sort({ id: 1 }).toArray();
@@ -769,7 +1015,8 @@ async function handleSolicitudBazar(req, res) {
   if (req.method === 'GET') {
     const admin = await requireAuth(req, res);
     if (!admin) return;
-    if (admin.role !== 'admin') return res.status(403).json({ error: 'Solo el administrador.' });
+    // v33: solo el admin principal (antes también el admin de cualquier bazar veía los WhatsApp de todos)
+    if (!esGlobal(admin)) return res.status(403).json({ error: 'Solo el administrador principal.' });
     const items = await col.find({}).sort({ creadoEn: -1 }).limit(200).toArray();
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json(items.map(({ _id, ...r }) => r));
@@ -779,7 +1026,7 @@ async function handleSolicitudBazar(req, res) {
   if (req.method === 'PATCH') {
     const admin = await requireAuth(req, res);
     if (!admin) return;
-    if (admin.role !== 'admin') return res.status(403).json({ error: 'Solo el administrador.' });
+    if (!esGlobal(admin)) return res.status(403).json({ error: 'Solo el administrador principal.' });
     const id = Number(req.body?.id);
     const estado = req.body?.estado === 'atendida' ? 'atendida' : 'nueva';
     if (!id) return res.status(400).json({ error: 'Falta id' });
@@ -788,6 +1035,10 @@ async function handleSolicitudBazar(req, res) {
   }
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+
+  // v39 · La página es solo de Stiimpys: ya no se reciben bazares nuevos.
+  // Las solicitudes viejas se siguen viendo en el panel (GET de arriba).
+  if (!multiBazar()) return res.status(410).json({ error: 'Stiimpys ya no está recibiendo bazares nuevos. ¡Gracias por tu interés!', cerrado: true });
 
   // Público, así que con freno: 5 envíos por IP cada hora.
   if (!(await rateLimit(req, res, { key: 'solicitud-bazar', max: 5, windowSec: 3600 }))) return;
@@ -933,3 +1184,6 @@ async function handleAnuncios(req, res) {
 
   return res.status(405).json({ error: 'Método no permitido' });
 }
+
+// v40 · Todas las funciones pasan primero por el escudo (ver api/_lib/escudo.js)
+export default conEscudo(auditado);

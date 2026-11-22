@@ -1,0 +1,68 @@
+/* ── Automático · Reporte · Apartados · Aviso de token ───────── */
+
+/* Aviso de token (arriba del panel de Instagram) */
+.aut-aviso {
+  margin: 0 0 18px; padding: 14px 16px; border-radius: var(--igx-radio, 10px);
+  background: #fbf3e2; border: 1px solid #ecd6a4; color: #6b4e12;
+  font: 400 13px/1.55 'DM Sans', sans-serif;
+}
+.aut-aviso b { display: block; font-weight: 700; margin-bottom: 2px; color: #4f390b; }
+.aut-aviso.rojo { background: #fbecea; border-color: #efc2bd; color: #7a1e17; }
+.aut-aviso.rojo b { color: #5c140f; }
+
+/* Campos numéricos en línea */
+.aut-nums { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 4px 0 14px; }
+.aut-num { display: inline-flex; align-items: center; gap: 8px; font: 500 12.5px 'DM Sans', sans-serif; color: var(--igx-suave, #6f675f); }
+.aut-num input {
+  width: 74px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--igx-borde, #e7e1d7);
+  font: 600 13px 'DM Sans', sans-serif; color: var(--igx-txt, #111); background: #fff; text-align: center;
+}
+.aut-num input:focus { outline: none; border-color: var(--igx-txt, #111); }
+.aut-num em { font-style: normal; }
+
+.aut-btns { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 4px 0 22px; }
+
+/* Bitácora */
+.aut-log { list-style: none; margin: 0; padding: 0; }
+.aut-log li { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--igx-borde, #e7e1d7); }
+.aut-log li:first-child { border-top: 0; }
+.aut-ic { width: 30px; height: 30px; flex-shrink: 0; display: grid; place-items: center; border-radius: 50%; background: var(--igx-fondo, #f6f3ee); font-size: 14px; }
+.aut-tx { flex: 1; min-width: 0; font: 400 13.5px/1.45 'DM Sans', sans-serif; color: var(--igx-txt, #111); }
+.aut-tx small { display: block; font-size: 11px; color: var(--igx-tenue, #9a938a); margin-top: 2px; }
+.aut-log li.t-error .aut-tx { color: var(--igx-rojo, #b3261e); }
+
+/* Reporte */
+.aut-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.aut-kpi { background: var(--igx-papel, #fbfaf7); border: 1px solid var(--igx-borde, #e7e1d7); border-radius: var(--igx-radio, 10px); padding: 16px 18px; }
+.aut-kpi b { display: block; font: 500 30px/1.1 var(--igx-serif, Georgia, serif); color: var(--igx-txt, #111); font-variant-numeric: tabular-nums; }
+.aut-kpi span { display: block; margin-top: 6px; font: 700 10px 'DM Sans', sans-serif; letter-spacing: .18em; text-transform: uppercase; color: var(--igx-tenue, #9a938a); }
+.aut-kpi small { display: block; margin-top: 4px; font: 400 12px 'DM Sans', sans-serif; color: var(--igx-suave, #6f675f); }
+.aut-tabla { width: 100%; border-collapse: collapse; font: 400 13px 'DM Sans', sans-serif; }
+.aut-tabla th { text-align: left; font: 700 10px 'DM Sans', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--igx-tenue, #9a938a); padding: 0 8px 8px 0; }
+.aut-tabla td { padding: 9px 8px 9px 0; border-top: 1px solid var(--igx-borde, #e7e1d7); font-variant-numeric: tabular-nums; }
+.aut-tabla td:first-child { font-weight: 600; }
+.aut-posts { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.aut-posts a { display: block; text-decoration: none; color: var(--igx-txt, #111); }
+.aut-posts img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 8px; background: var(--igx-fondo, #f6f3ee); display: block; }
+.aut-posts span { display: block; margin-top: 7px; font: 600 12px/1.35 'DM Sans', sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aut-posts em { display: block; font: 400 11.5px 'DM Sans', sans-serif; font-style: normal; color: var(--igx-suave, #6f675f); margin-top: 2px; }
+
+/* Apartados en el inventario */
+.ap-chip {
+  display: inline-block; margin: 6px 0 2px; padding: 4px 10px; border-radius: 999px;
+  background: #fbf3e2; color: #6b4e12; font: 600 11.5px 'DM Sans', sans-serif;
+}
+body.stmp-admin .item-actions .act-btn.ap {
+  width: 44px; padding: 0; min-height: 42px; margin: 0; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #fff; border: 1px solid #ecd6a4; font-size: 16px; filter: grayscale(.6);
+}
+body.stmp-admin .item-actions .act-btn.ap:hover,
+body.stmp-admin .item-actions .act-btn.ap.on { background: #f6c86b; border-color: #e0ae4b; filter: none; }
+
+/* Casillas dentro del diálogo */
+.dlg-check { display: flex; align-items: center; gap: 10px; margin: 12px 0 0; font: 500 14px 'DM Sans', sans-serif; cursor: pointer; }
+.dlg-check input { width: 18px; height: 18px; accent-color: #111; }
+.dlg-campo + .dlg-campo { margin-top: 14px; }
+.aut-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 18px; }
+.aut-chips .igx-tono { width: auto; padding: 8px 16px; }

@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<title>Acceso al panel | STMP MARKET</title>
+  <!-- v37 · La animación entre páginas es adorno: si el navegador la cancela, que no cuente como error -->
+  <script>addEventListener('pagereveal',function(e){var v=e.viewTransition;if(v){[v.ready,v.finished,v.updateCallbackDone].forEach(function(p){p&&p.catch(function(){})})}});addEventListener('pageswap',function(e){var v=e.viewTransition;if(v){[v.ready,v.finished,v.updateCallbackDone].forEach(function(p){p&&p.catch(function(){})})}});addEventListener('unhandledrejection',function(e){var r=e.reason;if(r&&/^(InvalidStateError|AbortError)$/.test(r.name||'')&&/Transition was|view ?transition/i.test(r.message||''))e.preventDefault()})</script>
+<title>Acceso al panel | Stiimpys</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#f7f4ef">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/global.css">
-<link rel="stylesheet" href="css/login.css">
-<link rel="stylesheet" href="css/dispositivos.css">
-  <link rel="stylesheet" href="css/estetica.css">
-  <link rel="stylesheet" href="css/premium.css">
-  <link rel="stylesheet" href="css/motionsites.css">
+<script src="js/dist/tema.js?v=afb6607306"></script>
+<link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<!-- Letras propias (css/fuentes): se piden antes para que el texto no cambie de letra al cargar -->
+<link rel="preload" href="css/fuentes/dm-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="css/fuentes/bebas-neue-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/dist/login.css?v=928b417eac">
 <style>
   /* Campo de contraseña con icono de ojo — paleta del login */
   .pw-wrap{ position:relative; }
@@ -44,15 +44,14 @@
   .pw-toggle.show .eye-on{ display:none; }
   .pw-toggle.show .eye-off{ display:block; }
 </style>
-  <script src="js/motion-pro.js" defer></script>
-  <script src="js/experiencia.js" defer></script>
+  <script src="js/dist/login-movimiento.js?v=0ff6d0ff8d" defer></script>
 </head>
 <body class="stmp-login">
 
 <div class="card">
   <div class="brand">
-    <div class="brand-name">STMP MARKET</div>
-    <div class="brand-sub">Panel de bazares</div>
+    <div class="brand-name"><img class="marca-logo marca-claro" src="img/logo-negro-chico.webp" alt="Stiimpys" width="110" height="77"><img class="marca-logo marca-oscuro" src="img/logo-blanco-chico.webp" alt="" width="110" height="77"></div>
+    <div class="brand-sub">Panel de Stiimpys</div>
   </div>
 
   <div class="error" id="errorMsg">Usuario o contraseña incorrectos.</div>
@@ -103,7 +102,6 @@
     }
   }
 </script>
-<script src="js/db.js"></script>
-<script src="js/login.js"></script>
+<script src="js/dist/login.js?v=aa0915f6ed"></script>
 </body>
 </html>

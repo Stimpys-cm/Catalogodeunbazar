@@ -1,0 +1,158 @@
+/* ═══════════════════════════════════════════════════════════════
+   css/tema.css — Sistema de diseño del panel · v34
+   ───────────────────────────────────────────────────────────────
+   Un solo juego de colores ("tokens" --p-*) para todo el panel, en
+   tema claro y oscuro, con 5 colores de acento. Las variables viejas
+   de cada módulo (--accent, --vn-*, --igx-*, --zi-*…) se conectan
+   aquí a los tokens, así todo el panel cambia junto.
+   El tema lo pone js/tema.js en <html data-tema="claro|oscuro"
+   data-acento="azul|grafito|esmeralda|violeta|coral"> antes de pintar.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Claro (el de siempre, más limpio) ─────────────────────────── */
+:root {
+  color-scheme: light;
+  --p-bg:            #f4f2ee;
+  --p-bg-elev:       #faf9f6;
+  --p-surface:       #ffffff;
+  --p-surface-2:     #f9f8f5;
+  --p-fill-solid:    #f1eee9;
+  --p-fill-solid-2:  #e8e4dd;
+  --p-raised:        #26272b;
+  --p-fill:          rgba(40, 32, 20, .05);
+  --p-fill-2:        rgba(40, 32, 20, .09);
+  --p-border:        rgba(40, 32, 20, .11);
+  --p-border-2:      rgba(40, 32, 20, .19);
+  --p-border-solid:  #e5e1da;
+  --p-text:          #15161a;
+  --p-text-2:        #5d5953;
+  --p-text-3:        #78736b;
+  --p-text-4:        #aaa49a;
+  --p-ink:           #131316;
+  --p-on-ink:        #ffffff;
+
+  --p-accent:        #2d6be4;
+  --p-accent-2:      #4a90d9;
+  --p-accent-rgb:    45 107 228;
+  --p-accent-text:   #1f55c0;
+  --p-accent-soft:   rgb(var(--p-accent-rgb) / .10);
+  --p-on-accent:     #ffffff;
+
+  --p-verde:   #1f7a45;  --p-verde-bg: #e4f4ea;
+  --p-ambar:   #8a5a00;  --p-ambar-bg: #fcf1db;
+  --p-rojo:    #c4362b;  --p-rojo-bg:  #fdecea;
+  --p-azul:    #1f55c0;  --p-azul-bg:  #e8effc;
+
+  --p-sombra-1: 0 1px 2px rgba(24, 18, 10, .05), 0 1px 1px rgba(24, 18, 10, .03);
+  --p-sombra-2: 0 6px 18px -6px rgba(24, 18, 10, .12), 0 2px 5px rgba(24, 18, 10, .05);
+  --p-sombra-3: 0 24px 60px -18px rgba(24, 18, 10, .28), 0 8px 18px -8px rgba(24, 18, 10, .12);
+  --p-glass:    rgba(250, 249, 246, .78);
+  --p-overlay:  rgba(18, 16, 12, .42);
+
+  --p-r-s: 10px;
+  --p-r:   14px;
+  --p-r-l: 20px;
+  --p-r-xl: 26px;
+  --p-fuente: 'DM Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --p-titulo: 'Bebas Neue', 'DM Sans', sans-serif;
+  --p-curva: cubic-bezier(.22, .61, .36, 1);
+  --p-resorte: cubic-bezier(.32, .72, 0, 1);   /* la curva de las hojas de iOS */
+}
+
+/* ── Oscuro (descansa la vista; estilo iPhone) ────────────────── */
+html[data-tema="oscuro"] {
+  color-scheme: dark;
+  --p-bg:            #0c0c0e;
+  --p-bg-elev:       #121215;
+  --p-surface:       #1a1a1d;
+  --p-surface-2:     #212125;
+  --p-fill-solid:    #26262a;
+  --p-fill-solid-2:  #2f2f34;
+  --p-raised:        #2a2a2f;
+  --p-fill:          rgba(255, 255, 255, .06);
+  --p-fill-2:        rgba(255, 255, 255, .10);
+  --p-border:        rgba(255, 255, 255, .09);
+  --p-border-2:      rgba(255, 255, 255, .16);
+  --p-border-solid:  #2c2c31;
+  --p-text:          #f2f2f5;
+  --p-text-2:        #a8a8b0;
+  --p-text-3:        #85858e;
+  --p-text-4:        #56565d;
+  --p-ink:           #f2f2f5;
+  --p-on-ink:        #111113;
+
+  --p-accent:        #3776ec;
+  --p-accent-2:      #5b93f2;
+  --p-accent-rgb:    55 118 236;
+  --p-accent-text:   #8fb4ff;
+  --p-accent-soft:   rgb(var(--p-accent-rgb) / .18);
+  --p-on-accent:     #ffffff;
+
+  --p-verde:   #4cd685;  --p-verde-bg: rgba(76, 214, 133, .13);
+  --p-ambar:   #f2c45a;  --p-ambar-bg: rgba(242, 196, 90, .13);
+  --p-rojo:    #ff6b62;  --p-rojo-bg:  rgba(255, 107, 98, .14);
+  --p-azul:    #8fb4ff;  --p-azul-bg:  rgba(55, 118, 236, .18);
+
+  --p-sombra-1: 0 1px 2px rgba(0, 0, 0, .5);
+  --p-sombra-2: 0 8px 24px -8px rgba(0, 0, 0, .7), 0 2px 6px rgba(0, 0, 0, .4);
+  --p-sombra-3: 0 30px 70px -20px rgba(0, 0, 0, .85), 0 10px 24px -10px rgba(0, 0, 0, .6);
+  --p-glass:    rgba(18, 18, 21, .74);
+  --p-overlay:  rgba(0, 0, 0, .62);
+}
+
+/* ── Colores de acento ───────────────────────────────────────── */
+html[data-acento="grafito"]   { --p-accent: #1d1d1f; --p-accent-2: #48484e; --p-accent-rgb: 29 29 31;  --p-accent-text: #1d1d1f; --p-on-accent: #fff; }
+html[data-acento="esmeralda"] { --p-accent: #0d8058; --p-accent-2: #1fa673; --p-accent-rgb: 13 128 88;  --p-accent-text: #0a6a49; --p-on-accent: #fff; }
+html[data-acento="violeta"]   { --p-accent: #6d4ae6; --p-accent-2: #8b6cf0; --p-accent-rgb: 109 74 230; --p-accent-text: #5534c7; --p-on-accent: #fff; }
+html[data-acento="coral"]     { --p-accent: #cc4430; --p-accent-2: #e8664f; --p-accent-rgb: 204 68 48;  --p-accent-text: #a8382a; --p-on-accent: #fff; }
+html[data-tema="oscuro"][data-acento="grafito"]   { --p-accent: #f2f2f5; --p-accent-2: #c7c7cc; --p-accent-rgb: 242 242 245; --p-accent-text: #f2f2f5; --p-on-accent: #111113; --p-accent-soft: rgb(255 255 255 / .12); }
+html[data-tema="oscuro"][data-acento="esmeralda"] { --p-accent: #34c78a; --p-accent-2: #5ad6a2; --p-accent-rgb: 52 199 138;  --p-accent-text: #7fe0b6; --p-on-accent: #0b0b0d; }
+html[data-tema="oscuro"][data-acento="violeta"]   { --p-accent: #9b7dff; --p-accent-2: #b49cff; --p-accent-rgb: 155 125 255; --p-accent-text: #c4b3ff; --p-on-accent: #0b0b0d; }
+html[data-tema="oscuro"][data-acento="coral"]     { --p-accent: #ff7a62; --p-accent-2: #ff9a86; --p-accent-rgb: 255 122 98;  --p-accent-text: #ffb3a5; --p-on-accent: #0b0b0d; }
+
+/* ── Las variables de siempre, conectadas a los tokens ────────── */
+:root {
+  --black: var(--p-text);
+  --white: var(--p-bg);
+  --accent: var(--p-accent);
+  --accent2: var(--p-accent-2);
+  --gray: var(--p-fill-solid);
+  --mid: var(--p-fill-solid-2);
+  --card: var(--p-surface);
+  --border: var(--p-border-solid);
+  --muted: var(--p-text-3);
+  --text2: var(--p-text-2);
+  --text-dark: var(--p-text);
+  --danger: var(--p-rojo);
+  --success: var(--p-verde);
+  --bg-gradient: var(--p-bg);
+  --card-gradient: var(--p-surface);
+  --accent-gradient: linear-gradient(135deg, var(--p-accent) 0%, var(--p-accent-2) 100%);
+  --bg: var(--p-fill-solid);
+  --gan-ganancia: var(--p-accent);
+  --gan-rejilla: var(--p-border);
+  --sombra-suave: var(--p-sombra-1);
+  --sombra: var(--p-sombra-2);
+  --sombra-fuerte: var(--p-sombra-3);
+}
+html[data-tema="oscuro"] { --gan-costo: #f0a050; }
+.vn, .sp, #view-sistema .sp-tabs, .sp-modal-fondo {
+  --vn-borde: var(--p-border-solid); --vn-fondo: var(--p-fill-solid); --vn-papel: var(--p-surface-2);
+  --vn-tinta: var(--p-ink); --vn-suave: var(--p-text-2); --vn-tenue: var(--p-text-3);
+  --sp-verde: var(--p-verde); --sp-verde-f: var(--p-verde-bg); --sp-ambar: var(--p-ambar); --sp-ambar-f: var(--p-ambar-bg);
+  --sp-rojo: var(--p-rojo); --sp-rojo-f: var(--p-rojo-bg); --sp-azul: var(--p-azul); --sp-azul-f: var(--p-azul-bg);
+  --sp-gris: var(--p-text-2); --sp-gris-f: var(--p-fill-solid);
+}
+#view-instagram, #view-marketplace, .igx-modal {
+  --igx-txt: var(--p-ink); --igx-borde: var(--p-border-solid); --igx-fondo: var(--p-fill-solid); --igx-papel: var(--p-surface-2);
+  --igx-suave: var(--p-text-2); --igx-tenue: var(--p-text-3); --igx-rosa: var(--p-ink); --igx-grad: var(--p-ink);
+  --igx-rojo: var(--p-rojo); --igx-verde: var(--p-verde);
+}
+.zi-modal, .zi-hero {
+  --zi-borde: var(--p-border-solid); --zi-fondo: var(--p-fill-solid); --zi-papel: var(--p-surface-2);
+  --zi-txt: var(--p-ink); --zi-suave: var(--p-text-2); --zi-tenue: var(--p-text-3);
+}
+
+/* Barras de desplazamiento discretas en los dos temas */
+html { scrollbar-color: var(--p-fill-solid-2) transparent; }
+::selection { background: rgb(var(--p-accent-rgb) / .22); color: var(--p-text); }

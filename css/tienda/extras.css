@@ -1,0 +1,15 @@
+/* ─────────────────────────────────────────────────────────────
+   css/tienda/extras.css — Lo nuevo de la tienda · v43
+   ───────────────────────────────────────────────────────────── */
+.ex-sello { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 4px; padding: 6px 12px; border-radius: 999px; background: #e9f6ee; color: #1f6b3f; font-size: 13.5px; font-weight: 700; }
+.ex-medidas { margin-top: 18px; }
+.ex-medidas h3 { font-size: 15px; margin: 0 0 8px; font-family: inherit; letter-spacing: 0; text-transform: none; }
+.ex-medidas dl { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 0; }
+.ex-medidas dl div { background: var(--paper, #fff); border: 1px solid var(--line, #ebe7e0); border-radius: 10px; padding: 8px 12px; }
+.ex-medidas dt { font-size: 12px; color: var(--muted, #777); } .ex-medidas dd { margin: 2px 0 0; font-weight: 800; font-size: 16px; }
+.ex-medidas small { display: block; margin-top: 8px; color: var(--muted, #777); font-size: 12.5px; }
+.ex-outfit-lista { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 700px) { .ex-outfit-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+.ex-outfit-item { text-decoration: none; color: inherit; background: var(--paper, #fff); border: 1px solid var(--line, #ebe7e0); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; }
+.ex-outfit-item img, .ex-outfit-item > span { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; background: #eee; display: block; }
+.ex-outfit-item b { padding: 10px 12px 0; font-size: 14px; line-height: 1.3; } .ex-outfit-item small { padding: 4px 12px 12px; color: var(--muted, #777); }

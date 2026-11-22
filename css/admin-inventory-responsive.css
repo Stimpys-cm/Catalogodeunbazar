@@ -386,3 +386,38 @@
     transition: none !important;
   }
 }
+
+/* ── Botón de Instagram en cada prenda: cuadrito junto a editar/borrar ── */
+body.stmp-admin .item-actions .act-btn.ig {
+  width: 44px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  text-decoration: none;
+  background: #fff; color: #dd2a7b;
+  border: 1px solid rgba(221,42,123,.35);
+}
+body.stmp-admin .item-actions .act-btn.ig:hover { background: linear-gradient(45deg, #f58529, #dd2a7b 50%, #8134af); color: #fff; border-color: transparent; }
+body.stmp-admin .item-actions .act-btn.ig.hecho { background: linear-gradient(45deg, #f58529, #dd2a7b 50%, #8134af); color: #fff; border-color: transparent; }
+body.stmp-admin .item-actions .act-btn.ig.cargando { animation: igLatido 1s ease-in-out infinite; }
+/* Con el botón de Instagram la franja pasa a 4 columnas: vender · editar · IG · borrar */
+body.stmp-admin .item-actions:has(.act-btn.ig),
+body.stmp-admin.vista-compacta .item-actions:has(.act-btn.ig) {
+  grid-template-columns: minmax(0, 1fr) 44px 44px 44px !important;
+}
+body.stmp-admin .item-actions:has(.act-btn.ig) .act-btn.edit { grid-column: 2 !important; }
+body.stmp-admin .item-actions:has(.act-btn.ig) .act-btn.ig   { grid-column: 3 !important; min-height: 42px; border-radius: 10px; margin: 0; }
+body.stmp-admin .item-actions:has(.act-btn.ig) .act-btn.del  { grid-column: 4 !important; }
+@media (max-width: 380px) {
+  body.stmp-admin .item-actions:has(.act-btn.ig) { grid-template-columns: minmax(0, 1fr) 40px 40px 40px !important; }
+  body.stmp-admin .item-actions:has(.act-btn.ig) .act-btn.edit,
+  body.stmp-admin .item-actions:has(.act-btn.ig) .act-btn.ig,
+  body.stmp-admin .item-actions:has(.act-btn.ig) .act-btn.del { width: 40px !important; }
+}
+@keyframes igLatido { 50% { opacity: .45; } }
+
+/* ── Modal de venta: avisar en Instagram ── */
+.vt-ig{margin-top:16px;padding:14px 16px;border-radius:14px;border:1.5px solid var(--border,#d4cfc6);background:linear-gradient(135deg,rgba(245,133,41,.06),rgba(221,42,123,.06) 50%,rgba(129,52,175,.06));}
+.vt-ig-titulo{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#dd2a7b;margin-bottom:10px;}
+.vt-ig-op{display:flex;gap:10px;align-items:flex-start;cursor:pointer;padding:6px 0;}
+.vt-ig-op input{margin-top:3px;width:17px;height:17px;accent-color:#dd2a7b;flex-shrink:0;}
+.vt-ig-op b{display:block;font-size:13.5px;color:var(--text-dark,#1a1f2e);font-weight:600;}
+.vt-ig-op small{display:block;font-size:12px;color:var(--muted,#8a8178);margin-top:2px;line-height:1.4;}

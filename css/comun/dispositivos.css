@@ -1,0 +1,425 @@
+/* ═══════════════════════════════════════════════════════════════
+   DISPOSITIVOS — iPhone, Android, tablet/iPad y navegadores viejos
+   Se carga después de las demás hojas para poder corregirlas.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Base para todos ─────────────────────────────────────────── */
+html {
+  /* Safari en horizontal agranda el texto por su cuenta */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Scroll suave al saltar a #ancla, respetando el header pegajoso */
+  scroll-behavior: smooth;
+  scroll-padding-top: 120px;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+body {
+  /* Sin el destello gris de iOS al tocar */
+  -webkit-tap-highlight-color: transparent;
+  /* Evita desbordes horizontales en pantallas angostas */
+  overflow-x: hidden;
+}
+
+/* Nada se sale del ancho de la pantalla */
+img, video, canvas, svg, iframe { max-width: 100%; }
+img { height: auto; }
+
+/* Los títulos largos no rompen el layout en pantallas chicas */
+h1, h2, h3, .card-name, .h-card-name, .hb-name, .bz-head-info h2 {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* ── Toques: el hover solo donde hay mouse ───────────────────── */
+/* En táctil el :hover se queda "pegado" tras tocar. */
+@media (hover: none) {
+  .card:hover,
+  .h-card:hover,
+  .hb-card:hover,
+  .h-bazar:hover,
+  .h-cat:hover,
+  .h-brand:hover,
+  .h-btn:hover,
+  .bz-link:hover {
+    transform: none;
+  }
+  .card:hover .card-img img,
+  .h-card:hover .h-card-img img,
+  .h-cat:hover img,
+  .hb-logo-link:hover .hb-logo,
+  .hb-head-logo:hover { transform: none; }
+  /* El botón de WhatsApp que aparece al pasar el mouse: en táctil, siempre visible */
+  .card .card-quick { opacity: 1; transform: none; }
+}
+
+/* Área de toque mínima cómoda (44px es lo que recomienda Apple) */
+@media (pointer: coarse) {
+  .h-btn, .hb-btn, .bz-link, .h-brand, .h-see-more,
+  .filter-btn, .sort-btn, .bn-item, .act-btn,
+  .bz-media-btn, .h-nav-cta { min-height: 44px; }
+  .card-fav-btn { width: 38px; height: 38px; }
+}
+
+/* ── Formularios en iOS ──────────────────────────────────────── */
+/* Safari hace zoom si el texto del campo mide menos de 16px */
+@media (max-width: 820px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+input, select, textarea, button { -webkit-tap-highlight-color: transparent; }
+/* iOS le pone su propio estilo a los campos y botones */
+input[type="text"], input[type="search"], input[type="password"],
+input[type="number"], input[type="tel"], input[type="email"], textarea {
+  -webkit-appearance: none;
+  appearance: none;
+  border-radius: inherit;
+}
+select { -webkit-appearance: none; appearance: none; background-image: none; }
+input[type="color"] { -webkit-appearance: none; appearance: none; border: 1.5px solid var(--border); }
+
+/* ── Carruseles: deslizamiento con inercia ───────────────────── */
+.h-rail, .filter-btns, .h-tabs, .cat-nav-inner, .pd-thumbs, .h-brands {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+/* En táctil el rail se desliza libre, sin "engancharse" */
+@media (pointer: coarse) {
+  .h-rail { scroll-snap-type: x proximity; }
+}
+
+/* ── Notch y barra de gestos (iPhone) ────────────────────────── */
+/* Solo en pantallas chicas, para no tocar el margen del escritorio */
+@media (max-width: 1024px) {
+  .h-wrap, .h-hero-inner {
+    padding-left:  max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+}
+@media (max-width: 600px) {
+  .h-wrap, .h-hero-inner {
+    padding-left:  max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+footer { padding-bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px)); }
+
+/* ── Tablet / iPad ───────────────────────────────────────────── */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .h-wrap { padding: 0 2rem; }
+  .h-hero-inner { padding: 2.5rem 2rem 3rem; }
+  .h-rail { grid-auto-columns: 195px; }
+  .h-cats { grid-template-columns: repeat(3, 1fr); }
+  .h-bazares { grid-template-columns: 1fr 1fr; }
+  .h-steps { grid-template-columns: 1fr 1fr; }
+}
+
+/* iPad en horizontal: el hero cabe en dos columnas */
+@media (min-width: 900px) and (max-width: 1200px) {
+  .h-hero-bz { grid-template-columns: 1fr 1fr; }
+  .hb-name { font-size: 1.8rem; }
+  .hb-desc { font-size: 12.5px; }
+}
+
+/* ── Teléfono en horizontal (poca altura) ────────────────────── */
+@media (max-height: 480px) and (orientation: landscape) {
+  .h-hero-inner { padding-top: 1.5rem; padding-bottom: 2rem; }
+  .h-hero-bz h1 { font-size: clamp(2rem, 6vw, 3rem); }
+  .bz-logo { width: 96px; height: 96px; }
+}
+
+/* ── Teléfonos: tipografía del hero a escala ─────────────────── */
+@media (max-width: 600px) {
+  .h-hero-bz h1 { font-size: clamp(2.1rem, 9.5vw, 3rem); }
+  .hero-slugs {
+    font-size: clamp(1.15rem, 5.6vw, 1.7rem);
+    gap: 8px;
+  }
+  .hero-sep { font-size: .6em; }
+  .hero-mas { font-size: 11px; padding: 6px 11px; }
+  .h-hero-sub { font-size: 14.5px; }
+  .h-section-head h2 { font-size: clamp(1.6rem, 7.5vw, 2.2rem); }
+  .h-cta { padding: 2rem 1rem; }
+}
+
+/* ── Pantallas muy angostas (iPhone SE, Android chicos) ──────── */
+@media (max-width: 380px) {
+  .h-wrap, .h-hero-inner {
+    padding-left:  max(.85rem, env(safe-area-inset-left));
+    padding-right: max(.85rem, env(safe-area-inset-right));
+  }
+  .h-rail { grid-auto-columns: 148px; gap: 10px; }
+  .h-cats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .h-btn { padding: 12px 18px; font-size: 11px; }
+  .hb-btns { gap: 6px; }
+  .hb-btn { padding: 10px 14px; font-size: 10px; }
+  .bz-logo { width: 88px; height: 88px; border-radius: 20px; }
+  .h-stats { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Navegadores sin soporte moderno ─────────────────────────── */
+/* aspect-ratio (Safari < 15): se simula con relleno */
+@supports not (aspect-ratio: 3 / 4) {
+  .h-card-img, .card-img { height: 0; padding-bottom: 133%; position: relative; }
+  .h-card-img img, .card-img img { position: absolute; inset: 0; }
+  .h-cat { height: 0; padding-bottom: 75%; }
+}
+/* gap en flex (Safari < 14.1): margen de respaldo */
+@supports not (gap: 1px) {
+  .h-cta-row > *, .hb-btns > *, .bz-links > *, .h-brands > * { margin: 0 8px 8px 0; }
+}
+/* backdrop-filter: si no existe, el header va sólido para que se lea */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  header, .cat-nav { background: var(--white); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TELÉFONOS — ajustes verificados en 320, 344, 360, 375, 390, 393,
+   412 y 430 px de ancho, más horizontal. Los anchos de arriba ya
+   estaban bien resueltos; esto corrige lo que quedaba.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Enlaces del pie: se podían leer, pero no atinar ─────────────
+   Medían 15 px de alto. Con el dedo eso es una lotería: el pie es
+   justo donde están "Ver catálogo" y "Cómo comprar". Se les da
+   altura de toque sin cambiar ni el tamaño ni el color del texto,
+   así que el pie se ve igual. */
+@media (pointer: coarse) {
+  .sf-col a, .sf-legal a {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    width: fit-content;
+  }
+  /* Los enlaces dentro de un párrafo son la excepción: darles altura
+     rompería el renglón. Ahí el objetivo se agranda por fuera. */
+  p a, .sf-nota a, .legal-sec a {
+    display: inline;
+    min-height: 0;
+    padding: .35em 0;
+  }
+}
+
+/* ── Alto real de la pantalla ────────────────────────────────────
+   En el móvil la barra del navegador aparece y desaparece: 100vh
+   mide siempre la pantalla completa, así que un panel de 100% se
+   iba por debajo del borde y sus botones quedaban fuera de alcance.
+   dvh sigue el alto que de verdad se ve. */
+@supports (height: 100dvh) {
+  .filter-drawer, .wishlist-panel { height: 100dvh; }
+}
+
+/* ── Botones que no queden bajo la barra de gestos ───────────────
+   En iPhone sin botón de inicio y en los Android con navegación por
+   gestos, los últimos milímetros de la pantalla no se pueden tocar.
+   Los pies de los paneles tienen que respetarlos. */
+.filter-drawer-foot,
+.wishlist-panel-footer {
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── Teléfono en horizontal ──────────────────────────────────────
+   Con 360 px de alto, un panel a pantalla completa deja muy poco
+   sitio para su contenido: se recorta el cabezal y se aprieta el pie
+   para que el cuerpo respire. */
+@media (max-height: 460px) and (orientation: landscape) {
+  .filter-drawer-head { height: 50px; }
+  .filter-drawer-foot { padding-top: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .filter-drawer-foot button { height: 40px; }
+  .wishlist-panel-header { padding-top: 12px; padding-bottom: 12px; }
+}
+
+/* ── Pantallas muy angostas (320 px: iPhone SE, Fold cerrado) ────
+   A este ancho el precio y el nombre de la marca competían por el
+   mismo renglón y el precio se comía el espacio del nombre. */
+@media (max-width: 340px) {
+  .card .card-row { flex-wrap: wrap; }
+  .card .card-brand { font-size: 12px; }
+  .card-price { font-size: 15px; }
+  .filter-drawer { width: 92%; }
+  .h-stats { grid-template-columns: 1fr; }
+}
+
+/* ── Texto grande del sistema ────────────────────────────────────
+   Quien tiene la letra del teléfono al máximo por accesibilidad no
+   debería encontrarse el catálogo roto: las etiquetas cortas dejan
+   de forzar una sola línea y pueden partirse. */
+@media (pointer: coarse) {
+  .card-brand, .h-card-name, .bz-head-info h2 { white-space: normal; }
+}
+
+/* ── Cabecera y barra del catálogo en pantallas angostas ─────────
+   Medido en 320 px (iPhone SE, Galaxy Fold cerrado): el botón
+   "Ver catálogo" salía cortado por el borde, el corazón de la
+   wishlist quedaba aplastado a 12 px de ancho y en la tienda el
+   selector "Ordenar" se salía de la pantalla. Los tres eran el
+   mismo problema: filas que no caben y nadie decía qué encoger. */
+@media (max-width: 400px) {
+  .header-row {
+    padding: 0 .9rem;
+    gap: .5rem;
+  }
+  /* Los iconos nunca encogen: son objetivos de toque, no relleno. */
+  .btn-wishlist-header,
+  .search-icon-btn,
+  .h-nav-ig {
+    flex-shrink: 0;
+    min-width: 40px;
+    min-height: 40px;
+    justify-content: center;
+  }
+  /* Lo que sí puede ceder es el texto del botón principal. */
+  .h-nav-cta {
+    flex-shrink: 1;
+    min-width: 0;
+    padding: 10px 14px;
+    white-space: nowrap;
+  }
+  .logo { flex-shrink: 0; }
+}
+
+/* La barra de filtros y orden: en una sola fila no cabe, así que
+   pasa a dos y cada control ocupa lo suyo. Antes "Ordenar" quedaba
+   medio fuera de la pantalla. */
+@media (max-width: 480px) {
+  .shop-toolbar {
+    flex-wrap: wrap;
+    padding: .8rem 1rem;
+    gap: 10px;
+  }
+  .shop-toolbar-left {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+  .sort-wrap { flex: 1 1 100%; }
+  .sort-btn  { width: 100%; justify-content: space-between; }
+  .sort-menu { width: 100%; }
+}
+
+/* ── El sufijo MXN se quedaba en 6 px ────────────────────────────
+   Es el que dice en qué moneda está el precio: a ese tamaño no se
+   lee en un teléfono. Sube a 10 px, que junto al precio grande
+   sigue leyéndose como un detalle y no compite con él. */
+@media (pointer: coarse) {
+  .cur { font-size: 10px !important; }
+}
+
+/* ── Datos del bazar en la ficha ─────────────────────────────────
+   A 320 px el nombre y el @usuario se salían de su caja. */
+@media (max-width: 380px) {
+  .pp-bazar-datos { min-width: 0; }
+  .pp-bazar-nombre, .pp-bazar-slug {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+}
+
+/* ── La cabecera del inicio a 320 px ─────────────────────────────
+   Logo (86) + acciones (254) no caben en 320. El bloque de acciones
+   no encogía nunca, así que el botón principal se salía. Ahora cede
+   él, que es quien tiene texto de sobra, y los iconos se quedan
+   como están porque son objetivos de toque. */
+@media (max-width: 400px) {
+  .header-actions {
+    min-width: 0;
+    gap: 6px;
+  }
+  .header-actions .h-nav-cta {
+    font-size: 9.5px;
+    letter-spacing: .06em;
+    padding: 10px 12px;
+  }
+  .header-actions .cuenta-entrar {
+    font-size: 9.5px;
+    letter-spacing: .06em;
+    padding: 9px 10px;
+  }
+  .logo { font-size: 1.5rem; }
+}
+
+/* En los teléfonos más estrechos el "Entrar" cabe mejor en el menú
+   de abajo, que ya lleva la cuenta: en la cabecera solo estorbaba
+   al botón que lleva al catálogo, que es el que importa. */
+@media (max-width: 340px) {
+  body:has(.bottom-nav) .header-actions .cuenta-entrar { display: none; }
+}
+
+/* ── El precio quedaba cortado en la tarjeta ─────────────────────
+   Nombre y precio compartían renglón. En una tarjeta de 119 px
+   (dos columnas a 320 px de pantalla) el precio no entraba en su
+   hueco y se salía por el borde: se veía "$2..." y nada más. Ahora
+   ocupa su propio renglón, donde tiene el ancho entero. */
+@media (max-width: 480px) {
+  .card .card-row    { display: block; }
+  .card .card-titles { min-width: 0; }
+  .card .card-price  { display: block; margin-top: 3px; white-space: nowrap; }
+}
+/* Un importe de cuatro cifras con su moneda al lado ("$1,014 MXN")
+   necesita 111 px y en una tarjeta de 320 px solo hay 77: se salía
+   por el borde. En vez de encoger el precio —que es lo que la
+   persona viene a ver— la moneda pasa debajo, que es donde sobra
+   sitio. Así el importe se mantiene grande y MXN sigue legible. */
+@media (max-width: 380px) {
+  .card .card-price .cur {
+    display: block;
+    margin-top: 1px;
+    line-height: 1;
+  }
+}
+@media (max-width: 340px) {
+  .card .card-price { font-size: 1.25rem; }
+}
+
+/* A 320 px "Ver catálogo" no cabía dentro de su propia píldora y la
+   última letra quedaba cortada. Se acorta a "Catálogo", igual que el
+   logo ya pasa de "STMP MARKET" a "STMP." en el mismo punto. */
+@media (max-width: 360px) {
+  .cta-largo { display: none; }
+  .h-nav-cta { text-transform: uppercase; }
+}
+
+/* ── La barra de categorías se cortaba a media palabra ───────────
+   A 320 px "Marcas" quedaba partido por el borde y no había forma
+   de llegar a él: la barra recortaba en vez de desplazarse. Ahora
+   se desliza con el dedo, como los demás carruseles del sitio. */
+@media (max-width: 420px) {
+  .cat-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .cat-nav::-webkit-scrollbar { display: none; }
+  .cat-nav-inner { width: max-content; min-width: 100%; }
+}
+
+/* ── La etiqueta del bazar se salía de la tarjeta ────────────────
+   Un @usuario largo desbordaba su hueco. Se recorta con puntos
+   suspensivos: vale más ver "@stiimpysreyn…" dentro de la tarjeta
+   que el nombre entero saliéndose por un lado. */
+@media (max-width: 480px) {
+  .card-bazar-row { min-width: 0; }
+  .card-bazar-row .card-bazar,
+  .card-bazar-row > * {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* ── Tarjeta de la portada en pantallas angostas ─────────────────
+   Precio y talla comparten renglón. Por debajo de 400 px la talla
+   se quedaba en "TAL…", que no informa de nada. Baja a su propio
+   renglón, donde entra completa, en vez de recortarse. */
+@media (max-width: 400px) {
+  .h-card-foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .h-card-size { max-width: 100%; }
+}

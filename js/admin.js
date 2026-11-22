@@ -71,12 +71,13 @@ function vigilarCierreDelPanel() {
 }
 window.addEventListener('db:ajustes', vigilarCierreDelPanel);
 window.addEventListener('db:ready',   vigilarCierreDelPanel);
+window.addEventListener('db:ready',   () => prepararOpcionInstagram());
 
 // ─── TABS ────────────────────────────────────────────────────
 let currentTab = 'inventario';
 
 // Pestañas válidas y las que requieren admin
-const TABS_VALIDAS   = ['inventario','registrar','catalogo','vendedores','bazares','drops','anuncios','subastas','ganancias','cuenta','sistema'];
+const TABS_VALIDAS   = ['inventario','registrar','catalogo','vendedores','bazares','drops','anuncios','subastas','ganancias','cuenta','sistema','instagram','marketplace','ventas'];
 const TABS_SOLO_ADMIN = ['catalogo', 'solicitudes'];
 // Sistema (logs de toda la plataforma) es solo del admin principal
 const TABS_SOLO_GLOBAL = ['sistema'];
@@ -188,7 +189,7 @@ function showTab(tab, fromHash) {
   if (tab === 'bazares'    && !esAdminGlobal() && !puedo('personalizar'))     return;
   const cambioDeVista = currentTab !== tab;
   currentTab = tab;
-  ['inventario','registrar','vendedores','catalogo','bazares','cuenta','drops','anuncios','subastas','ganancias','sistema','solicitudes'].forEach(t => {
+  ['inventario','registrar','vendedores','catalogo','bazares','cuenta','drops','anuncios','subastas','ganancias','sistema','solicitudes','instagram','marketplace','ventas'].forEach(t => {
     const v = document.getElementById('view-'+t);
     const b = document.getElementById('tab-'+t);
     if (v) v.classList.toggle('hidden', t!==tab);
@@ -205,6 +206,9 @@ function showTab(tab, fromHash) {
   if (tab==='ganancias')   cargarGanancias();
   if (tab==='sistema')     renderSistema();
   if (tab==='solicitudes') renderSolicitudes();
+  if (tab==='instagram')   igAbrir();
+  if (tab==='marketplace' && typeof mpAbrir === 'function') mpAbrir();
+  if (tab==='ventas' && typeof vtAbrir === 'function') vtAbrir();
   if (tab==='registrar')   { setTimeout(() => { initPreviewListeners(); updatePreview(); populateDropSelect(); }, 0); }
   closeSidebar();
 
@@ -224,7 +228,7 @@ function showTab(tab, fromHash) {
   // Título de la pestaña en el navegador
   const titulos = {
     inventario:'Inventario', registrar:'Registrar', catalogo:'Catálogo',
-    vendedores:'Vendedores', bazares:'Bazares', drops:'Drops', anuncios:'Anuncios', subastas:'Subastas', ganancias:'Ganancias', cuenta:'Mi cuenta', sistema:'Sistema'
+    vendedores:'Vendedores', bazares:'Bazares', drops:'Drops', anuncios:'Anuncios', subastas:'Subastas', ganancias:'Ganancias', cuenta:'Mi cuenta', sistema:'Sistema', instagram:'Instagram', marketplace:'Marketplace', ventas:'Ventas'
   };
   document.title = `${titulos[tab] || 'Panel'} · STMP MARKET`;
 }
@@ -539,7 +543,7 @@ function setFilter(f, el) {
   renderInv();
 }
 
-function renderAll() { pintarSelectorBazar(); renderStats(); renderInv(); }
+function renderAll() { pintarSelectorBazar(); renderStats(); renderInv(); if (typeof mpActualizarGlobo === 'function') mpActualizarGlobo(); }
 
 // Selector de bazar del inventario — solo para el admin principal
 function pintarSelectorBazar() {
@@ -642,7 +646,16 @@ function renderInv() {
           : `<button class="act-btn cal" onclick="abrirModalComprador(${p.id})">★ Calificar comprador</button>`)
       : '';
     const delBtn    = `<button class="act-btn del" onclick="delItem(${p.id})" aria-label="Eliminar ${escAdmin(p.nombre)}" title="Eliminar">${IC_TRASH}</button>`;
-    const costoHtml = isAdmin() ? `<span class="item-costo">Costo: $${p.costo}</span>` : '';
+    const igBtn = p.instagramId
+      ? (p.instagramUrl
+          ? `<a class="act-btn ig hecho" href="${escAdmin(p.instagramUrl)}" target="_blank" rel="noopener" title="Ver en Instagram" aria-label="Ver en Instagram">${IC_IG}</a>`
+          : `<span class="act-btn ig hecho" title="Ya está en Instagram" aria-label="Ya está en Instagram">${IC_IG}</span>`)
+      : (!p.vendido && !p.oculto && bazarDePrenda(p.bazarId)?.instagramAuto
+          ? (_igEnCurso.has(p.id)
+              ? `<span class="act-btn ig cargando" title="Publicando en Instagram…">${IC_IG}</span>`
+              : `<button class="act-btn ig" onclick="publicarEnInstagram(${p.id})" title="Publicar en Instagram" aria-label="Publicar en Instagram">${IC_IG}</button>`)
+          : '');
+    const costoHtml = isAdmin() ? `<span class="item-costo">Costo: ${p.costo != null && p.costo !== '' && !isNaN(p.costo) ? '$' + Number(p.costo).toLocaleString('es-MX') : 'sin registrar'}</span>` : '';
 
     // Cuando el admin principal ve varios bazares, cada card dice de quién es
     const bazarHtml = (esAdminGlobal() && invBazarFiltro === 'todos')
@@ -667,8 +680,9 @@ function renderInv() {
           <div class="item-name">${escAdmin(p.nombre)}</div>
           ${bazarHtml}
           <div class="item-tags">${tagsHtml}</div>
-          <div class="item-meta">Talla ${p.talla||'–'} · ${p.estado||''}</div>
+          <div class="item-meta">Talla ${escAdmin(p.talla||'–')} · ${escAdmin(p.estado||'')}</div>
           ${compradorHtml}
+          ${typeof apChip === 'function' ? apChip(p) : ''}
           ${enSubasta ? '' : `<div class="item-prices">
             <span class="item-price">${(p.precioAnterior && Number(p.precioAnterior) > Number(p.precio_venta))
               ? `<s class="item-antes">$${Number(p.precioAnterior).toLocaleString('es-MX')}</s> ` : ''}$${p.precio_venta} <span class="cur">MXN</span></span>
@@ -680,6 +694,9 @@ function renderInv() {
           ${vendBtn}
           ${calBtn}
           <button class="act-btn edit" onclick="re_editar_prenda(${p.id})" aria-label="Editar ${escAdmin(p.nombre)}" title="Editar">${IC_EDIT}</button>
+          ${igBtn}
+          ${typeof mpBotonPrenda === 'function' ? mpBotonPrenda(p) : ''}
+          ${!enSubasta && typeof apBotonPrenda === 'function' ? apBotonPrenda(p) : ''}
           ${delBtn}
         </div>
       </div>
@@ -800,6 +817,8 @@ function abrirModalVenta(id) {
       Es el nombre de usuario que el comprador tiene en su cuenta de STMP MARKET.
       Al guardar, la prenda sale del catálogo activo y aparece en sus compras.
     </p>
+    ${bloqueAvisoInstagram(p)}
+    ${(p.marketplace?.publicadoEn && !p.marketplace?.vendidoMarcadoEn && typeof IC_MP !== 'undefined') ? `<div class="vt-mp">${IC_MP}<span>Esta prenda también está en <b>Facebook Marketplace</b>. Al guardar te muestro cómo marcarla como vendida allá.</span></div>` : ''}
     <div class="vt-error" id="ventaError"></div>`;
 
   tituloModalVenta('Registrar venta', '¿A quién se la vendiste?', 'Marcar como vendido');
@@ -959,6 +978,13 @@ async function confirmarVenta() {
   const comprador = (document.getElementById('ventaUsername')?.value || '').trim();
   if (comprador.length < 3) return errorVenta('Escribe el @username del comprador');
 
+  // Se leen antes de que el modal se cierre y se borre su contenido
+  const avisoIG = {
+    comentario: !!document.getElementById('vtIgComentario')?.checked,
+    historia:   !!document.getElementById('vtIgHistoria')?.checked,
+    portada:    !!document.getElementById('vtIgPortada')?.checked,
+  };
+
   const btn = document.getElementById('ventaGuardar');
   const txt = btn?.textContent;
   if (btn) { btn.disabled = true; btn.textContent = 'Registrando…'; }
@@ -982,6 +1008,8 @@ async function confirmarVenta() {
     playActionSound('sell');
     toast(`Vendido a @${comprador}`);
     if (typeof pollAhora === 'function') pollAhora(800);
+    if (avisoIG.comentario || avisoIG.historia || avisoIG.portada) avisarVendidoEnInstagram(id, avisoIG);
+    if (p?.marketplace?.publicadoEn && !p.marketplace.vendidoMarcadoEn && typeof mpAbrirKit === 'function') setTimeout(() => mpAbrirKit(id), 700);
   } catch (err) {
     errorVenta(err.message || 'No se pudo registrar la venta');
   } finally {
@@ -1003,7 +1031,15 @@ async function revertirVenta(id) {
   if (!seguro) return;
 
   try {
-    await api('/api/acciones?op=revertir-venta', { method: 'POST', body: { id } });
+    try {
+      await api('/api/acciones?op=revertir-venta', { method: 'POST', body: { id } });
+    } catch (err) {
+      // v33: venta pagada en línea → solo se reactiva confirmando que ya se devolvió el dinero
+      if (!(err.status === 409 && err.datos?.requiereConfirmar)) throw err;
+      const devuelto = await uiConfirm({ titulo: '¿Ya devolviste el dinero?', sub: p.nombre || ('#' + id), mensaje: err.message, ok: 'Sí, ya lo devolví: reactivar', peligro: true });
+      if (!devuelto) return;
+      await api('/api/acciones?op=revertir-venta', { method: 'POST', body: { id, confirmarReembolso: true } });
+    }
     p.vendido = false; delete p.vendidoA; delete p.vendidoEn; delete p.ventaId;
     if (typeof _actualizarInventarioLocal === 'function') _actualizarInventarioLocal(getDB());
     renderAll();
@@ -1035,7 +1071,8 @@ async function delItem(id) {
     if (!r.ok) { toast('No se pudo eliminar'); return; }
   } catch (e) {
     // El servidor devuelve 429 si se pasó del límite
-    toast(e.message || 'No se pudo eliminar');
+    toast(e.message || 'No se pudo eliminar', { tipo: 'error', origen: 'productos', titulo: 'No se pudo eliminar la prenda',
+      cuerpo: e.message || '', reintentar: e.status === 429 || e.status === 403 ? null : () => delItem(id) });
     playActionSound('error');
     return;
   }
@@ -1044,7 +1081,23 @@ async function delItem(id) {
   _actualizarInventarioLocal(getDB().filter(x => x.id!==id));
   registrarLog('eliminar', prenda?.nombre || ('#'+id), prenda?.marca ? `Marca: ${prenda.marca}` : '');
   playActionSound('del');
-  renderAll(); toast('Prenda eliminada');
+  renderAll();
+  toast('Prenda eliminada', { tipo: 'ok', origen: 'productos', cuerpo: prenda?.nombre || '', deshacer: () => restaurarPrenda(id) });
+}
+
+// "Deshacer" del aviso: la prenda regresa de la papelera con sus fotos y datos
+async function restaurarPrenda(id) {
+  try {
+    const r = await api('/api/acciones?op=restaurar-prenda', { method: 'POST', body: { id } });
+    if (r.prenda && !getDB().some(x => x.id === id)) _actualizarInventarioLocal([r.prenda, ...getDB()]);
+    registrarLog('editar', r.prenda?.nombre || ('#' + id), 'Restaurada después de eliminarla');
+    playActionSound('ok');
+    renderAll();
+    toast('Prenda restaurada', { tipo: 'ok', origen: 'productos', cuerpo: r.prenda?.nombre || '' });
+    if (typeof pollAhora === 'function') pollAhora(800);
+  } catch (e) {
+    toast(e.message || 'No se pudo restaurar', { tipo: 'error', origen: 'productos', titulo: 'No se pudo restaurar la prenda', cuerpo: e.message || '', reintentar: () => restaurarPrenda(id) });
+  }
 }
 
 // Modal de confirmación premium para eliminar prenda (cooldown configurable)
@@ -1119,6 +1172,8 @@ function editItem(id) {
   escribirEstado('f', p.estado || '');
   const descEl = document.getElementById('f_descripcion');
   if (descEl) descEl.value = p.descripcion||'';
+  const hashEl = document.getElementById('f_hashtags');
+  if (hashEl) hashEl.value = p.hashtags||'';
   const brandSel = document.getElementById('f_marca');
   if (brandSel) brandSel.value = p.marca||'';
   renderCatCheckboxes(Array.isArray(p.categorias) ? p.categorias : []);
@@ -1196,28 +1251,38 @@ function reGetSelectedCats() {
   return [...document.querySelectorAll('#re_cats_wrap input:checked')].map(i => i.value);
 }
 
+// Textos del aviso cuando se suben varias fotos a la vez
+const FOTOS_AVISO = {
+  cargando: (h, n) => n === 1 ? 'Subiendo foto…' : `Subiendo fotos… ${h} de ${n}`,
+  ok: n => n === 1 ? 'Foto subida' : `${n} fotografías subidas correctamente`,
+  fallo: (f, n) => n === 1 ? 'No se pudo subir la foto' : `${f} de ${n} fotos no se pudieron subir`,
+};
+
 // Fotos del modal (independiente del formulario de registrar)
 function reHandleFiles(files) {
   const fileArr = Array.from(files);
   const input = document.getElementById('reFileInput');
   if (input) input.value = '';
+  if (!fileArr.length) return;
+  const lote = Avisos.lote({ clave: 'fotos-editar', origen: 'fotos', total: fileArr.length, textos: FOTOS_AVISO });
   fileArr.forEach(file => {
     const r = new FileReader();
+    r.onerror = () => lote.fallo(file.name, new Error('No se pudo leer el archivo'));
     r.onload = async e => {
       const base64 = e.target.result;
-      const idx = reEditImgs.length;
       reEditImgs.push(base64);          // preview inmediata
       reRenderPreviews();
       try {
-        toast('Subiendo foto...');
         const url = await uploadToCloud(base64);
-        reEditImgs[idx] = url;          // reemplaza por URL de Cloudinary
+        const i = reEditImgs.indexOf(base64);   // por si otra foto falló y se movieron
+        if (i >= 0) reEditImgs[i] = url;        // reemplaza por URL de Cloudinary
         reRenderPreviews();
-        toast('Foto subida');
+        lote.ok(file.name);
       } catch (err) {
-        toast('Error subiendo foto: ' + err.message);
-        reEditImgs.splice(idx, 1);
+        const i = reEditImgs.indexOf(base64);
+        if (i >= 0) reEditImgs.splice(i, 1);
         reRenderPreviews();
+        lote.fallo(file.name, err, () => reHandleFiles([file]));
       }
     };
     r.readAsDataURL(file);
@@ -1279,14 +1344,15 @@ async function guardarReEdicion() {
       estado: p.estado, descripcion: p.descripcion, imagenes: p.imagenes,
     });
   } catch (err) {
-    toast(err.message || 'No se pudieron guardar los cambios');
+    toast(err.message || 'No se pudieron guardar los cambios', { tipo: 'error', origen: 'productos', titulo: 'No se pudieron guardar los cambios',
+      cuerpo: err.message || '', reintentar: () => guardarReEdicion() });
     return;
   }
   registrarLog('editar', nombre, diffPrenda(antes, p));
   playActionSound('ok');
   cerrarReEdicion();
   renderAll();
-  toast('Cambios guardados');
+  toast('Cambios guardados', { tipo: 'ok', origen: 'productos', cuerpo: p.nombre || '', ir: { texto: 'Ver en la tienda', url: `prenda.html?id=${p.id}` } });
 }
 
 // ─── FORM ────────────────────────────────────────────────────
@@ -1396,28 +1462,29 @@ async function uploadToCloud(base64) {
 function handleFiles(files) {
   const fileArr = Array.from(files);
   document.getElementById('fileInput').value = '';
+  if (!fileArr.length) return;
+  const lote = Avisos.lote({ clave: 'fotos-registro', origen: 'fotos', total: fileArr.length, textos: FOTOS_AVISO });
 
   // Mostrar previews locales inmediatamente mientras suben
   fileArr.forEach(file => {
     const r = new FileReader();
+    r.onerror = () => lote.fallo(file.name, new Error('No se pudo leer el archivo'));
     r.onload = async e => {
       const base64 = e.target.result;
-      // Preview local temporal
-      const tempIdx = newImages.length;
       newImages.push(base64);
       renderPreviews();
-
       try {
-        toast('Subiendo foto...');
         const url = await uploadToCloud(base64);
-        // Reemplazar base64 con URL de Cloudinary
-        newImages[tempIdx] = url;
+        // Reemplazar base64 con URL de Cloudinary (se busca por valor: otra foto pudo fallar y moverse)
+        const i = newImages.indexOf(base64);
+        if (i >= 0) newImages[i] = url;
         renderPreviews();
-        toast('Foto subida');
+        lote.ok(file.name);
       } catch (err) {
-        toast('Error subiendo foto: ' + err.message);
-        newImages.splice(tempIdx, 1);
+        const i = newImages.indexOf(base64);
+        if (i >= 0) newImages.splice(i, 1);
         renderPreviews();
+        lote.fallo(file.name, err, () => handleFiles([file]));
       }
     };
     r.readAsDataURL(file);
@@ -1441,7 +1508,7 @@ function removePreview(i) {
 }
 function clearForm() {
   document.getElementById('editId').value = '';
-  ['f_nombre','f_precio','f_precioAnterior','f_costo','f_estado','f_descripcion','f_dropNombre'].forEach(id => {
+  ['f_nombre','f_precio','f_precioAnterior','f_costo','f_estado','f_descripcion','f_hashtags','f_dropNombre'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const brandSel = document.getElementById('f_marca');
@@ -1461,6 +1528,104 @@ function clearForm() {
   const useSb = document.getElementById('f_useSubasta');
   if (useSb) useSb.checked = false;
   toggleSubastaField();
+  prepararOpcionInstagram();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INSTAGRAM — publica la prenda como carrusel en la cuenta del bazar.
+//  Las credenciales viven en Vercel; aquí solo se sabe si hay conexión.
+// ═══════════════════════════════════════════════════════════════
+function bazarDePrenda(bazarId) {
+  return getBazares().find(b => Number(b.id) === Number(bazarId || 1));
+}
+
+function prepararOpcionInstagram() {
+  const chk  = document.getElementById('f_publicarIG');
+  const hint = document.getElementById('igToggleHint');
+  if (!chk) return;
+  const bz = bazarDePrenda(bazarParaNuevas());
+  const conectado = !!bz?.instagramAuto;
+  chk.checked  = conectado && bz?.instagramConfig?.autoPublicar !== false;
+  chk.disabled = !conectado;
+  if (hint) hint.textContent = conectado
+    ? '(carrusel con todas las fotos)'
+    : '(Instagram no está conectado para este bazar)';
+}
+
+// Casillas del modal de venta: solo aparecen si el bazar tiene Instagram.
+// El comentario solo si la prenda se publicó desde aquí (hay post donde comentar).
+function bloqueAvisoInstagram(p) {
+  if (!bazarDePrenda(p.bazarId)?.instagramAuto) return '';
+  const hecho = p.instagramVendido || {};
+  const cfgIG = bazarDePrenda(p.bazarId)?.instagramConfig || {};
+  const puedeComentar = p.instagramId && !hecho.comentario;
+  const puedeHistoria = !hecho.historia;
+  const puedePortada  = false;   // ya no se vuelve a publicar el post al vender: solo comentario
+  if (!puedeComentar && !puedeHistoria && !puedePortada) return '';
+  return `
+    <div class="vt-ig">
+      <div class="vt-ig-titulo">Avisar en Instagram</div>
+      ${puedeComentar ? `
+      <label class="vt-ig-op">
+        <input type="checkbox" id="vtIgComentario" ${cfgIG.autoComentario !== false ? 'checked' : ''}>
+        <span><b>Comentar "VENDIDA" en el post</b><small>Quien vea la publicación sabrá que ya no está disponible</small></span>
+      </label>` : ''}
+      ${puedePortada ? `
+      <label class="vt-ig-op">
+        <input type="checkbox" id="vtIgPortada" ${cfgIG.autoPortada ? 'checked' : ''}>
+        <span><b>Cambiar la portada del post a VENDIDO</b><small>Foto en gris con sello VENDIDO. Se vuelve a publicar: pierde sus likes y comentarios</small></span>
+      </label>` : ''}
+      ${puedeHistoria ? `
+      <label class="vt-ig-op">
+        <input type="checkbox" id="vtIgHistoria" ${cfgIG.autoHistoria !== false ? 'checked' : ''}>
+        <span><b>Subir historia de VENDIDO</b><small>Diseño editorial con la foto en gris y el link a la tienda</small></span>
+      </label>` : ''}
+    </div>`;
+}
+
+async function avisarVendidoEnInstagram(id, opciones) {
+  try {
+    const r = await api(`/api/inventario-item?op=instagram-vendido&id=${encodeURIComponent(id)}`, { method: 'POST', body: opciones });
+    const p = getDB().find(x => Number(x.id) === Number(id));
+    if (p) {
+      p.instagramVendido = { ...(p.instagramVendido || {}) };
+      if (r.comentario) p.instagramVendido.comentario = r.comentario;
+      if (r.historia)   p.instagramVendido.historia   = r.historia;
+      if (r.portada)  { p.instagramVendido.portada = r.portada; p.instagramId = r.portada; }
+    }
+    const hechos = [r.portada && 'portada', r.comentario && 'comentario', r.historia && 'historia'].filter(Boolean);
+    if (hechos.length) {
+      registrarLog('instagram', p?.nombre || `Prenda ${id}`, `Aviso de vendido: ${hechos.join(' y ')}`);
+      toast(`Instagram: ${hechos.join(' y ')} de VENDIDO publicado${hechos.length > 1 ? 's' : ''}`);
+    }
+    if (r.error) toast(r.error);
+  } catch (err) {
+    toast(err.message || 'No se pudo avisar en Instagram');
+  }
+}
+
+const IC_IG = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor"/></svg>';
+const _igEnCurso = new Set();
+async function publicarEnInstagram(id) {
+  if (_igEnCurso.has(id)) return;
+  _igEnCurso.add(id);
+  renderInv();
+  const aviso = Avisos.cargando('Publicando en Instagram…', { clave: 'ig-prenda-' + id, origen: 'instagram' });
+  try {
+    const r = await api(`/api/inventario-item?op=instagram&id=${encodeURIComponent(id)}`, { method: 'POST', body: {} });
+    const p = getDB().find(x => Number(x.id) === Number(id));
+    if (p) Object.assign(p, { instagramId: r.instagramId, instagramUrl: r.instagramUrl, instagramEn: r.instagramEn });
+    registrarLog('instagram', p?.nombre || `Prenda ${id}`, r.instagramUrl || 'Publicada en Instagram');
+    playActionSound('ok');
+    aviso.resolver('¡Publicada en Instagram!', { tipo: 'ok', origen: 'instagram', cuerpo: p?.nombre || '',
+      ir: r.instagramUrl ? { texto: 'Ver en Instagram', url: r.instagramUrl, nueva: true } : null });
+  } catch (err) {
+    aviso.resolver(err.message || 'No se pudo publicar en Instagram', { tipo: 'error', origen: 'instagram', titulo: 'No se pudo publicar en Instagram',
+      cuerpo: err.message || '', reintentar: () => publicarEnInstagram(id) });
+  } finally {
+    _igEnCurso.delete(id);
+    renderInv();
+  }
 }
 // Arma un texto con los datos clave de una prenda (para logs de "subir")
 function detallePrenda({ precio, costo, talla, categorias }) {
@@ -1548,19 +1713,20 @@ async function submitForm() {
         precio_venta: precio, precioAnterior: leerPrecioAnterior(precio), costo,
         estado: document.getElementById('f_estado').value.trim(),
         descripcion: (document.getElementById('f_descripcion')?.value || '').trim(),
+        hashtags: limpiarHashtags(document.getElementById('f_hashtags')?.value),
       };
       if (combined.length) nuevos.imagenes = combined;
       cambios = diffPrenda(antes, { ...p, ...nuevos });
       try {
         await guardarPrenda(editId, nuevos);
       } catch (err) {
-        toast(err.message || 'No se pudo guardar');
+        toast(err.message || 'No se pudo guardar', { tipo: 'error', origen: 'productos', titulo: 'No se pudo guardar la prenda', cuerpo: err.message || '', reintentar: () => submitForm() });
         return;
       }
     }
     registrarLog('editar', nombre, cambios);
     playActionSound('ok');
-    toast('Prenda actualizada');
+    toast('Prenda actualizada', { tipo: 'ok', origen: 'productos', cuerpo: nombre, ir: { texto: 'Ver en la tienda', url: `prenda.html?id=${editId}` } });
   } else {
     const useDrop = document.getElementById('f_useDrop')?.checked;
     const dropId  = document.getElementById('f_dropId')?.value;
@@ -1598,12 +1764,13 @@ async function submitForm() {
         precio_venta: precio, precioAnterior: leerPrecioAnterior(precio), costo,
         estado: document.getElementById('f_estado').value.trim(),
         descripcion: (document.getElementById('f_descripcion')?.value||'').trim(),
+        hashtags: limpiarHashtags(document.getElementById('f_hashtags')?.value),
         imagenes: combined, vendido: false,
         oculto: !!dropIdFinal,
         bazarId: bazarParaNuevas(),
       });
     } catch (err) {
-      toast(err.message || 'No se pudo publicar la prenda');
+      toast(err.message || 'No se pudo publicar la prenda', { tipo: 'error', origen: 'productos', titulo: 'No se pudo publicar la prenda', cuerpo: err.message || '', reintentar: () => submitForm() });
       return;
     }
     nuevoIdParaSubasta = nuevaPrenda.id;
@@ -1619,7 +1786,12 @@ async function submitForm() {
     } else {
       registrarLog('subir', nombre, `Marca: ${marca} · ${detallePrenda({ precio, costo, talla, categorias })}`);
       playActionSound('ok');
-      toast('Prenda publicada');
+      toast('Prenda publicada', { tipo: 'ok', origen: 'productos', cuerpo: nombre, ir: { texto: 'Ver en la tienda', url: `prenda.html?id=${nuevaPrenda.id}` } });
+      if (document.getElementById('f_publicarIG')?.checked) {
+        // Sin await: Instagram tarda unos segundos y no hay por qué
+        // tener el formulario detenido mientras tanto.
+        publicarEnInstagram(nuevaPrenda.id);
+      }
     }
   }
   // La prenda ya está en el servidor (crearPrenda / guardarPrenda), así
@@ -2840,11 +3012,12 @@ function playActionSound(tipo){
 if (typeof toast === 'function' && !window._toastWrapped) {
   const _toastOrig = toast;
   window._toastWrapped = true;
-  window.toast = function(msg, dur){
+  window.toast = function(msg, a, b){
     const m = String(msg || '').toLowerCase();
-    const esError = /inválid|invalid|obligatori|no se encontró|no encontrad|sin permiso|error|debe ser|espera a que|elige|escribe el|no coincide|futura|mínimo|incorrect/.test(m);
+    const tipo = [a, b].find(x => typeof x === 'string') || (typeof b === 'object' && b?.tipo) || (typeof a === 'object' && a?.tipo) || (typeof Avisos === 'object' ? Avisos.tipoDe(String(msg || '')) : '');
+    const esError = tipo === 'error' || tipo === 'alerta' || /inválid|invalid|obligatori|no se encontró|no encontrad|sin permiso|error|debe ser|espera a que|elige|escribe el|no coincide|futura|mínimo|incorrect/.test(m);
     if (esError && typeof playActionSound === 'function') playActionSound('error');
-    return _toastOrig(msg, dur);
+    return _toastOrig(msg, a, b);
   };
   // Reasignar la referencia local usada en admin.js
   toast = window.toast;
@@ -4176,7 +4349,7 @@ function renderLogs(mantenerPagina = false) {
   if (selU) {
     const usuarios = [...new Set(logs.map(l => l.usuario))].sort();
     selU.innerHTML = `<option value="">Todos los usuarios</option>` +
-      usuarios.map(u => `<option value="${u}">${u}</option>`).join('');
+      usuarios.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join('');
     if (fUprev && usuarios.includes(fUprev)) selU.value = fUprev;
   }
   if (selA && selA.options.length <= 1) {
@@ -4628,6 +4801,7 @@ function renderDropCard(d) {
   ` : `
     <button class="drop-btn drop-btn-primary" onclick="publicarDrop('${d.id}')">${IC_ROCKET} Publicar ahora</button>
     <button class="drop-btn drop-btn-edit" onclick="editarDropFecha('${d.id}')">${IC_CALENDAR} Cambiar fecha</button>
+    ${typeof dropBotonIg === 'function' ? dropBotonIg(d) : ''}
     ${admin ? `<button class="drop-btn drop-btn-danger" onclick="eliminarDrop('${d.id}')">${IC_TRASH} Cancelar drop</button>` : ''}
   `;
 
@@ -4765,7 +4939,7 @@ setInterval(() => {
 let _solicitudes = [];
 
 async function cargarSolicitudes() {
-  try { _solicitudes = await api('/api/acciones?op=solicitud-bazar'); }
+  try { const r = await api('/api/acciones?op=solicitud-bazar'); _solicitudes = Array.isArray(r) ? r : []; }
   catch (_) { _solicitudes = []; }
   return _solicitudes;
 }
@@ -5021,4 +5195,12 @@ async function borrarAnuncio(id) {
     toast('Anuncio borrado', 'success');
     renderAnuncios();
   } catch (e) { toast(e.message || 'No se pudo borrar', 'error'); }
+}
+
+// "#Nav merch, travis" → "#navmerch #travis" (máx. 15, sin repetir)
+function limpiarHashtags(v) {
+  const vistos = new Set();
+  return String(v || '').split(/[\s,]+/)
+    .map(t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9ñ_]/g, ''))
+    .filter(t => t.length > 1 && !vistos.has(t) && vistos.add(t)).slice(0, 15).map(t => '#' + t).join(' ');
 }

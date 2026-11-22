@@ -1,0 +1,11 @@
+const mw = (await import('../middleware.js')).default;
+const ok = (c, m) => console.log((c ? 'PASS ' : 'FAIL ') + m);
+globalThis.fetch = async (u) => { u = String(u); if (u.includes('id=7&vista=bot')) return new Response('<html>bot</html>', { status: 200 }); return new Response(null, { status: 302 }); };
+let r = await mw(new Request('https://stiimpys.store/prenda.html?id=7', { headers: { 'user-agent': 'WhatsApp/2.23' } }));
+ok(r.status === 200 && (await r.text()).includes('bot') && r.headers.get('vary') === 'User-Agent', 'WhatsApp recibe la ficha en la misma dirección');
+r = await mw(new Request('https://stiimpys.store/prenda.html?id=8', { headers: { 'user-agent': 'Googlebot' } }));
+ok(r.status === 302 && r.headers.get('location').endsWith('/tienda.html'), 'prenda inexistente → tienda');
+r = await mw(new Request('https://stiimpys.store/prenda.html?id=7', { headers: { 'user-agent': 'Mozilla/5.0 iPhone' } }));
+ok(r === undefined, 'personas pasan directo a la ficha normal');
+r = await mw(new Request('https://stiimpys.store/admin.html', { headers: {} }));
+ok(r.status === 404, 'panel sigue oculto');

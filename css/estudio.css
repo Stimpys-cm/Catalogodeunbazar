@@ -143,3 +143,21 @@ select.es-input { cursor: pointer; }
   .es-main { padding: 1.2rem 1rem 3rem; }
   .es-panel { padding: 1.1rem; }
 }
+
+/* ── Publicar en Instagram ── */
+.es-ig { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border, #d4cfc6); }
+.es-ig .es-lbl span { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--muted, #8a8178); }
+.es-ig textarea {
+  width: 100%; margin: 6px 0 10px; padding: 10px 12px; border-radius: 10px; resize: vertical;
+  border: 1.5px solid var(--border, #d4cfc6); background: #fff; font: 13px/1.5 'DM Sans', sans-serif; outline: none;
+}
+.es-ig textarea:focus { border-color: #dd2a7b; box-shadow: 0 0 0 3px rgba(221,42,123,.1); }
+.es-ig-btn {
+  width: 100%; padding: 14px; border: none; border-radius: 40px; cursor: pointer; color: #fff;
+  background: linear-gradient(45deg, #f58529, #dd2a7b 50%, #8134af);
+  font-size: 15px; font-weight: 800; font-family: inherit; letter-spacing: .02em;
+  box-shadow: 0 6px 20px rgba(221,42,123,.3);
+  transition: transform .15s, opacity .2s;
+}
+.es-ig-btn:hover { transform: translateY(-2px); }
+.es-ig-btn:disabled { opacity: .6; cursor: default; transform: none; }

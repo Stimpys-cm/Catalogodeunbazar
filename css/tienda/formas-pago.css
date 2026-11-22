@@ -1,0 +1,38 @@
+/* v55 · Formas de pago (inicio, ficha, carrito y pie) */
+.fp { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.fp-tit { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+.fp-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.fp-item { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; border: 1px solid rgba(17, 17, 17, .14); background: rgba(255, 255, 255, .7); line-height: 1.15; }
+.fp-ico { display: inline-flex; width: 18px; height: 18px; flex: none; }
+.fp-ico svg { width: 100%; height: 100%; }
+.fp-txt { display: flex; flex-direction: column; }
+.fp-txt b { font-size: 13px; font-weight: 700; }
+.fp-txt small { font-size: 11.5px; opacity: .7; }
+
+.fp-hero { margin-top: 18px; }
+.fp-carrito { margin-top: 12px; justify-content: center; }
+.fp-carrito .fp-item { padding: 5px 10px; }
+.fp-ficha { margin: 14px 0 4px; }
+.fp-ficha .fp-item { border-radius: 12px; }
+
+/* Pie oscuro */
+.site-footer .fp-pie { margin-top: 14px; flex-direction: column; align-items: flex-start; gap: 8px; }
+.site-footer .fp-pie .fp-lista { flex-direction: column; gap: 6px; }
+.site-footer .fp-pie .fp-item { padding: 0; border: 0; background: none; border-radius: 0; color: inherit; }
+.site-footer .fp-pie .fp-tit { color: inherit; }
+
+@media (max-width: 600px) {
+  .fp-hero { justify-content: center; }
+  .fp-hero .fp-tit { width: 100%; text-align: center; }
+  .fp-ficha .fp-lista { display: grid; grid-template-columns: 1fr; width: 100%; }
+}
+
+/* v55 · Link de la ficha a su post de Instagram */
+.tp-ig { display: inline-flex; align-items: center; gap: 8px; margin: 6px 0 2px; font-size: 13.5px; font-weight: 600; color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.tp-ig svg { width: 16px; height: 16px; }
+
+/* En celular y tableta el hero acomoda sus piezas con "order": las formas de pago van justo después de los botones */
+@media (max-width: 900px) {
+  .h-hero-bz [data-formas-pago="hero"] { order: 5; margin-top: -0.4rem; }
+  .h-hero-bz [data-formas-pago="hero"] .fp-hero { margin-top: 0; }
+}

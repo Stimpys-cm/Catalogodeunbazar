@@ -144,18 +144,29 @@ function toggleWishlist(product) {
   let list = getWishlist();
   const idx = list.findIndex(i => i.id === product.id);
   if (idx === -1) {
+    // v35 · Carrito: solo prendas que se pueden comprar
+    if (product.vendido || product.apartada) {
+      if (typeof Avisos === 'object') Avisos.info(product.vendido ? 'Esta prenda ya se vendió' : 'Esta prenda está apartada', { origen: 'wishlist', cuerpo: product.nombre || '' });
+      return;
+    }
     list.push(product);
-    showToast(`❤️ ${product.nombre} guardado`);
+    if (window.Carrito?.avisarAgregada) Carrito.avisarAgregada(product.nombre, product.id);
+    else showToast(`${product.nombre} se agregó a tu carrito`);
   } else {
     list.splice(idx, 1);
-    showToast(`Eliminado de tu wishlist`);
+    if (typeof Avisos === 'object') Avisos.info('Quitada de tu carrito', { origen: 'wishlist', clave: 'wl-' + product.id, cuerpo: product.nombre || '',
+      deshacer: () => { if (!isWishlisted(product.id)) toggleWishlist(product); } });
+    else showToast(`Quitada de tu carrito`);
   }
   saveWishlist(list);
   updateWishlistBadge();
   renderWishlistPanel();
-  // Re-render el corazón en la card si está visible
-  const btn = document.querySelector(`[data-wl-id="${product.id}"]`);
-  if (btn) btn.classList.toggle('active', isWishlisted(product.id));
+  // El botón del carrito en la tarjeta (y donde se vea esa prenda)
+  const en = isWishlisted(product.id);
+  document.querySelectorAll(`[data-wl-id="${product.id}"]`).forEach(b => {
+    b.classList.toggle('active', en);
+    if (b.classList.contains('card-fav-btn')) { b.title = en ? 'En tu carrito' : 'Agregar al carrito'; b.setAttribute('aria-label', en ? 'En tu carrito (quitar)' : 'Agregar al carrito'); }
+  });
 }
 // El panel de prendas guardadas vive en js/wishlist.js, compartido con
 // la ficha de prenda: updateWishlistBadge, renderWishlistPanel,
@@ -169,7 +180,7 @@ function buildDropdowns() {
   document.getElementById('dropCatsList').innerHTML =
     `<a class="drop-link ${!filterCat?'active':''}" onclick="setFilterCat(null)">Todas las categorías</a>` +
     cats.map(c =>
-      `<a class="drop-link ${filterCat===c.nombre?'active':''}" onclick="setFilterCat(&#39;${esc(c.nombre).replace(/'/g, '&#39;')}&#39;)">${esc(c.nombre)}</a>`
+      `<a class="drop-link ${filterCat===c.nombre?'active':''}" onclick="setFilterCat(${esc(JSON.stringify(String(c.nombre)))})">${esc(c.nombre)}</a>`
     ).join('');
 
   const bl = document.getElementById('dropBrandsList');
@@ -177,7 +188,7 @@ function buildDropdowns() {
   bl.innerHTML =
     `<a class="drop-link ${!filterBrand?'active':''}" onclick="setFilterBrand(null)">Todas las marcas</a>` +
     brands.map(b =>
-      `<a class="drop-link ${filterBrand===b.nombre?'active':''}" onclick="setFilterBrand(&#39;${esc(b.nombre).replace(/'/g, '&#39;')}&#39;)">${esc(b.nombre)}</a>`
+      `<a class="drop-link ${filterBrand===b.nombre?'active':''}" onclick="setFilterBrand(${esc(JSON.stringify(String(b.nombre)))})">${esc(b.nombre)}</a>`
     ).join('');
 }
 
@@ -406,13 +417,13 @@ function renderGrid(query) {
 
     return `<div class="card" data-product='${productData}' style="cursor:pointer">
       <div class="card-img">
-        ${imgHtml}${marcaTag}${subCinta}${(!sub && hayOferta(p)) ? `<span class="of-corner">-${Math.round((1 - Number(p.precio_venta) / Number(p.precioAnterior)) * 100)}%</span>` : ''}${(!sub && !hayOferta(p) && esNuevo(p)) ? `<span class="nuevo-corner">Nuevo</span>` : ''}
-        <button class="card-fav-btn ${favActive}" data-wl-id="${favId}" data-product='${productData}'
-          aria-label="Guardar en wishlist">
+        ${imgHtml}${marcaTag}${subCinta}${p.apartada ? (p.pagandoHasta && window.Contador ? `<span class="apartada-corner en-pago" title="Alguien la está pagando. Si no termina, se libera al llegar a cero.">Apartada · ${Contador.html(p.pagandoHasta, { fin: 'liberando…' })}</span>` : '<span class="apartada-corner">Apartada</span>') : ''}${(!sub && hayOferta(p)) ? `<span class="of-corner">-${Math.round((1 - Number(p.precio_venta) / Number(p.precioAnterior)) * 100)}%</span>` : ''}${(!sub && !hayOferta(p) && esNuevo(p)) ? `<span class="nuevo-corner">Nuevo</span>` : ''}
+        ${(p.vendido || p.apartada || sub) ? '' : `<button class="card-fav-btn ${favActive}" data-wl-id="${favId}" data-product='${productData}'
+          aria-label="${favActive ? 'En tu carrito (quitar)' : 'Agregar al carrito'}" title="${favActive ? 'En tu carrito' : 'Agregar al carrito'}">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            <path d="M3 4h2.4l2.2 10.3a1.7 1.7 0 0 0 1.7 1.3h8.1a1.7 1.7 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.6" cy="19.6" r="1.3"/><circle cx="17.2" cy="19.6" r="1.3"/><path class="ic-mas" d="M13.4 9.3v3.6M11.6 11.1h3.6"/><path class="ic-ok" d="m11.4 11.2 1.6 1.6 2.9-3"/>
           </svg>
-        </button>
+        </button>`}
         ${sub
           ? (subViva
               ? `<button type="button" class="card-quick card-quick-sb" data-ofertar="${p.id}"
@@ -427,7 +438,7 @@ function renderGrid(query) {
           Contactar por WhatsApp
         </a>`}
       </div>
-      <div class="card-body" data-marca="${p.marca||''}">
+      <div class="card-body" data-marca="${esc(p.marca||'')}">
         <div class="card-row">
           <div class="card-titles">
             <div class="card-brand${p.marca ? '' : ' sin-marca'}">${esc(p.marca || SIN_MARCA)}</div>
@@ -708,7 +719,7 @@ function _openProductDetailDrawer(p) {
   // Galería principal con zoom
   const mainImg = pdImgs[0]
     ? `<div class="pd-zoom-wrap" id="pdZoomWrap">
-         <img id="pdMainImg" src="${pdImgs[0]}" alt="${p.nombre}" onclick="openModal(pdImgs, pdIdx)">
+         <img id="pdMainImg" src="${esc(pdImgs[0] || '')}" alt="${esc(p.nombre)}" onclick="openModal(pdImgs, pdIdx)">
          <span class="pd-zoom-hint"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg> Ampliar</span>
        </div>`
     : `<div id="pdMainImg" class="no-photo">Sin foto</div>`;
@@ -798,11 +809,11 @@ function _openProductDetailDrawer(p) {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.563 4.144 1.535 5.886L0 24l6.274-1.507A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.853 0-3.587-.5-5.084-1.367l-.361-.214-3.733.897.931-3.618-.235-.374A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
           Contactar por WhatsApp
         </a>
-        <button class="pd-btn-fav ${favActive}" data-wl-id="${p.id}" data-product='${productData}'>
+        ${(p.vendido || p.apartada) ? '' : `<button class="pd-btn-fav ${favActive}" data-wl-id="${p.id}" data-product='${productData}' aria-label="Agregar al carrito" title="Agregar al carrito">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            <path d="M3 4h2.4l2.2 10.3a1.7 1.7 0 0 0 1.7 1.3h8.1a1.7 1.7 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.6" cy="19.6" r="1.3"/><circle cx="17.2" cy="19.6" r="1.3"/><path class="ic-mas" d="M13.4 9.3v3.6M11.6 11.1h3.6"/><path class="ic-ok" d="m11.4 11.2 1.6 1.6 2.9-3"/>
           </svg>
-        </button>
+        </button>`}
       </div>
     </div>
   `;
@@ -817,7 +828,7 @@ function _openProductDetailDrawer(p) {
 
   // Deep link: actualizar URL con el id de la prenda
   history.pushState({ productId: p.id }, '', `?id=${p.id}`);
-  document.title = `${p.nombre} · STMP MARKET`;
+  document.title = `${p.nombre} · Stiimpys`;
 
   // El detalle se tiñe con el color del bazar dueño de la prenda
   const pdDrawerEl = document.getElementById('pdDrawer');
@@ -840,7 +851,7 @@ function closePD() {
   document.getElementById('pdOverlay').classList.remove('active');
   document.body.style.overflow = '';
   history.pushState({}, '', location.pathname);
-  document.title = 'STMP MARKET | Prendas Disponibles';
+  document.title = 'Catálogo | Stiimpys';
 }
 
 function pdSetImg(idx) {
@@ -909,6 +920,7 @@ function mChg(d) {
 // ─── TOAST ───────────────────────────────────────────────────
 let toastTimer;
 function showToast(msg) {
+  if (typeof Avisos === 'object') return Avisos.mostrar(msg);
   const t = document.getElementById('toast');
   if (!t) return;
   t.textContent = msg;
@@ -922,7 +934,8 @@ function showToast(msg) {
 async function compartirPrenda(btn) {
   const url = btn.dataset.url || location.href;
   const orig = btn.innerHTML;
-  await navigator.clipboard.writeText(url).catch(() => {});
+  if (typeof Avisos === 'object') await Avisos.copiar(url, { que: 'Link' });
+  else await navigator.clipboard.writeText(url).catch(() => {});
   btn.textContent = '✓ Link copiado';
   setTimeout(() => { btn.innerHTML = orig; }, 2000);
 }
@@ -1032,7 +1045,7 @@ function aplicarBazarURL() {
 
   filterBazar = b.id;
   pintarPortadaBazar(b);
-  document.title = `${b.nombre} · STMP MARKET`;
+  document.title = `${b.nombre} · Stiimpys`;
 
   // El apartado del bazar se divide en tres pestañas
   document.getElementById('bzTabsWrap')?.classList.remove('hidden');
@@ -1245,7 +1258,7 @@ function tarjetaVendida(p) {
       <div class="card-meta">Talla ${esc(p.talla || '–')}${p.marca ? ' · ' + esc(p.marca) : ''}</div>
       <div class="card-vendida-a">
         ${p.vendidoA
-          ? `Vendido a <b>@${esc(p.vendidoA)}</b>`
+          ? `Vendido a <b>${/\s/.test(String(p.vendidoA).trim()) ? '' : '@'}${esc(p.vendidoA)}</b>`
           : 'Prenda entregada'}
       </div>
       ${fecha ? `<div class="card-vendida-fecha">${esc(fecha)}</div>` : ''}

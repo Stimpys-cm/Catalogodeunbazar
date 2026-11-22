@@ -1,0 +1,53 @@
+STIIMPYS v58 — PUBLICACIONES DE INSTAGRAM QUE SE QUEDABAN ATORADAS
+=================================================================
+Incluye todo lo de la v57 y anteriores. Las notas de antes están en
+docs/HISTORIAL-VERSIONES.txt.
+
+CÓMO SUBIRLO
+------------
+Igual que siempre: deja solo .git y .vercel en tu carpeta, borra lo demás, pega
+el contenido de este paquete, git add -A → commit → push a una rama → revisa la
+vista previa de Vercel → producción. No hay variables nuevas.
+Las prendas que hoy dicen "Ya se está publicando" se destraban solas al subir
+esta versión (el candado viejo ya no cuenta).
+
+1 · POR QUÉ PASABA
+------------------
+Al publicar un carrusel, cada foto se subía a Instagram una tras otra. Con
+6–7 fotos (más la portada con plantilla) se pasaba del límite de 60 segundos
+del servidor, que cortaba a medias. La marca de "publicando" nunca se
+quitaba y la prenda quedaba bloqueada para siempre ("Ya se está publicando,
+espera unos segundos"). A veces el post sí alcanzaba a salir, pero no
+quedaba ligado a la prenda.
+
+2 · QUÉ CAMBIA
+--------------
+- Las fotos del carrusel se suben todas a la vez: mucho más rápido.
+- Si Instagram tarda demasiado, se detiene a tiempo sin publicar nada y te
+  dice que lo intentes en unos minutos (ya no se corta a medias).
+- La marca de "publicando" lleva la hora: si pasan más de 2.5 minutos, se
+  libera sola.
+- Antes de reintentar, se revisa si el post sí salió en Instagram. Si salió,
+  solo se liga con la prenda: no se publica dos veces.
+- El error queda guardado en la prenda. En el inventario, el botón de
+  Instagram se marca con un "!" rojo y al pasar el mouse dice por qué falló;
+  tocándolo se reintenta.
+
+3 · INSTAGRAM → "CON PROBLEMAS" (nuevo)
+---------------------------------------
+Con un número rojo en el menú cuando hay algo:
+- Prendas que fallaron (con el motivo y cuántos intentos), que se quedaron a
+  medias o que se están publicando en este momento.
+- Publicaciones programadas que dieron error o se quedaron a medias.
+Botones:
+- Reintentar: revisa si ya salió (y la liga) o la vuelve a publicar.
+- Cancelar: quita el aviso; la prenda queda lista para publicarla cuando
+  quieras (en programados, la quita de la fila).
+El aviso de error al publicar trae "Ver publicaciones con problemas".
+Las programadas que se cortan también se revisan solas: si sí salieron, se
+marcan como publicadas en vez de repetirse.
+
+PRUEBAS
+-------
+pruebas/v58-publicar.mjs (25) y pruebas/v58-navegador.py (24). Servidor 908
+de 908; en navegador v33–v58 sin fallas (pruebas/RESULTADOS-v58.md).

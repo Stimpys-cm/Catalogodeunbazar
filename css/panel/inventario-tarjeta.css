@@ -1,0 +1,58 @@
+/* ─────────────────────────────────────────────────────────────
+   v56 · Tarjeta del inventario
+   - El chip del bazar (solo sale en prendas de otro bazar) mide lo que su texto.
+   - Acciones: "Marcar como vendido" / "Reactivar" / "Calificar" a todo lo ancho y los
+     botones de íconos en una fila pareja abajo (antes "borrar" quedaba solo en otra fila).
+   Va al final del paquete del panel para ganarle a las reglas viejas.
+   ───────────────────────────────────────────────────────────── */
+body.stmp-admin .item-card .inv-card-bazar {
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Con #invGrid (id) le gana a las reglas viejas con :has() y !important que fijaban columnas de 40 px */
+body.stmp-admin #invGrid .item-card .item-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 7px !important;
+  align-items: stretch;
+  justify-content: stretch !important;
+  grid-template-columns: none !important;
+}
+body.stmp-admin #invGrid .item-card .item-actions > * {
+  flex: 1 1 0 !important;
+  min-width: 40px !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+  min-height: 42px;
+  justify-content: center;
+}
+body.stmp-admin #invGrid .item-card .item-actions > .act-btn.sell,
+body.stmp-admin #invGrid .item-card .item-actions > .act-btn.unsell,
+body.stmp-admin #invGrid .item-card .item-actions > .act-btn.cal,
+body.stmp-admin #invGrid .item-card .item-actions > .act-btn.cal-hecha {
+  flex: 1 1 100% !important;
+}
+body.stmp-admin.vista-compacta #invGrid .item-card .item-actions { gap: 5px !important; }
+body.stmp-admin.vista-compacta #invGrid .item-card .item-actions > * { min-height: 36px; }
+
+/* v56 · "Mostrarla como rebaja" debajo del precio al editar */
+.re-rebaja { display: flex; gap: 8px; align-items: flex-start; margin-top: 8px; font-size: 12.5px; line-height: 1.35; color: var(--muted, #667); cursor: pointer; }
+.re-rebaja input { margin-top: 2px; flex: none; }
+.re-rebaja[hidden] { display: none; }
+
+/* v56 · Chip de apartado con ícono de línea; vencido en gris */
+body.stmp-admin .ap-chip svg { width: 13px; height: 13px; vertical-align: -2px; margin-right: 2px; }
+body.stmp-admin .ap-chip.ap-chip-vencido { background: rgba(127, 127, 127, .12); color: var(--muted, #667); }
+
+/* v58 · Botón de Instagram cuando la publicación falló o se quedó a medias */
+body.stmp-admin #invGrid .item-card .item-actions > .act-btn.ig.con-error { position: relative; border-color: #e5484d !important; color: #e5484d; }
+body.stmp-admin #invGrid .item-card .item-actions > .act-btn.ig.con-error::after {
+  content: '!'; position: absolute; top: -6px; right: -6px; width: 17px; height: 17px; border-radius: 50%;
+  background: #e5484d; color: #fff; font: 700 11px/17px system-ui, sans-serif; text-align: center;
+}

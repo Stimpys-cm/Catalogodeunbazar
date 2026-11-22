@@ -134,6 +134,7 @@ export function resenaPublica(r) {
     etiquetas: Array.isArray(r.etiquetas) ? r.etiquetas : [],
     comentario: r.comentario || '',
     creadoEn: r.creadoEn,
+    verificada: !!r.verificada,
   };
 }
 

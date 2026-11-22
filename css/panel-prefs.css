@@ -1,0 +1,82 @@
+/* ─────────────────────────────────────────────────────────────
+   Menú personalizable del panel: favoritos, orden y ocultas
+   ───────────────────────────────────────────────────────────── */
+.sidebar-item { position: relative; }
+.sidebar-item.pp-oculto { display: none !important; }
+.sidebar-group.pp-vacio { display: none; }
+.pp-favs[hidden] { display: none; }
+.pp-favs .sidebar-nav-label { display: flex; align-items: center; gap: 6px; }
+.pp-favs .sidebar-nav-label svg { color: #e3a21a; }
+
+/* Estrella rápida (aparece al pasar el mouse) */
+.sidebar-item .pp-estrella { margin-left: auto; display: none; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; color: #b8b0a5; flex-shrink: 0; }
+.sidebar-item:hover .pp-estrella, .sidebar-item:focus-visible .pp-estrella { display: inline-flex; }
+.sidebar-item .pp-estrella:hover { color: #e3a21a; background: rgba(0, 0, 0, .06); }
+.sidebar-item.pp-es-fav .pp-estrella { color: #e3a21a; }
+.sidebar-item .sidebar-badge + .pp-estrella, .sidebar-item .sidebar-badge:not(.hidden) ~ .pp-estrella { margin-left: 4px; }
+.sidebar-item .sidebar-badge:not(.hidden) { margin-left: auto; }
+
+/* Botón "Personalizar menú" */
+.pp-barra { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 2px 0 6px; }
+.pp-ordenar { display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; padding: 9px .85rem; min-height: 36px; border-radius: 8px; font: 600 11.5px 'DM Sans', sans-serif; color: var(--muted, #8a8178); cursor: pointer; }
+.pp-ordenar:hover { background: rgba(0, 0, 0, .05); color: var(--text, #1a1f2e); }
+
+/* Ventana para ordenar */
+.pp-fondo { position: fixed; inset: 0; z-index: 9999; background: rgba(17, 20, 28, .45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.pp-caja { width: min(520px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: #fff; border-radius: 18px; box-shadow: 0 24px 60px -20px rgba(0, 0, 0, .45); padding: 20px; font-family: 'DM Sans', sans-serif; color: #1a1f2e; }
+.pp-caja header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 8px; }
+.pp-caja h2 { margin: 0; font-size: 19px; font-weight: 700; }
+.pp-caja header p { margin: 4px 0 0; font-size: 13px; color: #6f675f; }
+.pp-caja h3 { display: flex; align-items: center; gap: 6px; margin: 16px 0 6px; font-size: 12px; font-weight: 700; color: #6f675f; }
+.pp-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.pp-fila { display: grid; grid-template-columns: 18px 24px 1fr repeat(4, 34px); gap: 6px; align-items: center; padding: 6px 6px 6px 8px; border: 1px solid #ebe5dc; border-radius: 10px; background: #fff; }
+.pp-fila.fav { border-color: #f1d9a0; background: #fffaf0; }
+.pp-fila.oculta .pp-nom, .pp-fila.oculta .pp-ic { opacity: .45; }
+.pp-fila.moviendo { opacity: .5; }
+.pp-grip { color: #b8b0a5; cursor: grab; display: inline-flex; }
+.pp-ic { display: inline-flex; color: #3a3f4b; }
+.pp-ic svg { width: 18px; height: 18px; }
+.pp-nom { font-size: 14px; font-weight: 600; min-width: 0; }
+.pp-nom small { margin-left: 8px; font-size: 11px; font-weight: 600; color: #8a8178; }
+.pp-b { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 8px; background: none; color: #6f675f; cursor: pointer; }
+.pp-b:hover:not(:disabled) { background: #f3efe8; color: #1a1f2e; }
+.pp-b:disabled { opacity: .3; cursor: default; }
+.pp-b.on { color: #e3a21a; }
+.pp-b:focus-visible { outline: 3px solid rgba(45, 107, 228, .45); outline-offset: 1px; }
+.pp-caja footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 18px; }
+.pp-link { border: 0; background: none; padding: 0; font: 600 13px 'DM Sans', sans-serif; color: #6f675f; text-decoration: underline; cursor: pointer; }
+.pp-listo { border: 0; border-radius: 10px; background: #1a1f2e; color: #fff; padding: 10px 20px; font: 700 14px 'DM Sans', sans-serif; cursor: pointer; }
+@media (max-width: 520px) {
+  .pp-fila { grid-template-columns: 22px 1fr repeat(4, 32px); }
+  .pp-grip { display: none; }
+  .pp-b { width: 32px; height: 32px; }
+}
+
+/* Menú de Instagram */
+.igx-item { position: relative; }
+.igx-item .pp-estrella { margin-left: auto; display: none; align-items: center; color: #b8b0a5; padding: 3px; border-radius: 6px; line-height: 0; }
+.igx-item:hover .pp-estrella, .igx-item:focus-visible .pp-estrella { display: inline-flex; }
+.igx-item .pp-estrella:hover { color: #e3a21a; background: rgba(0, 0, 0, .05); }
+.igx-item.fav .pp-estrella { color: #e3a21a; }
+.igx-item.fav .igx-ic { color: #e3a21a; }
+.igx-item em ~ .pp-estrella { margin-left: 6px; }
+.igx-ordenar { display: inline-flex; align-items: center; gap: 6px; margin: 4px 8px 8px; border: 0; background: none; padding: 6px 8px; border-radius: 8px; font: 600 12px 'DM Sans', sans-serif; color: #8a8178; cursor: pointer; }
+.igx-ordenar:hover { background: rgba(0, 0, 0, .05); color: #1a1f2e; }
+@media (max-width: 900px) { .igx-ordenar { display: none; } }
+
+/* Iconos que reemplazan emojis en Instagram, ZIP y automático */
+.aut-ic { display: inline-flex; align-items: center; justify-content: center; }
+.aut-ic.t-rebaja { color: #c2410c; }
+.aut-ic.t-error { color: #b8433d; }
+.igx-tip, .zi-fallas, .zi-razon, .igx-vacio { display: flex; gap: 8px; align-items: flex-start; }
+.igx-tip > .ico, .zi-razon > .ico { color: #b7791f; margin-top: 2px; }
+.zi-fallas > .ico { color: #b8433d; margin-top: 2px; }
+.igx-vacio { justify-content: center; align-items: center; }
+.igx-vacio .ico-listo { color: #2f7a4f; }
+
+/* Pie del menú: "Ver tienda" y "Salir" del mismo alto y en un renglón */
+body.stmp-admin .sidebar-footer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+body.stmp-admin .btn-tienda, body.stmp-admin .btn-logout { white-space: nowrap; letter-spacing: .06em; padding: 9px 8px; min-height: 36px; gap: 6px; }
+.pp-caja:focus { outline: none; }
+/* Etiqueta de rol en una sola línea */
+body.stmp-admin .profile-role { white-space: nowrap; letter-spacing: .05em; max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: top; }

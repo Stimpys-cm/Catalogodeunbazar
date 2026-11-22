@@ -1,8 +1,44 @@
 {
   "rewrites": [
     {
+      "source": "/",
+      "destination": "/inicio.html"
+    },
+    {
+      "source": "/llms.txt",
+      "destination": "/api/prenda?llms=1"
+    },
+    {
       "source": "/sitemap.xml",
       "destination": "/api/prenda?sitemap=1"
+    },
+    {
+      "source": "/marca/:slug",
+      "destination": "/api/prenda?landing=marca&slug=:slug"
+    },
+    {
+      "source": "/categoria/:slug",
+      "destination": "/api/prenda?landing=categoria&slug=:slug"
+    },
+    {
+      "source": "/talla/:slug",
+      "destination": "/api/prenda?landing=talla&slug=:slug"
+    },
+    {
+      "source": "/precio/:slug",
+      "destination": "/api/prenda?landing=precio&slug=:slug"
+    },
+    {
+      "source": "/guias",
+      "destination": "/api/prenda?landing=guias"
+    },
+    {
+      "source": "/guias/:slug",
+      "destination": "/api/prenda?landing=guias&slug=:slug"
+    },
+    {
+      "source": "/drop/:id",
+      "destination": "/api/prenda?landing=drop&id=:id"
     },
     {
       "source": "/api/:path*",
@@ -14,6 +50,46 @@
     }
   ],
   "headers": [
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/img/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/icons/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(pagar|cuenta|carrito)(\\.html)?",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, follow"
+        }
+      ]
+    },
     {
       "source": "/(admin|login)(\\.html)?",
       "headers": [
@@ -41,11 +117,33 @@
       ]
     },
     {
-      "source": "/(.*)\\.(css|js)",
+      "source": "/((?!css/dist/|js/dist/).*)\\.(css|js)",
       "headers": [
         {
           "key": "Cache-Control",
           "value": "public, max-age=0, s-maxage=60, stale-while-revalidate=300"
+        }
+      ]
+    },
+    {
+      "source": "/(css|js)/dist/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/css/fuentes/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
         }
       ]
     },
@@ -83,9 +181,27 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://res.cloudinary.com https://*.cloudinary.com https://*.googleusercontent.com; connect-src 'self' https://challenges.cloudflare.com https://accounts.google.com; frame-src https://challenges.cloudflare.com https://accounts.google.com; form-action 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://accounts.google.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://res.cloudinary.com https://*.cloudinary.com https://*.googleusercontent.com https://*.cdninstagram.com https://*.fbcdn.net; media-src 'self' blob: https://res.cloudinary.com https://*.cdninstagram.com https://*.fbcdn.net; connect-src 'self' https://res.cloudinary.com https://api.cloudinary.com https://challenges.cloudflare.com https://accounts.google.com; frame-src https://challenges.cloudflare.com https://accounts.google.com; form-action 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; upgrade-insecure-requests"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin-allow-popups"
         }
       ]
+    }
+  ],
+  "functions": {
+    "api/inventario-item.js": {
+      "maxDuration": 60
+    },
+    "api/acciones.js": {
+      "maxDuration": 60
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/acciones?op=ig-cron",
+      "schedule": "0 15 * * *"
     }
   ]
 }

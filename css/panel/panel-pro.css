@@ -1,0 +1,519 @@
+/* ═══════════════════════════════════════════════════════════════
+   css/panel-pro.css — Rediseño del panel · v34
+   ───────────────────────────────────────────────────────────────
+   Va al final de todo. Usa solo los tokens de css/tema.css, así cada
+   regla sirve igual en claro, oscuro y con cualquier color de acento.
+   1. Base y transición de tema       5. Ventanas y diálogos
+   2. Menú lateral (computadora)      6. Apariencia (selector de tema)
+   3. Encabezados y contenido         7. iPhone: barra de pestañas, títulos
+   4. Tarjetas, campos y botones         grandes, hojas y listas agrupadas
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1 · Base ────────────────────────────────────────────────── */
+html { background: var(--p-bg); }
+body.stmp-admin {
+  background: var(--p-bg);
+  color: var(--p-text);
+  font-family: var(--p-fuente);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+/* Al cambiar de tema todo se funde en vez de "parpadear" */
+html.tema-cambiando body.stmp-admin,
+html.tema-cambiando body.stmp-admin *,
+html.tema-cambiando body.stmp-admin *::before,
+html.tema-cambiando body.stmp-admin *::after {
+  transition: background-color .28s ease, border-color .28s ease, color .2s ease, fill .2s ease, box-shadow .28s ease !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.tema-cambiando body.stmp-admin * { transition: none !important; }
+}
+body.stmp-admin :is(button, a, summary, [role="button"], [role="tab"], [role="radio"]):focus-visible { outline: 2px solid var(--p-accent); outline-offset: 2px; }
+body.stmp-admin ::placeholder { color: var(--p-text-4); opacity: 1; }
+body.stmp-admin hr { border: 0; border-top: 1px solid var(--p-border); }
+
+/* ── 2 · Menú lateral ────────────────────────────────────────── */
+body.stmp-admin .sidebar {
+  width: 252px;
+  background: var(--p-bg-elev);
+  border-right: 1px solid var(--p-border);
+  box-shadow: none;
+}
+body.stmp-admin .sidebar-logo { padding: 22px 22px 16px; border-bottom: 0; }
+body.stmp-admin .sidebar-logo-text { font-size: 1.7rem; letter-spacing: .04em; color: var(--p-text); }
+body.stmp-admin .sidebar-logo-text span { color: var(--p-accent); }
+
+body.stmp-admin .sidebar-profile {
+  margin: 0 12px 6px; padding: 10px 12px; gap: 11px;
+  background: var(--p-surface); border: 1px solid var(--p-border); border-radius: var(--p-r);
+  box-shadow: var(--p-sombra-1);
+}
+body.stmp-admin .profile-avatar,
+body.stmp-admin .profile-avatar-placeholder {
+  width: 38px; height: 38px; border: 0;
+  background: var(--p-fill-solid); color: var(--p-text-3);
+}
+body.stmp-admin .profile-avatar-wrap { width: 38px; height: 38px; }
+body.stmp-admin .profile-name { font-size: 13px; letter-spacing: .03em; color: var(--p-text); }
+body.stmp-admin .profile-role {
+  background: var(--p-accent-soft); color: var(--p-accent-text);
+  font-size: 9.5px; letter-spacing: .08em; padding: 2px 8px; border-radius: 999px;
+}
+
+body.stmp-admin .sidebar-nav { padding: 6px 12px 12px; gap: 1px; scrollbar-width: thin; }
+body.stmp-admin .sidebar-nav-label {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .12em; color: var(--p-text-3);
+  padding: 14px 10px 6px; margin: 0;
+}
+body.stmp-admin .sidebar-item {
+  min-height: 38px; padding: 8px 10px; gap: 11px; border-radius: 10px;
+  font-size: 13.5px; font-weight: 600; color: var(--p-text-2);
+  transition: background .15s ease, color .15s ease, transform .12s ease;
+}
+body.stmp-admin .sidebar-item svg { width: 18px; height: 18px; opacity: .9; }
+body.stmp-admin .sidebar-item:hover { background: var(--p-fill); color: var(--p-text); }
+body.stmp-admin .sidebar-item:active { transform: scale(.985); }
+body.stmp-admin .sidebar-item.active {
+  background: var(--p-accent-soft); color: var(--p-accent-text); box-shadow: none;
+}
+body.stmp-admin .sidebar-item.active svg { stroke: var(--p-accent); opacity: 1; }
+body.stmp-admin .sidebar-badge {
+  margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px;
+  display: inline-grid; place-items: center; font-size: 11px; font-weight: 800;
+  background: var(--p-rojo); color: #fff;
+}
+
+body.stmp-admin .sidebar-footer { padding: 12px; border-top: 1px solid var(--p-border); gap: 10px; }
+body.stmp-admin .online-badge {
+  background: var(--p-verde-bg); color: var(--p-verde); border: 0; border-radius: 10px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: .02em;
+}
+body.stmp-admin .btn-tienda,
+body.stmp-admin .btn-logout {
+  min-height: 34px; border-radius: 10px; font-size: 11px; letter-spacing: .06em;
+  border: 1px solid var(--p-border-2); color: var(--p-text-2); background: var(--p-surface);
+}
+body.stmp-admin .btn-tienda:hover { border-color: var(--p-verde); color: var(--p-verde); background: var(--p-verde-bg); }
+body.stmp-admin .btn-logout:hover { border-color: var(--p-rojo); color: var(--p-rojo); background: var(--p-rojo-bg); }
+
+/* ── 3 · Encabezados y contenido ─────────────────────────────── */
+body.stmp-admin .admin-main {
+  margin-left: 252px; max-width: calc(100vw - 252px);
+  padding: 0 40px 56px;
+}
+/* El encabezado de cada sección se queda arriba, translúcido, al hacer scroll */
+body.stmp-admin .view-header {
+  position: sticky; top: 0; z-index: 40;
+  margin: 0 -40px 26px; padding: 30px 40px 18px;
+  align-items: flex-end; gap: 16px; flex-wrap: wrap;
+  background: var(--p-glass);
+  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s ease, padding .2s ease;
+}
+body.stmp-admin.pp-desplazado .view-header { border-bottom-color: var(--p-border); }
+body.stmp-admin .view-title { font-size: 2.55rem; letter-spacing: .025em; color: var(--p-text); margin-bottom: 4px; }
+body.stmp-admin .view-subtitle { font-size: 13px; color: var(--p-text-3); letter-spacing: 0; line-height: 1.5; }
+
+/* ── 4 · Tarjetas, campos y botones ──────────────────────────── */
+body.stmp-admin .form-card,
+body.stmp-admin .vendedor-list-wrap,
+body.stmp-admin .catalogo-section,
+body.stmp-admin .gan-card,
+body.stmp-admin .preview-panel {
+  background: var(--p-surface);
+  border: 1px solid var(--p-border);
+  border-radius: var(--p-r-l);
+  box-shadow: var(--p-sombra-1);
+}
+body.stmp-admin .form-card { padding: 26px 28px; }
+body.stmp-admin .form-card::before { height: 3px; background: var(--accent-gradient); opacity: .9; }
+body.stmp-admin .form-title { font-size: 1.75rem; letter-spacing: .035em; color: var(--p-text); margin-bottom: 1.2rem; }
+body.stmp-admin .form-hint { color: var(--p-text-3); }
+
+body.stmp-admin .stat-card {
+  background: var(--p-surface); border: 1px solid var(--p-border); border-radius: var(--p-r-l);
+  box-shadow: var(--p-sombra-1);
+}
+body.stmp-admin .stat-card:hover { box-shadow: var(--p-sombra-2); transform: translateY(-2px); }
+body.stmp-admin .stat-label { font-size: 10px; letter-spacing: .14em; font-weight: 700; color: var(--p-text-3); }
+
+body.stmp-admin .item-card {
+  background: var(--p-surface); border: 1px solid var(--p-border); border-radius: var(--p-r-l);
+  box-shadow: var(--p-sombra-1); overflow: hidden;
+}
+body.stmp-admin .item-card:hover { box-shadow: var(--p-sombra-2); transform: translateY(-3px); }
+body.stmp-admin .item-img { background: var(--p-fill-solid); }
+body.stmp-admin .item-name { color: var(--p-text); letter-spacing: .03em; }
+
+/* Campos */
+body.stmp-admin .fg label,
+body.stmp-admin .dlg-campo > span {
+  font-size: 10.5px; letter-spacing: .1em; font-weight: 700; color: var(--p-text-3);
+}
+body.stmp-admin .fg input, body.stmp-admin .fg select, body.stmp-admin .fg textarea,
+body.stmp-admin .catalogo-add input, body.stmp-admin .dlg-campo input, body.stmp-admin .dlg-campo textarea,
+body.stmp-admin .re-modal input, body.stmp-admin .re-modal select, body.stmp-admin .re-modal textarea,
+body.stmp-admin .vn-input, body.stmp-admin .logs-select, body.stmp-admin .inv-bazar-select {
+  background: var(--p-surface-2);
+  border: 1px solid var(--p-border-2);
+  border-radius: 11px;
+  color: var(--p-text);
+  font-family: var(--p-fuente);
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+body.stmp-admin .fg input, body.stmp-admin .fg select { min-height: 42px; }
+body.stmp-admin .fg input:hover, body.stmp-admin .fg select:hover, body.stmp-admin .fg textarea:hover,
+body.stmp-admin .vn-input:hover { border-color: var(--p-text-4); }
+body.stmp-admin .fg input:focus, body.stmp-admin .fg select:focus, body.stmp-admin .fg textarea:focus,
+body.stmp-admin .catalogo-add input:focus, body.stmp-admin .dlg-campo input:focus, body.stmp-admin .dlg-campo textarea:focus,
+body.stmp-admin .re-modal input:focus, body.stmp-admin .re-modal select:focus, body.stmp-admin .re-modal textarea:focus,
+body.stmp-admin .vn-input:focus {
+  outline: none; background: var(--p-surface);
+  border-color: var(--p-accent);
+  box-shadow: 0 0 0 4px rgb(var(--p-accent-rgb) / .16);
+}
+body.stmp-admin select { color-scheme: inherit; }
+
+/* Buscador del inventario */
+body.stmp-admin .inv-search {
+  background: var(--p-surface); border: 1px solid var(--p-border-2); border-radius: 12px; min-height: 40px;
+}
+body.stmp-admin .inv-search:focus-within { border-color: var(--p-accent); box-shadow: 0 0 0 4px rgb(var(--p-accent-rgb) / .14); }
+body.stmp-admin .inv-search input { color: var(--p-text); font-size: 13px; }
+
+/* Botón principal */
+body.stmp-admin .submit-btn {
+  min-height: 44px; border-radius: 12px; border: 0;
+  background: var(--p-accent); color: var(--p-on-accent);
+  font-weight: 700; letter-spacing: .07em;
+  box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 6px 16px -6px rgb(var(--p-accent-rgb) / .55);
+  transition: filter .15s ease, transform .12s ease, box-shadow .15s ease;
+}
+body.stmp-admin .submit-btn:hover { opacity: 1; filter: brightness(1.06); box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 10px 22px -8px rgb(var(--p-accent-rgb) / .6); }
+body.stmp-admin .submit-btn:active { transform: scale(.98); }
+body.stmp-admin .submit-btn:disabled { filter: grayscale(.4); opacity: .6; }
+
+/* Filtros tipo pastilla */
+body.stmp-admin .filter-btn {
+  border-radius: 999px; border: 1px solid var(--p-border-2); background: var(--p-surface);
+  color: var(--p-text-2); font-weight: 700; letter-spacing: .08em; min-height: 34px;
+}
+body.stmp-admin .filter-btn:not(.active):hover { border-color: var(--p-text-3); color: var(--p-text); }
+body.stmp-admin .filter-btn.active { background: var(--p-ink); color: var(--p-on-ink); border-color: transparent; box-shadow: none; }
+
+/* Botones de acción de las tarjetas */
+body.stmp-admin .act-btn { border-radius: 10px; transition: background .15s ease, transform .1s ease; }
+body.stmp-admin .act-btn:active { transform: scale(.95); }
+
+/* Interruptores estilo iOS */
+body.stmp-admin .pref-switch {
+  width: 46px; height: 28px; background: var(--p-fill-solid-2); border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--p-border);
+}
+body.stmp-admin .pref-switch::after {
+  top: 2px; left: 2px; width: 24px; height: 24px; background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.22), 0 0 0 .5px rgba(0,0,0,.06);
+  transition: transform .26s var(--p-resorte);
+}
+body.stmp-admin .pref-switch:checked { background: var(--p-accent); box-shadow: none; }
+body.stmp-admin .pref-switch:checked::after { transform: translateX(18px); }
+body.stmp-admin .pref-row { border-color: var(--p-border); }
+
+/* Tablas */
+body.stmp-admin .vendedor-table th { color: var(--p-text-3); border-color: var(--p-border); background: var(--p-surface-2); }
+body.stmp-admin .vendedor-table td { color: var(--p-text); border-color: var(--p-border); }
+body.stmp-admin .vendedor-table tbody tr:hover td { background: var(--p-fill); }
+
+/* Paginación */
+body.stmp-admin .pg-arrow, body.stmp-admin .pg-num {
+  background: var(--p-surface); border: 1px solid var(--p-border-2); color: var(--p-text); border-radius: 10px;
+}
+body.stmp-admin .pg-num.active { background: var(--p-ink); color: var(--p-on-ink); border-color: transparent; box-shadow: none; }
+
+/* Ventas / Sistema (módulos v28–v33): mismas superficies */
+body.stmp-admin .vn-nav, body.stmp-admin .vn-pend, body.stmp-admin .vn-ped,
+body.stmp-admin .sp-tabs, body.stmp-admin .sp-serv, body.stmp-admin .sp-kpi, body.stmp-admin .sp-caja,
+body.stmp-admin .sp-estado, body.stmp-admin .sp-tabla-envuelta, body.stmp-admin .sp-filtros {
+  background: var(--p-surface); border-color: var(--p-border);
+}
+body.stmp-admin .vn-btn { background: var(--p-surface); border-color: var(--p-border-2); color: var(--p-text); }
+body.stmp-admin .vn-btn.negro, body.stmp-admin .vn-chips button.on, body.stmp-admin .vn-nav button.on,
+body.stmp-admin .sp-tabs button.on, body.stmp-admin .sp-pag .pg-num.active {
+  background: var(--p-ink); color: var(--p-on-ink); border-color: transparent;
+}
+body.stmp-admin .vn-btn.ghost { background: transparent; }
+
+/* ── 5 · Ventanas y diálogos ─────────────────────────────────── */
+body.stmp-admin .re-overlay, body.stmp-admin .dlg-overlay, body.stmp-admin .sb-modal-fondo {
+  background: var(--p-overlay);
+  -webkit-backdrop-filter: blur(6px) saturate(140%); backdrop-filter: blur(6px) saturate(140%);
+}
+body.stmp-admin .re-modal, body.stmp-admin .dlg, body.stmp-admin .sb-modal {
+  background: var(--p-surface); border: 1px solid var(--p-border); border-radius: var(--p-r-xl);
+  box-shadow: var(--p-sombra-3);
+}
+body.stmp-admin .re-modal-head, body.stmp-admin .re-modal-foot { border-color: var(--p-border); }
+body.stmp-admin .re-modal-foot { background: var(--p-surface-2); }
+body.stmp-admin .re-modal-title, body.stmp-admin .dlg-titulo { color: var(--p-text); }
+body.stmp-admin .dlg-msg { color: var(--p-text-2); }
+body.stmp-admin .re-close:hover { background: var(--p-fill); color: var(--p-text); }
+
+/* ── 6 · Apariencia ──────────────────────────────────────────── */
+.pa-tema-rapido {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 3px;
+  background: var(--p-fill); border-radius: 11px;
+}
+.pa-tema-rapido button {
+  display: grid; place-items: center; height: 30px; border: 0; border-radius: 9px; background: none;
+  color: var(--p-text-3); cursor: pointer; transition: background .15s ease, color .15s ease;
+}
+.pa-tema-rapido button:hover { color: var(--p-text); }
+.pa-tema-rapido button.on { background: var(--p-surface); color: var(--p-text); box-shadow: var(--p-sombra-1); }
+html[data-tema="oscuro"] .pa-tema-rapido button.on { background: var(--p-fill-solid-2); }
+
+.pa-apariencia .pa-opciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
+.pa-op {
+  position: relative; display: flex; flex-direction: column; gap: 10px; padding: 10px; text-align: left;
+  border: 1.5px solid var(--p-border-2); border-radius: 16px; background: var(--p-surface-2); cursor: pointer;
+  font: 600 13px var(--p-fuente); color: var(--p-text); transition: border-color .15s ease, transform .12s ease;
+}
+.pa-op:hover { border-color: var(--p-text-4); }
+.pa-op:active { transform: scale(.98); }
+.pa-op.on { border-color: var(--p-accent); box-shadow: 0 0 0 3px rgb(var(--p-accent-rgb) / .18); }
+.pa-op small { display: block; font-weight: 500; font-size: 11.5px; color: var(--p-text-3); }
+.pa-mini { height: 74px; border-radius: 10px; overflow: hidden; display: grid; grid-template-columns: 30% 1fr; border: 1px solid rgba(0,0,0,.08); }
+.pa-mini i { display: block; }
+.pa-mini .l { background: #faf9f6; border-right: 1px solid #e6e2db; }
+.pa-mini .m { background: #f4f2ee; padding: 9px; display: flex; flex-direction: column; gap: 6px; }
+.pa-mini .m b { display: block; height: 9px; width: 55%; border-radius: 4px; background: #15161a; }
+.pa-mini .m em { display: block; flex: 1; border-radius: 6px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.pa-mini.osc .l { background: #121215; border-color: #26262a; }
+.pa-mini.osc .m { background: #0c0c0e; }
+.pa-mini.osc .m b { background: #f2f2f5; }
+.pa-mini.osc .m em { background: #1a1a1d; }
+.pa-mini.auto { position: relative; }
+.pa-mini.auto::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 50%, rgba(12,12,14,.95) 50%); }
+.pa-check { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; display: none; place-items: center; background: var(--p-accent); color: var(--p-on-accent); }
+.pa-op.on .pa-check { display: grid; }
+.pa-acentos { display: flex; gap: 12px; flex-wrap: wrap; }
+.pa-acento {
+  position: relative; width: 36px; height: 36px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--c); box-shadow: inset 0 0 0 1px rgba(0,0,0,.12);
+  transition: transform .12s ease;
+}
+.pa-acento:hover { transform: scale(1.06); }
+.pa-acento.on::after { content: ''; position: absolute; inset: -5px; border-radius: 50%; border: 2px solid var(--c); }
+html[data-tema="oscuro"] .pa-acento[data-a="grafito"] { --c: #f2f2f5 !important; }
+.pa-acento-nombre { font-size: 12.5px; color: var(--p-text-3); margin-top: 10px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   7 · iPhone / celular: como app nativa
+   ═══════════════════════════════════════════════════════════════ */
+.pa-tabbar, .pa-hoja-fondo, .pa-hoja { display: none; }
+:root { --pa-rojo: #d93a32; }
+html[data-tema="oscuro"] .pa-fila.peligro { color: #ff5a4f; }
+
+@media (max-width: 768px) {
+  html, body.stmp-admin { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+  body.stmp-admin { -webkit-text-size-adjust: 100%; }
+  /* Campos de 16 px: iOS no hace zoom al tocarlos */
+  body.stmp-admin input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  body.stmp-admin select, body.stmp-admin textarea { font-size: 16px !important; }
+
+  /* Contenido: deja espacio a la barra de arriba y a la de pestañas */
+  body.stmp-admin .admin-main {
+    margin-left: 0;
+    padding: calc(env(safe-area-inset-top, 0px) + 52px) max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 96px) max(16px, env(safe-area-inset-left, 0px));
+    max-width: 100vw;
+  }
+
+  /* Barra de navegación translúcida (como Ajustes o Fotos) */
+  body.stmp-admin .topbar-mobile {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 260;
+    display: grid; grid-template-columns: 44px 1fr 44px; align-items: center;
+    min-height: 0; height: calc(env(safe-area-inset-top, 0px) + 48px);
+    padding: env(safe-area-inset-top, 0px) 10px 0; margin: 0;
+    background: var(--p-glass);
+    -webkit-backdrop-filter: saturate(180%) blur(22px); backdrop-filter: saturate(180%) blur(22px);
+    border-bottom: .5px solid transparent;
+    transition: border-color .2s ease, background .2s ease;
+  }
+  body.stmp-admin.pp-desplazado .topbar-mobile { border-bottom-color: var(--p-border-2); }
+  body.stmp-admin .topbar-mobile .sidebar-toggle { display: none; }
+  body.stmp-admin .topbar-mobile .topbar-title {
+    grid-column: 2; justify-self: center; max-width: 100%;
+    font: 700 16.5px/1.2 var(--p-fuente); letter-spacing: -.01em; color: var(--p-text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    opacity: 0; transform: translateY(6px); transition: opacity .2s ease, transform .2s ease;
+  }
+  body.stmp-admin .topbar-mobile .topbar-title span { color: inherit; }
+  body.stmp-admin.pp-titulo-chico .topbar-mobile .topbar-title { opacity: 1; transform: none; }
+  body.stmp-admin .topbar-mobile .pa-perfil-mini {
+    grid-column: 1; grid-row: 1; width: 34px; height: 34px; border-radius: 50%; border: 0; padding: 0; overflow: hidden;
+    background: var(--p-fill-solid); color: var(--p-text-3); display: grid; place-items: center; cursor: pointer;
+  }
+  body.stmp-admin .topbar-mobile .pa-perfil-mini img { width: 100%; height: 100%; object-fit: cover; }
+  body.stmp-admin .topbar-mobile .ac-campana { grid-column: 3; grid-row: 1; justify-self: end; }
+
+  /* Título grande (large title) */
+  body.stmp-admin .view-header {
+    position: static; margin: 4px 0 18px; padding: 0; background: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none; border: 0;
+    align-items: flex-end;
+  }
+  body.stmp-admin .view-title { font-size: 2.6rem; line-height: .95; letter-spacing: .02em; }
+  body.stmp-admin .view-subtitle { font-size: 13.5px; }
+  body.stmp-admin .view-header .submit-btn { min-height: 38px; padding: 8px 16px !important; font-size: 11px; }
+
+  /* Menú lateral: en celular lo reemplazan las pestañas y "Más" */
+  body.stmp-admin .sidebar { display: none; }
+  body.stmp-admin .sidebar-overlay { display: none !important; }
+
+  /* Tarjetas tipo "lista agrupada" de iOS */
+  body.stmp-admin .form-card { padding: 20px 18px; border-radius: 18px; }
+  body.stmp-admin .form-card::before { display: none; }
+  body.stmp-admin .form-title { font-size: 1.55rem; }
+  body.stmp-admin .stat-card { border-radius: 18px; box-shadow: none; }
+  body.stmp-admin .item-card { border-radius: 18px; box-shadow: none; }
+  body.stmp-admin .item-card:hover, body.stmp-admin .stat-card:hover { transform: none; box-shadow: none; }
+  body.stmp-admin .submit-btn { min-height: 50px; border-radius: 14px; font-size: 13px; }
+  body.stmp-admin .fg input, body.stmp-admin .fg select { min-height: 48px; border-radius: 12px; }
+
+  /* Toque: todo lo que se presiona responde como en iOS */
+  body.stmp-admin button, body.stmp-admin .sidebar-item, body.stmp-admin .vn-btn, body.stmp-admin .act-btn, body.stmp-admin .filter-btn {
+    touch-action: manipulation;
+  }
+  body.stmp-admin button:active:not(:disabled), body.stmp-admin .vn-btn:active { transform: scale(.97); }
+
+  /* ── Barra de pestañas inferior ── */
+  .pa-tabbar {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 270;
+    padding: 6px max(6px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 4px) max(6px, env(safe-area-inset-left, 0px));
+    background: var(--p-glass);
+    -webkit-backdrop-filter: saturate(180%) blur(22px); backdrop-filter: saturate(180%) blur(22px);
+    border-top: .5px solid var(--p-border-2);
+  }
+  .pa-tab {
+    position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    min-height: 49px; padding: 4px 0 2px; border: 0; background: none; cursor: pointer;
+    font: 600 10.5px/1.1 var(--p-fuente); letter-spacing: .01em; color: var(--p-text-3);
+    transition: color .15s ease;
+  }
+  .pa-tab svg { width: 25px; height: 25px; stroke-width: 1.9; transition: transform .2s var(--p-resorte); }
+  .pa-tab.on { color: var(--p-accent); }
+  .pa-tab.on svg { stroke-width: 2.2; }
+  .pa-tab:active svg { transform: scale(.88); }
+  .pa-tab-badge {
+    position: absolute; top: 1px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 999px; background: var(--pa-rojo); color: #fff; font: 700 11px/18px var(--p-fuente); text-align: center;
+    box-shadow: 0 0 0 2px var(--p-bg);
+  }
+
+  /* ── Hojas (sheets) ── */
+  .pa-hoja-fondo {
+    display: block; position: fixed; inset: 0; z-index: 680; background: var(--p-overlay);
+    opacity: 0; pointer-events: none; transition: opacity .32s ease;
+  }
+  .pa-hoja-fondo.abierta { opacity: 1; pointer-events: auto; }
+  .pa-hoja {
+    display: flex; flex-direction: column; position: fixed; left: 0; right: 0; bottom: 0; z-index: 690;
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 18px);
+    background: var(--p-bg); border-radius: 14px 14px 0 0;
+    box-shadow: 0 -10px 40px rgba(0,0,0,.25);
+    transform: translateY(105%); transition: transform .42s var(--p-resorte);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pa-hoja.abierta { transform: translateY(0); }
+  .pa-hoja.arrastrando { transition: none; }
+  .pa-agarradera { flex: none; display: grid; place-items: center; height: 22px; cursor: grab; touch-action: none; }
+  .pa-agarradera::before { content: ''; width: 38px; height: 5px; border-radius: 3px; background: var(--p-text-4); opacity: .55; }
+  .pa-hoja-cab { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 18px 8px; }
+  .pa-hoja-cab h2 { margin: 0; font: 700 20px var(--p-fuente); letter-spacing: -.01em; color: var(--p-text); }
+  .pa-hoja-cab button { border: 0; background: var(--p-fill-2); color: var(--p-text-2); width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; }
+  .pa-hoja-cuerpo { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 4px 16px 18px; }
+
+  /* Lista agrupada estilo Ajustes */
+  .pa-grupo-tit { margin: 18px 16px 7px; font: 600 12.5px var(--p-fuente); letter-spacing: .01em; text-transform: uppercase; color: var(--p-text-3); }
+  .pa-grupo { background: var(--p-surface); border-radius: 12px; overflow: hidden; }
+  .pa-fila {
+    display: flex; align-items: center; gap: 13px; width: 100%; min-height: 50px; padding: 0 14px;
+    border: 0; background: none; text-align: left; cursor: pointer; color: var(--p-text);
+    font: 500 16px var(--p-fuente); position: relative;
+  }
+  .pa-fila + .pa-fila::before { content: ''; position: absolute; top: 0; right: 0; left: 57px; height: .5px; background: var(--p-border-2); }
+  .pa-fila:active { background: var(--p-fill-2); transform: none !important; }
+  .pa-ico { flex: none; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: #fff; background: var(--ic, #8e8e93); }
+  .pa-ico svg { width: 18px; height: 18px; stroke: #fff; stroke-width: 2.1; }
+  .pa-fila-txt { flex: 1; min-width: 0; }
+  .pa-fila-txt small { display: block; font-size: 13px; color: var(--p-text-3); margin-top: 1px; }
+  .pa-fila .pa-chevron { color: var(--p-text-4); flex: none; }
+  .pa-fila .pa-num { min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; background: var(--pa-rojo); color: #fff; font: 700 12.5px/22px var(--p-fuente); text-align: center; }
+  .pa-fila.peligro { color: var(--pa-rojo); justify-content: center; font-weight: 600; }
+  .pa-fila.activa .pa-fila-txt { color: var(--p-accent); font-weight: 600; }
+  .pa-perfil { min-height: 72px; }
+  .pa-perfil .pa-av { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: var(--p-fill-solid); display: grid; place-items: center; color: var(--p-text-3); flex: none; }
+  .pa-perfil .pa-av img { width: 100%; height: 100%; object-fit: cover; }
+  .pa-perfil .pa-fila-txt b { font-size: 18px; font-weight: 700; display: block; }
+  .pa-control { padding: 12px 14px 14px; }
+  .pa-seg { display: grid; grid-template-columns: repeat(3, 1fr); padding: 2px; border-radius: 9px; background: var(--p-fill-2); }
+  .pa-seg button { height: 32px; border: 0; border-radius: 7px; background: none; color: var(--p-text); font: 600 13.5px var(--p-fuente); cursor: pointer; }
+  .pa-seg button.on { background: var(--p-surface); box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 0 0 .5px rgba(0,0,0,.04); }
+  html[data-tema="oscuro"] .pa-seg button.on { background: #636366; }
+  .pa-control .pa-acentos { margin-top: 14px; justify-content: space-between; }
+
+  /* Diálogos y ventanas del panel → hojas que suben desde abajo */
+  body.stmp-admin .dlg, body.stmp-admin .re-modal, body.stmp-admin .sb-modal {
+    top: auto !important; bottom: 0 !important; left: 0 !important; right: 0 !important;
+    width: 100% !important; max-width: 100% !important; max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 24px) !important;
+    border-radius: 14px 14px 0 0 !important; border-bottom: 0;
+    transform: translateY(105%) !important;
+    transition: transform .42s var(--p-resorte), opacity .2s ease !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body.stmp-admin .dlg.open, body.stmp-admin .re-modal.open, body.stmp-admin .sb-modal.open { transform: translateY(0) !important; }
+  body.stmp-admin .dlg::before, body.stmp-admin .re-modal::before, body.stmp-admin .sb-modal::before {
+    content: ''; display: block; flex: none; width: 38px; height: 5px; border-radius: 3px; margin: 7px auto 0;
+    background: var(--p-text-4); opacity: .55;
+  }
+  body.stmp-admin .dlg-btn { min-height: 50px; border-radius: 14px; font-size: 15px; }
+
+  /* Avisos (toasts) por encima de la barra de pestañas */
+  body.stmp-admin .stmp-avisos { bottom: calc(env(safe-area-inset-bottom, 0px) + 74px) !important; }
+}
+
+/* App instalada en la pantalla de inicio (sin barra de Safari) */
+@media (display-mode: standalone) and (max-width: 768px) {
+  body.stmp-admin { -webkit-user-select: none; user-select: none; }
+  body.stmp-admin input, body.stmp-admin textarea, body.stmp-admin [contenteditable] { -webkit-user-select: text; user-select: text; }
+}
+
+/* Botón de acción destructiva: rojo sólido legible en los dos temas
+   (el degradado rosa original dejaba el texto blanco con poco contraste) */
+body.stmp-admin .dlg-ok.dlg-peligro {
+  background: #d93a32;
+  box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 6px 16px -6px rgba(217,58,50,.55);
+}
+
+/* Globos de aviso del menú: rojo con texto blanco legible */
+body.stmp-admin .sidebar-badge { background: #d93a32; color: #fff; }
+/* Botones ámbar de las tarjetas (Reactivar, Calificar): texto un poco más oscuro en claro */
+html[data-tema="claro"] body.stmp-admin .act-btn.unsell,
+html[data-tema="claro"] body.stmp-admin .act-btn.cal { color: #8f6500; }
+
+/* Campos con prefijo dentro de un marco (ej. "@usuario" al registrar venta):
+   el marco ya es el campo, el input de adentro no lleva borde propio */
+body.stmp-admin .vt-input-wrap { background: var(--p-surface-2); border-color: var(--p-border-2); }
+body.stmp-admin .vt-input-wrap:focus-within { background: var(--p-surface); border-color: var(--p-accent); box-shadow: 0 0 0 4px rgb(var(--p-accent-rgb) / .16); }
+body.stmp-admin .re-modal .vt-input-wrap input,
+body.stmp-admin .re-modal .vt-input-wrap input:focus { border: 0 !important; background: none !important; box-shadow: none !important; min-height: 0; }
+
+/* Centro de notificaciones: panel oscuro neutro (antes azul marino) que combina con los dos temas */
+body.stmp-admin .ac-panel { background: #1c1c21; }
+html[data-tema="oscuro"] body.stmp-admin .ac-panel { background: #222227; box-shadow: 0 28px 60px -20px rgba(0,0,0,.8), inset 0 0 0 1px rgba(255,255,255,.09); }
+
+/* v36 · Contador del apartado mientras alguien paga en línea */
+body.stmp-admin .cuenta { font-variant-numeric: tabular-nums; font-weight: 800; }
+body.stmp-admin .ap-chip-pago .cuenta-poca { color: var(--p-rojo); }

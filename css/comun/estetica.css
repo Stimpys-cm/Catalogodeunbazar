@@ -1,0 +1,441 @@
+/* ═══════════════════════════════════════════════════════════════
+   ESTÉTICA COMÚN — el mismo lenguaje visual de la portada en todo
+   el sitio: tipografía, esquinas, sombras azules, foco y movimiento.
+   Se carga al final para poder afinar lo que ya existe.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --radio-chico:  10px;
+  --radio:        16px;
+  --radio-grande: 22px;
+  --radio-pill:   40px;
+
+  --sombra-suave:  0 3px 16px rgba(45, 107, 228, .07);
+  --sombra:        0 10px 30px rgba(45, 107, 228, .12);
+  --sombra-fuerte: 0 18px 46px rgba(26, 31, 46, .18);
+
+  --curva: cubic-bezier(.4, 0, .2, 1);
+  --transicion: .25s var(--curva);
+}
+
+/* ── Tipografía ──────────────────────────────────────────────── */
+/* Los títulos van en Bebas en todo el sitio, como en la portada */
+h1, h2, h3,
+.view-title, .brand-name, .sidebar-logo-text, .topbar-title,
+.pp-nombre, .bz-head-info h2, .hb-name, .legal-sec h2 {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: .02em;
+}
+.view-title { font-size: 2.1rem; line-height: 1; }
+
+/* Selección de texto con el azul de la marca */
+::selection { background: rgba(45, 107, 228, .18); color: var(--text-dark); }
+
+/* ── Foco visible y accesible ────────────────────────────────── */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 2px solid var(--bz-color, var(--accent));
+  outline-offset: 2px;
+  border-radius: var(--radio-chico);
+}
+
+/* En estos campos el contorno automático del navegador sobra: el propio
+   input ya marca el foco con su borde azul y su halo, y el outline
+   pintaba un tercer recuadro encima. Se quita solo el contorno; el
+   borde y el halo se quedan, que son los que dan la caja. */
+.ct-input-wrap input:focus-visible,
+.ct-pw-wrap input:focus-visible {
+  outline: none;
+}
+
+/* El @username es el único caso distinto: ahí el borde lo dibuja la
+   caja de fuera (.ct-input-arroba) y el input va sin ninguno. Si el
+   input marcase el foco por su cuenta saldría un recuadro dentro de
+   otro, tapando la arroba. Marca el foco la caja, no el campo. */
+.ct-input-arroba:focus-within { outline: none; }
+.ct-input-arroba input:focus,
+.ct-input-arroba input:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+/* ── Barras de desplazamiento discretas ──────────────────────── */
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 20px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--muted); background-clip: content-box; }
+
+/* ── Encabezado de cristal, igual en todas las páginas ───────── */
+header {
+  backdrop-filter: saturate(1.4) blur(14px);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+}
+
+/* ── Botones: el mismo gesto en todos lados ──────────────────── */
+.h-btn, .hb-btn, .bz-link, .pp-btn-wa, .h-nav-cta,
+.submit-btn, .btn-ig, .filter-btn, .estado-pill, .bz-media-btn {
+  transition: transform var(--transicion), box-shadow var(--transicion),
+              background var(--transicion), border-color var(--transicion),
+              color var(--transicion), opacity var(--transicion);
+}
+@media (hover: hover) {
+  .h-btn:hover, .pp-btn-wa:hover, .submit-btn:hover { transform: translateY(-2px); }
+}
+.h-btn:active, .hb-btn:active, .pp-btn-wa:active,
+.submit-btn:active, .h-nav-cta:active { transform: translateY(0) scale(.985); }
+
+/* ── Panel de administración con las mismas formas ───────────── */
+.stat-card, .item-card, .vend-card, .cat-item, .form-card,
+.preview-card, .drop-card, .logs-card, .bz-card {
+  border-radius: var(--radio) !important;
+}
+.stat-card, .form-card, .preview-card, .logs-card {
+  box-shadow: var(--sombra-suave);
+}
+.submit-btn, .filter-btn, .act-btn, .bz-media-btn, .estado-pill {
+  border-radius: var(--radio-chico);
+}
+.filter-btn, .estado-pill { border-radius: var(--radio-pill); }
+.sidebar-item { border-radius: var(--radio-chico); }
+.item-card:hover, .vend-card:hover, .bz-card:hover {
+  box-shadow: var(--sombra);
+}
+
+/* ── Imágenes: nunca un salto al cargar ──────────────────────── */
+.h-card-img img, .card-img img, .pp-thumb img, .h-cat img {
+  background: linear-gradient(145deg, #edf2fb, #e8e2d8);
+}
+
+/* ── Rendimiento de pintado ──────────────────────────────────── */
+/* El navegador no gasta trabajo en las secciones que aún no se ven.
+   Con muchas prendas, esto es la diferencia entre un scroll fluido
+   y uno que se traba en celulares modestos. */
+@supports (content-visibility: auto) {
+  main > .h-section,
+  #filasBazares > .h-section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 420px;
+  }
+  footer.site-footer {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 520px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PANTALLA DE MANTENIMIENTO
+   Tapa la página cuando el admin cierra el sitio o una de sus partes.
+   ═══════════════════════════════════════════════════════════════ */
+body.mnt-activo { overflow: hidden; }
+.mnt-capa {
+  position: fixed; inset: 0; z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem 1.5rem;
+  background: var(--bg-gradient, linear-gradient(135deg, #f7f4ef 0%, #eef2fb 50%, #e8e2d8 100%));
+  animation: mnt-entra .35s var(--curva, ease) both;
+}
+@keyframes mnt-entra { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .mnt-capa { animation: none; } }
+
+.mnt-caja {
+  max-width: 30rem; width: 100%; text-align: center;
+  background: #fff;
+  border: 1.5px solid var(--border, #d4cfc6);
+  border-radius: var(--radio-grande, 22px);
+  padding: 2.6rem 2rem 2.4rem;
+  box-shadow: var(--sombra, 0 10px 30px rgba(45, 107, 228, .12));
+}
+.mnt-marca {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.15rem; letter-spacing: .12em;
+  color: var(--text2, #5c5750); margin-bottom: 1.6rem;
+}
+.mnt-marca span { color: var(--accent, #2d6be4); }
+.mnt-icono {
+  width: 58px; height: 58px; margin: 0 auto 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 18px;
+  background: var(--accent-gradient, linear-gradient(135deg, #2d6be4, #4a90d9));
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(45, 107, 228, .28);
+}
+.mnt-icono svg { width: 27px; height: 27px; }
+.mnt-titulo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.1rem; line-height: 1; letter-spacing: .02em;
+  color: var(--black, #12161f); margin: 0 0 .7rem;
+}
+.mnt-msg {
+  font-size: 15px; line-height: 1.6;
+  color: var(--text2, #5c5750); margin: 0 auto; max-width: 34ch;
+}
+.mnt-hora {
+  font-size: 13px; color: var(--muted, #8a8178);
+  margin-top: .9rem;
+}
+.mnt-btn {
+  display: inline-block; margin-top: 1.8rem;
+  padding: 13px 26px;
+  font-size: 11px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase;
+  color: #fff; background: var(--accent-gradient, linear-gradient(135deg, #2d6be4, #4a90d9));
+  border-radius: 40px; text-decoration: none;
+  box-shadow: 0 6px 20px rgba(45, 107, 228, .26);
+}
+@media (max-width: 480px) {
+  .mnt-caja { padding: 2.2rem 1.4rem 2rem; }
+  .mnt-titulo { font-size: 1.8rem; }
+}
+
+/* ── VISTA PREVIA (solo la ve el admin general) ──────────────
+   Cuando algo está cerrado, el admin sigue viendo el sitio normal.
+   Esta barra existe para que no se le olvide que el resto no. */
+.mnt-previa {
+  position: fixed; z-index: 9998;
+  left: 50%; transform: translateX(-50%);
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: 12px;
+  max-width: min(680px, calc(100vw - 24px));
+  padding: 12px 18px;
+  background: #1a1f2e; color: #f2f0ec;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 40px;
+  box-shadow: 0 10px 40px rgba(26,31,46,.35);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12.5px; line-height: 1.45;
+  animation: mntPreviaEntra .35s cubic-bezier(.2,.9,.3,1.1);
+}
+.mnt-previa b { color: #fff; font-weight: 700; }
+.mnt-previa-punto {
+  width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+  background: #e0a13c; box-shadow: 0 0 0 4px rgba(224,161,60,.22);
+  animation: mntPulso 2s ease-in-out infinite;
+}
+.mnt-previa-link {
+  flex-shrink: 0; margin-left: 4px;
+  background: #2d6be4; color: #fff; text-decoration: none;
+  padding: 8px 16px; border-radius: 30px;
+  font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  white-space: nowrap; transition: background .2s;
+}
+.mnt-previa-link:hover { background: #4a90d9; }
+
+/* En las páginas con barra inferior se coloca justo encima */
+body:has(.bottom-nav) .mnt-previa {
+  bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+}
+
+@keyframes mntPreviaEntra {
+  from { opacity: 0; transform: translate(-50%, 14px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes mntPulso {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(224,161,60,.22); }
+  50%      { box-shadow: 0 0 0 7px rgba(224,161,60,.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mnt-previa, .mnt-previa-punto { animation: none; }
+}
+
+@media (max-width: 560px) {
+  .mnt-previa {
+    flex-wrap: wrap; justify-content: center; text-align: center;
+    border-radius: 18px; padding: 12px 16px; font-size: 12px;
+    left: 12px; right: 12px; transform: none; max-width: none;
+  }
+  @keyframes mntPreviaEntra {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  /* El punto solo, en su propio renglón, se veía raro */
+  .mnt-previa-punto { display: none; }
+  .mnt-previa-link { margin-left: 0; margin-top: 4px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MOVIMIENTO — el mismo lenguaje de animación en todo el sitio.
+   Hasta ahora cada archivo elegía su propia curva y su propio
+   tiempo (había diez cubic-bezier distintos). Aquí queda una sola
+   escala para que la aplicación se sienta hecha por un mismo
+   equipo, y las piezas nuevas que faltaban: aparición al hacer
+   scroll, transición entre páginas y respuesta al pulsar.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  /* Tiempos. Micro para lo que responde al dedo, normal para lo que
+     se abre, grande solo para un cambio de contexto. */
+  --t-micro:  .12s;
+  --t-normal: .24s;
+  --t-grande: .42s;
+
+  /* Curvas. "salida" arranca rápido y frena suave: es la que hace
+     que algo se sienta ágil en vez de perezoso. */
+  --curva-salida: cubic-bezier(.22, .61, .36, 1);
+  --curva-suave:  cubic-bezier(.4, 0, .2, 1);
+  --curva-rebote: cubic-bezier(.34, 1.46, .64, 1);
+
+  --mov-micro:  var(--t-micro)  var(--curva-salida);
+  --mov-normal: var(--t-normal) var(--curva-salida);
+  --mov-grande: var(--t-grande) var(--curva-suave);
+}
+
+/* ── Aparición al entrar en pantalla ─────────────────────────────
+   El estado oculto solo existe si el JS está vivo (html.js-mov) y
+   la persona no pidió menos movimiento. Sin JS, todo se ve: una
+   animación nunca puede ser la razón de que no se lea el catálogo. */
+.js-mov [data-revelar] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity var(--t-grande) var(--curva-salida),
+              transform var(--t-grande) var(--curva-salida);
+  transition-delay: var(--retraso, 0ms);
+  will-change: opacity, transform;
+}
+.js-mov [data-revelar].visible {
+  opacity: 1;
+  transform: none;
+  will-change: auto;
+}
+
+/* ── Respuesta al pulsar ─────────────────────────────────────────
+   Lo que se puede tocar se hunde un poco al pulsarlo. Es el gesto
+   que hace que una interfaz se sienta física y no un dibujo. */
+.card, .h-card, .h-bazar, .h-brand, .h-cat, .bz-card,
+.pp-thumb, .wl-item, .filter-chip, .fpill, .sort-opt {
+  transition: transform var(--mov-micro), box-shadow var(--mov-normal),
+              border-color var(--mov-normal), opacity var(--mov-micro);
+}
+.card:active, .h-card:active, .h-bazar:active, .h-brand:active,
+.h-cat:active, .bz-card:active, .pp-thumb:active, .wl-item:active,
+.filter-chip:active, .fpill:active, .sort-opt:active {
+  transform: scale(.978);
+}
+
+/* En pantalla táctil el hover no existe: el press es todo el feedback
+   que hay, así que ahí se nota un poco más. */
+@media (hover: none) {
+  .card:active, .h-card:active, .bz-card:active { transform: scale(.965); }
+}
+
+/* ── Imágenes: entran, no aparecen de golpe ──────────────────────
+   El fondo degradado ya reserva el hueco (aspect-ratio); esto solo
+   evita el parpadeo de blanco a foto. */
+.js-mov img[data-fade] {
+  opacity: 0;
+  transition: opacity var(--t-normal) var(--curva-salida);
+}
+.js-mov img[data-fade].cargada { opacity: 1; }
+
+/* ── Encabezado al bajar ─────────────────────────────────────────
+   Al despegarse de arriba se compacta y gana sombra: da sensación
+   de capa flotante y libera altura en el móvil. */
+header {
+  transition: box-shadow var(--mov-normal), background-color var(--mov-normal);
+}
+header.compacto {
+  box-shadow: 0 6px 24px rgba(26, 31, 46, .10);
+  background-color: rgba(255, 255, 255, .82);
+}
+
+/* ── Transición entre páginas ────────────────────────────────────
+   Nativa del navegador: sin librerías, sin peso y sin bloquear la
+   navegación en los que no la soportan (ahí se ve como siempre). */
+@view-transition { navigation: auto; }
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: vt-sale var(--t-normal) var(--curva-salida) both;
+  }
+  ::view-transition-new(root) {
+    animation: vt-entra var(--t-grande) var(--curva-salida) both;
+  }
+  @keyframes vt-sale  { to   { opacity: 0; } }
+  @keyframes vt-entra { from { opacity: 0; transform: translateY(8px); } }
+
+  /* La foto de la prenda viaja de la tarjeta a la ficha en vez de
+     desaparecer y volver a nacer. Es lo que da continuidad al abrir
+     un producto. El nombre lo pone js/movimiento.js al hacer clic. */
+  ::view-transition-group(prenda-foto) {
+    animation-duration: var(--t-grande);
+    animation-timing-function: var(--curva-suave);
+  }
+}
+
+/* ── Menos movimiento, de verdad ─────────────────────────────────
+   Una sola regla para todo el sitio: si la persona pidió menos
+   movimiento, nada se anima. Antes había que acordarse de añadirlo
+   animación por animación y varias se quedaban fuera. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .js-mov [data-revelar] { opacity: 1; transform: none; }
+  .js-mov img[data-fade] { opacity: 1; }
+  @view-transition { navigation: none; }
+}
+
+/* ── Guardar en favoritos ────────────────────────────────────────
+   Guardar algo merece que se note. El corazón da un latido al
+   activarse: es corto, ocurre bajo el dedo y confirma la acción
+   sin robar un toast ni tapar el catálogo. */
+.card-fav-btn svg,
+.pd-btn-fav svg,
+.pp-fav svg {
+  transition: stroke var(--mov-normal), fill var(--mov-normal),
+              transform var(--t-normal) var(--curva-rebote);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .card-fav-btn.active svg,
+  .pd-btn-fav.active svg,
+  .pp-fav.active svg {
+    animation: latido .34s var(--curva-rebote);
+  }
+  @keyframes latido {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.32); }
+    70%  { transform: scale(.94); }
+    100% { transform: scale(1); }
+  }
+}
+
+/* ── will-change solo cuando hace falta ──────────────────────────
+   Estaba fijo en la imagen de cada tarjeta: con 42 prendas en
+   pantalla, el navegador reservaba 42 capas de GPU permanentes y en
+   un teléfono modesto eso se paga en memoria y en scroll. Solo se
+   pide la capa mientras el cursor está encima, que es cuando de
+   verdad se va a animar. */
+.card-img img { will-change: auto; }
+@media (hover: hover) {
+  .card:hover .card-img img { will-change: transform; }
+}
+
+/* ── Estados vacíos ──────────────────────────────────────────────
+   Que no haya resultados no es un error: es un momento en el que
+   hay que ofrecer la salida. El icono entra suave y el botón para
+   limpiar filtros es lo que más pesa visualmente. */
+.empty {
+  animation: aparecer-vacio var(--t-grande) var(--curva-salida) both;
+}
+.empty-icon {
+  color: var(--accent);
+  opacity: .32;
+}
+.empty-cta {
+  transition: transform var(--mov-micro), box-shadow var(--mov-normal),
+              background var(--mov-normal);
+}
+.empty-cta:active { transform: scale(.97); }
+@media (hover: hover) {
+  .empty-cta:hover { transform: translateY(-2px); box-shadow: var(--sombra); }
+}
+@keyframes aparecer-vacio {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}

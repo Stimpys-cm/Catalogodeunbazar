@@ -405,6 +405,7 @@
 
     // Descargar
     document.getElementById('esDescargar').addEventListener('click', descargar);
+    document.getElementById('esPublicarIG')?.addEventListener('click', publicarEnInstagram);
   }
 
   function grupoChips(contId, key, cb) {
@@ -426,6 +427,48 @@
       a.href = url; document.body.appendChild(a); a.click(); a.remove();
     } catch (e) {
       alert('No se pudo exportar la imagen. Si usaste una foto del catálogo, intenta subir la foto manualmente.');
+    }
+  }
+
+  // Sube el diseño a Cloudinary y lo publica en la cuenta del bazar
+  // (post si el formato es cuadrado, historia si es vertical).
+  async function publicarEnInstagram() {
+    const btn  = document.getElementById('esPublicarIG');
+    const nota = document.getElementById('esIgNota');
+    const esHistoria = state.fmt === 'story';
+    render();
+    let dataUrl;
+    try { dataUrl = canvas.toDataURL('image/jpeg', 0.92); }
+    catch (e) { alert('No se pudo exportar la imagen. Si usaste una foto del catálogo, intenta subir la foto manualmente.'); return; }
+
+    if (!confirm(esHistoria ? '¿Publicar este diseño como historia en Instagram?' : '¿Publicar este diseño como post en Instagram?')) return;
+    btn.disabled = true; btn.textContent = 'Subiendo…';
+    try {
+      const up = await fetch('/api/upload', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: dataUrl }),
+      });
+      const subida = await up.json().catch(() => ({}));
+      if (!up.ok) throw new Error(subida.error || 'No se pudo subir la imagen. ¿Iniciaste sesión en el panel?');
+
+      btn.textContent = 'Publicando en Instagram…';
+      const r = await fetch('/api/acciones?op=ig-publicar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: esHistoria ? 'historia' : 'post',
+          imagenes: [subida.url],
+          exacta: true,               // el diseño ya trae la medida correcta
+          caption: (document.getElementById('esIgTexto')?.value || '').trim(),
+        }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || 'Instagram no respondió.');
+      nota.innerHTML = esHistoria ? '✅ ¡Historia publicada!'
+        : `✅ ¡Publicado! ${data.permalink ? `<a href="${data.permalink}" target="_blank" rel="noopener">Ver en Instagram</a>` : ''}`;
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Publicar en Instagram';
     }
   }
 

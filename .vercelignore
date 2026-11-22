@@ -1,0 +1,8 @@
+# Lo que NO se sube a Vercel (no es parte del sitio)
+# v33: pruebas automáticas y herramientas
+pruebas/
+herramientas/
+# v40: documentación e historial
+docs/
+README.md
+LEEME.txt

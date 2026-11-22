@@ -24,7 +24,12 @@
 
 export const config = {
   // No interceptar el API, los archivos estáticos ni las imágenes
-  matcher: ['/((?!api/|css/|js/|_next/|favicon|robots.txt|sitemap).*)'],
+  matcher: ['/((?!api/|css/|js/|icons/|img/|_next/|favicon|manifest.webmanifest|robots.txt|sitemap).*)',
+    // v40 · El código del panel tampoco se descarga sin sesión (ver CODIGO_PANEL abajo)
+    '/js/panel/:path*', '/css/panel/:path*',
+    '/js/dist/admin.js', '/js/dist/admin.js.map', '/css/dist/admin.css', '/css/dist/admin.css.map',
+    '/js/dist/estudio.js', '/js/dist/estudio.js.map', '/css/dist/estudio.css', '/css/dist/estudio.css.map',
+    '/js/dist/caja.js', '/js/dist/caja.js.map', '/css/dist/caja.css', '/css/dist/caja.css.map'],
 };
 
 // La puerta del panel. Si cambias esto, cambia también RUTA_PANEL_DEFECTO
@@ -36,6 +41,9 @@ const PUBLICAS = new Set([
   '/inicio.html', '/tienda.html', '/prenda.html', '/terminos.html',
   '/cuenta.html',
 ]);
+
+// v40 · Archivos internos y carpetas que no son del sitio público
+const ARCHIVOS_PRIVADOS = /^\/(middleware\.js|leeme\.txt|package(-lock)?\.json|vercel\.json|readme\.md|[^/]*\.md|\.[^/]*|(herramientas|pruebas|docs|node_modules|\.git|\.vercel)(\/.*)?)$/i;
 
 // Cookie de paso: la deja la dirección secreta y es lo único que hace
 // existir /login.html. Dura poco: es un pase para entrar, no una sesión.
@@ -58,30 +66,48 @@ const PAGINA_404 = `<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Página no encontrada</title>
+<title>Página no encontrada | Stiimpys</title>
 <meta name="robots" content="noindex">
+<meta name="theme-color" content="#f5f2ec">
+<link rel="stylesheet" href="/css/comun/fuentes.css">
 <style>
+/* Misma estética del inicio (v39): papel, rejilla tenue, brillo azul y Bebas */
 *{margin:0;padding:0;box-sizing:border-box}
-body{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:2rem;
-background:linear-gradient(135deg,#f7f4ef 0%,#eef2fb 50%,#e8e2d8 100%);
-font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;color:#1a1f2e;text-align:center}
-.n{font-size:clamp(4rem,18vw,9rem);font-weight:800;line-height:.9;letter-spacing:-.04em;color:#2d6be4;opacity:.16}
-h1{font-size:1.4rem;font-weight:700;letter-spacing:.02em;margin:-.4rem 0 .6rem}
-p{font-size:.95rem;line-height:1.6;color:#5c5750;max-width:34ch;margin:0 auto 1.8rem}
-a{display:inline-block;text-decoration:none;font-size:.75rem;font-weight:700;letter-spacing:.14em;
-text-transform:uppercase;color:#fff;background:linear-gradient(135deg,#2d6be4,#4a90d9);
-padding:14px 26px;border-radius:40px;box-shadow:0 6px 20px rgba(45,107,228,.26)}
-.m{margin-top:2.4rem;font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;color:#8a8178}
+body{min-height:100dvh;display:flex;flex-direction:column;font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;color:#15171d;
+background:radial-gradient(120% 90% at 88% 0%,rgba(45,107,228,.10) 0%,transparent 55%),radial-gradient(90% 70% at 0% 100%,rgba(21,23,29,.05) 0%,transparent 60%),#f5f2ec}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.5;
+background-image:linear-gradient(rgba(21,23,29,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(21,23,29,.10) 1px,transparent 1px);background-size:64px 64px;
+-webkit-mask-image:radial-gradient(120% 80% at 70% 10%,#000 0%,transparent 70%);mask-image:radial-gradient(120% 80% at 70% 10%,#000 0%,transparent 70%)}
+.cinta{background:#15171d;color:rgba(255,255,255,.72);font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;text-align:center;padding:9px 16px}
+.barra{position:relative;max-width:1280px;width:100%;margin:0 auto;padding:16px max(16px,min(40px,4vw));display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(21,23,29,.10)}
+.logo{font:400 27px/1 'Bebas Neue',sans-serif;letter-spacing:.01em;color:#1a1f2e;text-decoration:none}
+.logo span{color:#2d6be4}
+.cta{font-size:11px;font-weight:700;letter-spacing:.01em;text-transform:uppercase;text-decoration:none;color:#fff;background:#15171d;border-radius:40px;padding:10px 16px}
+main{position:relative;flex:1;display:grid;place-items:center;padding:3rem 1rem;text-align:center}
+.ceja{font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#2d6be4;margin-bottom:.8rem}
+.n{font:400 clamp(6rem,22vw,11rem)/.85 'Bebas Neue',sans-serif;color:#15171d}
+.n em{font-style:normal;color:#2d6be4}
+h1{font:400 clamp(1.8rem,5vw,2.6rem)/1 'Bebas Neue',sans-serif;letter-spacing:.01em;margin:.6rem 0 .7rem}
+p{font-size:15px;line-height:1.6;color:#3a3d47;max-width:36ch;margin:0 auto 1.8rem}
+.btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-block;text-decoration:none;font-size:12px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;border-radius:40px;padding:15px 28px}
+.btn-1{color:#fff;background:#2d6be4}
+.btn-2{color:#15171d;background:#fff;border:1px solid rgba(21,23,29,.16)}
+.btn-1:hover{background:#1c48a0}.btn-2:hover{border-color:#15171d}
 </style>
 </head>
 <body>
+<div class="cinta">Stiimpys · Página oficial</div>
+<div class="barra"><a class="logo" href="/inicio.html" aria-label="Stiimpys, ir al inicio"><img src="/img/logo-negro-chico.webp" alt="" width="69" height="48" style="display:block;height:48px;width:auto"></a><a class="cta" href="/tienda.html">Ver catálogo</a></div>
+<main>
 <div>
-<div class="n">404</div>
+<div class="ceja">Página no encontrada</div>
+<div class="n">4<em>0</em>4</div>
 <h1>Esta página no existe</h1>
 <p>El enlace puede estar mal escrito o la página ya no está disponible.</p>
-<a href="/inicio.html">Ir al inicio</a>
-<div class="m">STMP MARKET</div>
+<div class="btns"><a class="btn btn-1" href="/inicio.html">Ir al inicio</a><a class="btn btn-2" href="/tienda.html">Ver catálogo</a></div>
 </div>
+</main>
 </body>
 </html>
 `;
@@ -169,8 +195,28 @@ export default async function middleware(req) {
   // La dirección secreta sí distingue mayúsculas: es una contraseña, y
   // cuantas más formas de escribirla valgan, más fácil es acertarla.
   const esPuerta = !!rutaPanel && (pagina === `/${rutaPanel}`);
-  const esAdmin  = nombre === '/admin' || sinBarra.toLowerCase().startsWith('/admin/');
+  // v40 · El Estudio de posts es una herramienta del panel: mismas reglas que el panel
+  const esAdmin  = nombre === '/admin' || sinBarra.toLowerCase().startsWith('/admin/') || nombre === '/estudio' || nombre === '/caja';
+  // v40 · Código del panel (archivos originales y paquetes del panel y del Estudio):
+  // sin sesión responde 404, para no regalarle a nadie el mapa del panel.
+  const esCodigoPanel = /^\/(js|css)\/panel\//i.test(sinBarra) || /^\/(js|css)\/dist\/(admin|estudio|caja)\./i.test(sinBarra);
   const esLogin  = nombre === '/login';
+
+  // v40 · Archivos del proyecto que no son páginas: nunca se sirven (aunque Vercel los
+  // tenga a mano). middleware.js lleva la dirección secreta por defecto del panel y
+  // package.json dice qué versiones de librerías usa el sitio.
+  if (ARCHIVOS_PRIVADOS.test(sinBarra)) return noEncontrado();
+
+  // v39 · La página es solo de Stiimpys: "Los bazares" y "Vende con nosotros"
+  // llevan al inicio (MULTI_BAZAR=1 en Vercel las vuelve a abrir), y la vieja
+  // puerta de verificación (/index.html) también: toda pantalla pública acaba
+  // en el inicio.
+  // v41: las páginas de varios bazares se archivaron (docs/archivo/multi-bazar): siempre al inicio
+  if (nombre === '/redes' || nombre === '/vender') return irA(url.origin, '/inicio.html');
+  if (nombre === '/index') return irA(url.origin, '/inicio.html');
+  // v53 · Link corto de los posts de Instagram: /p/160 → la ficha de la prenda 160
+  const corto = /^\/p\/(\d{1,9})$/i.exec(sinBarra);
+  if (corto) return irA(url.origin, `/prenda.html?id=${corto[1]}`);
 
   // Las apps de mensajería y los buscadores piden la ficha para armar el
   // preview, pero /prenda.html es una página vacía hasta que corre el JS:
@@ -178,11 +224,30 @@ export default async function middleware(req) {
   // que sí escribe las etiquetas (api/prenda.js). A las personas, no.
   if (nombre === '/prenda' && esRobot(req)) {
     const id = url.searchParams.get('id');
-    if (id) return irA(url.origin, `/api/prenda?id=${encodeURIComponent(id)}`);
+    if (id) {
+      // Se sirve el contenido en esta misma dirección (sin redirigir): así
+      // Google indexa /prenda.html?id=… y WhatsApp arma el preview a la primera.
+      // Si por algo falla, se usa la redirección de antes.
+      try {
+        const r = await fetch(new URL(`/api/prenda?id=${encodeURIComponent(id)}&vista=bot`, url.origin), {
+          headers: { 'user-agent': req.headers.get('user-agent') || '' }, redirect: 'manual',
+        });
+        if (r.status === 200) {
+          return new Response(await r.text(), { status: 200, headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            // Sin s-maxage: el CDN no debe guardar esta versión, porque a las
+            // personas, en la misma dirección, se les sirve la ficha normal.
+            'Cache-Control': 'max-age=300', 'Vary': 'User-Agent',
+          } });
+        }
+        if (r.status === 302) return irA(url.origin, '/tienda.html');   // no existe u oculta
+      } catch (_) {}
+      return irA(url.origin, `/api/prenda?id=${encodeURIComponent(id)}`);
+    }
   }
 
   // El resto del sitio pasa sin tocarse
-  if (!esPuerta && !esAdmin && !esLogin) return;
+  if (!esPuerta && !esAdmin && !esLogin && !esCodigoPanel) return;
 
   const entra = secreto
     ? await firmaValida(leerCookie(req, 'acceso'), secreto)
@@ -191,6 +256,8 @@ export default async function middleware(req) {
   // ── Sin dirección secreta: como siempre ────────────────────
   // El acceso es público y el panel exige sesión. Sirve para no dejar
   // el sitio inaccesible si aún no se ha definido RUTA_PANEL.
+  if (esCodigoPanel) return entra ? undefined : noEncontrado();
+
   if (!rutaPanel) {
     if (esLogin || entra) return;
     const destino = new URL('/login.html', url.origin);

@@ -3,3 +3,6 @@ node_modules/
 .env.*
 .vercel/
 *.log
+
+# v33: copia temporal que crean las pruebas
+pruebas/.tmp/

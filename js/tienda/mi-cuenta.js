@@ -1,0 +1,1307 @@
+// js/mi-cuenta.js — pantalla de cuenta.html en Stiimpys
+//
+// Dos estados:
+//   sin sesión → entrar / crear cuenta
+//   con sesión → centro de control del comprador, en cuatro pestañas:
+//     Mis Compras · Favoritos · Mis Reseñas · Ajustes de Perfil
+//
+// La pieza que une todo es el @username: es lo que el bazar escribe en su
+// panel al marcar una prenda como vendida, y lo que hace que esa prenda
+// aparezca aquí.
+
+(function () {
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+  const ETIQUETAS = [
+    'Envío rápido',
+    'Prenda en excelente estado',
+    'Buena atención',
+    'Tal como se describe',
+    'Buen precio',
+  ];
+
+  let modo    = 'entrar';        // 'entrar' | 'registro' | 'olvide' | 'rescate'
+  let tokenRescate = null;       // el del enlace que llegó por correo
+  let pestana = 'compras';       // compras | subastas | favoritos | resenas | ajustes
+
+  // Cachés de la sesión: se piden una vez y se refrescan al cambiar algo
+  let _compras   = null;
+  let _misReseñas = null;
+  let _misSubastas = null;
+
+  // Precios en pesos mexicanos: el MXN va en pequeño junto al importe
+  const dinero = v => '$' + Number(v || 0).toLocaleString('es-MX') + ' <span class="cur">MXN</span>';
+  const fechaCorta = v => v
+    ? new Date(v).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+    : '';
+
+  function aviso(msg) {
+    if (typeof Avisos === 'object') return Avisos.mostrar(msg);
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2600);
+  }
+
+  function error(msg) {
+    const el = document.getElementById('ctError');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.classList.toggle('visible', !!msg);
+  }
+
+  // Estrellas de solo lectura (db.js las expone, pero cuenta.html no
+  // siempre lo tiene cargado antes que esto)
+  function estrellas(valor, clase = 'st-estrellas') {
+    const v = Math.max(0, Math.min(5, Number(valor) || 0));
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+      const estado = v >= i ? 'llena' : (v >= i - .5 ? 'media' : 'vacia');
+      html += `<span class="st-estrella ${estado}">★</span>`;
+    }
+    return `<span class="${clase}" role="img" aria-label="${v} de 5 estrellas">${html}</span>`;
+  }
+
+  /* ═════════════════════════════════════════════════════════
+     SIN SESIÓN
+     ═════════════════════════════════════════════════════════ */
+  function pintarFormulario() {
+    if (modo === 'olvide')  return pintarOlvide();
+    if (modo === 'rescate') return pintarRescate();
+    const esRegistro = modo === 'registro';
+    document.getElementById('ctaTitulo').innerHTML = esRegistro
+      ? 'Crear <em>cuenta</em>' : 'Entrar a <em>tu cuenta</em>';
+    document.getElementById('ctaSub').textContent = esRegistro
+      ? 'Con una cuenta tus compras, tu carrito y tus reseñas viven en Stiimpys.'
+      : 'Entra para ver tus compras y tu carrito.';
+
+    document.getElementById('ctContenido').innerHTML = `
+      <div class="ct-card">
+        <div class="ct-tabs" role="tablist">
+          <button class="ct-tab ${!esRegistro ? 'active' : ''}" role="tab"
+                  aria-selected="${!esRegistro}" onclick="MiCuenta.modo('entrar')">Entrar</button>
+          <button class="ct-tab ${esRegistro ? 'active' : ''}" role="tab"
+                  aria-selected="${esRegistro}" onclick="MiCuenta.modo('registro')">Crear cuenta</button>
+        </div>
+
+        <div class="ct-error" id="ctError"></div>
+
+        <div class="ct-social" id="ctSocial" hidden>
+          <div class="ct-g">
+            <div class="ct-g-visible" aria-hidden="true">
+              <svg viewBox="0 0 48 48" width="19" height="19" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.2.5 24 .5 14.6.5 6.5 5.9 2.6 13.7l7.8 6c1.9-5.6 7.1-9.7 13.3-9.7z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.2-.4-4.7H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.3z"/><path fill="#FBBC05" d="M10.4 28.3c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.8-6C1 16.4 0 20.1 0 23.8s1 7.4 2.6 10.5l7.8-6z"/><path fill="#34A853" d="M24 47.5c6.2 0 11.5-2 15.4-5.6l-7.5-5.8c-2.1 1.4-4.8 2.2-7.9 2.2-6.2 0-11.4-4.1-13.3-9.7l-7.8 6C6.5 42.1 14.6 47.5 24 47.5z"/></svg>
+              <span>Continuar con Google</span>
+            </div>
+            <div class="ct-g-real" id="ctGoogleBtn"></div>
+          </div>
+          <div class="ct-o"><span>o con tu correo</span></div>
+        </div>
+
+        <form id="ctForm" autocomplete="on" novalidate>
+          ${esRegistro ? `
+            <label class="ct-campo">
+              <span>Tu nombre</span>
+              <div class="ct-input-wrap">
+                ${ICONO.persona}
+                <input type="text" id="ctNombre" autocomplete="name" maxlength="60"
+                       placeholder="Cómo te llamas" oninput="MiCuenta.revisarForm()">
+              </div>
+            </label>
+
+            <label class="ct-campo">
+              <span>Tu @username</span>
+              <div class="ct-input-wrap ct-arroba">
+                <input type="text" id="ctUsername" autocomplete="username" maxlength="30"
+                       placeholder="comotellaman" oninput="MiCuenta.revisarUsername()">
+              </div>
+              <small class="ct-ayuda" id="ctUsernameAyuda">
+                De 3 a 30 caracteres: letras, números, punto, guion o guion bajo.
+              </small>
+            </label>` : ''}
+
+          <label class="ct-campo">
+            <span>Correo</span>
+            <div class="ct-input-wrap">
+              ${ICONO.sobre}
+              <input type="email" id="ctEmail" autocomplete="email" maxlength="120"
+                     placeholder="tucorreo@ejemplo.com"
+                     ${esRegistro ? 'oninput="MiCuenta.revisarForm()"' : ''}>
+            </div>
+          </label>
+
+          <label class="ct-campo">
+            <span>Contraseña</span>
+            <div class="ct-pw-wrap">
+              <input type="password" id="ctPass" maxlength="200"
+                autocomplete="${esRegistro ? 'new-password' : 'current-password'}"
+                placeholder="${esRegistro ? 'Crea una contraseña segura' : 'Tu contraseña'}"
+                ${esRegistro ? 'oninput="MiCuenta.revisarPass()"' : ''}>
+              <button type="button" class="ct-pw-ojo" tabindex="-1"
+                      aria-label="Mostrar contraseña" onclick="MiCuenta.verPass(this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </label>
+
+          ${esRegistro ? `
+            <div class="ct-pw-guia" id="ctPwGuia">
+              <div class="ct-pw-barra"><span id="ctPwNivel"></span></div>
+              <div class="ct-pw-nivel-txt" id="ctPwTexto">Escribe una contraseña</div>
+              <ul class="ct-pw-reglas" id="ctPwReglas">
+                ${[['len','8 caracteres o más'], ['upper','Una mayúscula'],
+                   ['lower','Una minúscula'],    ['num','Un número'],
+                   ['sym','Un símbolo (!@#$…)'], ['comun','Que no sea una contraseña obvia']]
+                  .map(([k, t]) => `<li data-regla="${k}">${ICONO.check}${ICONO.cruz}<span>${t}</span></li>`).join('')}
+              </ul>
+            </div>
+
+            <label class="ct-campo">
+              <span>Repite la contraseña</span>
+              <div class="ct-pw-wrap">
+                <input type="password" id="ctPass2" maxlength="200" autocomplete="new-password"
+                       placeholder="La misma de arriba" oninput="MiCuenta.revisarForm()">
+              </div>
+              <small class="ct-ayuda" id="ctPass2Ayuda"></small>
+            </label>
+
+            <label class="ct-acepto">
+              <input type="checkbox" id="ctAcepto" onchange="MiCuenta.revisarForm()">
+              <span>Acepto los <a href="terminos.html" target="_blank" rel="noopener">Términos
+              y Condiciones</a> y el <a href="terminos.html#privacidad" target="_blank"
+              rel="noopener">Aviso de Privacidad</a>.</span>
+            </label>` : ''}
+
+          <button type="submit" class="ct-btn" id="ctEnviar" ${esRegistro ? 'disabled' : ''}>
+            <span class="ct-btn-txt">${esRegistro ? 'Crear mi cuenta' : 'Entrar'}</span>
+          </button>
+        </form>
+
+        ${esRegistro ? '' : `
+          <button type="button" class="ct-olvide" onclick="MiCuenta.modo('olvide')">
+            Olvidé mi contraseña
+          </button>`}
+
+        <p class="ct-nota">
+          Tu cuenta guarda tu nombre, tu correo, tus compras y tu carrito.
+          Los pagos en línea los procesan Clip y PayPal como intermediarios;
+          tu cuenta no guarda datos de tarjeta.
+          <a href="terminos.html#privacidad">Aviso de privacidad</a>
+        </p>
+      </div>
+
+      <aside class="ct-lado">
+        <h2>Con tu cuenta</h2>
+        <ul>
+          <li><b>Eres alguien en la comunidad.</b> Tu @username es tu identidad: es lo que Stiimpys anota al venderte una prenda.</li>
+          <li><b>No pierdes tu carrito.</b> Te sigue del celular a la computadora, sin volver a buscar las prendas.</li>
+          <li><b>Tienes historial.</b> Cada compra queda registrada y puedes calificarla.</li>
+          <li><b>Ganas reputación.</b> Un comprador con historial y buenas reseñas genera más confianza en el siguiente trato.</li>
+        </ul>
+        <p class="ct-lado-nota">
+          Tarda menos de un minuto y es gratis.
+        </p>
+      </aside>`;
+
+    document.getElementById('ctForm').addEventListener('submit', enviar);
+    montarGoogle();
+  }
+
+  /* ── Entrar con Google ────────────────────────────────────
+     Se usa Google Identity Services: el botón lo dibuja Google y
+     devuelve un token firmado que el servidor comprueba. No hay
+     redirecciones, así que no hace falta una página de vuelta.
+
+     Todo esto es opcional: si GOOGLE_CLIENT_ID no está configurado, el
+     bloque no aparece y el formulario de siempre funciona igual. */
+  const GIS = 'https://accounts.google.com/gsi/client';
+  let _gisCargando = null;
+
+  function cargarGIS() {
+    if (window.google?.accounts?.id) return Promise.resolve();
+    if (_gisCargando) return _gisCargando;
+    _gisCargando = new Promise((listo, falla) => {
+      const s = document.createElement('script');
+      s.src = GIS; s.async = true; s.defer = true;
+      s.onload = listo;
+      s.onerror = () => falla(new Error('No cargó Google'));
+      document.head.appendChild(s);
+    });
+    return _gisCargando;
+  }
+
+  async function montarGoogle() {
+    const caja = document.getElementById('ctSocial');
+    const hueco = document.getElementById('ctGoogleBtn');
+    if (!caja || !hueco) return;
+
+    let clientId = '';
+    try { clientId = (await Cuenta.config()).googleClientId || ''; } catch (_) {}
+    if (!clientId) {
+      // Sin identificador el botón no puede existir, y callar deja a
+      // quien administra el sitio adivinando por qué no aparece.
+      console.info('[cuenta] Entrar con Google está apagado: falta GOOGLE_CLIENT_ID. ' +
+        'Recuerda que Vercel fija las variables al desplegar: si acabas de añadirla, ' +
+        'hay que volver a desplegar. Comprueba /api/cuenta?op=config');
+      return;
+    }
+
+    try {
+      await cargarGIS();
+      // El formulario pudo repintarse mientras cargaba el script
+      if (!document.body.contains(hueco)) return;
+
+      google.accounts.id.initialize({
+        client_id: clientId,
+        callback: entrarConGoogle,
+        // Sin el diálogo automático: aparecer solo, encima de la página,
+        // antes de que nadie lo pida, molesta más de lo que ayuda.
+        auto_select: false,
+        cancel_on_tap_outside: true,
+      });
+      // Se muestra ANTES de medir: oculto, el hueco mide cero y había que
+      // adivinar un ancho fijo que en tarjetas estrechas no cabía y
+      // recortaba el botón por los lados.
+      caja.hidden = false;
+
+      // El botón que se ve es el de arriba, dibujado por nosotros. El de
+      // Google va encima, transparente, y es quien recibe el clic: así
+      // el ancho y la altura los decidimos aquí y su recorte —que no se
+      // podía evitar desde fuera del iframe— deja de importar.
+      // Se pide el ancho real del hueco para que lo cubra entero.
+      const opciones = {
+        type: 'standard', theme: 'outline', size: 'large',
+        text: 'continue_with', shape: 'rectangular',
+        logo_alignment: 'left', locale: 'es',
+        width: Math.max(200, Math.min(400, Math.round(hueco.getBoundingClientRect().width) || 320)),
+      };
+
+      google.accounts.id.renderButton(hueco, opciones);
+    } catch (err) {
+      // Si Google no carga (bloqueadores, red, un origen no autorizado en
+      // Google Console), se queda el formulario de siempre.
+      console.info('[cuenta] No se pudo montar el botón de Google:', err.message);
+      caja.hidden = true;   // se mostró para medir; si falla, se recoge
+    }
+  }
+
+  async function entrarConGoogle(respuesta) {
+    const caja = document.getElementById('ctSocial');
+    if (caja) caja.classList.add('ct-social-cargando');
+    try {
+      await Cuenta.conGoogle(respuesta.credential);
+      aviso('¡Listo!');
+      pestana = 'compras';
+      pintarPanel();
+    } catch (err) {
+      error(err.message || 'No se pudo entrar con Google');
+      if (caja) caja.classList.remove('ct-social-cargando');
+    }
+  }
+
+  /* ── Iconos ───────────────────────────────────────────────
+     En línea y no como archivo: son cuatro trazos y así no cuestan
+     una petición más ni parpadean al cargar. */
+  const ICONO = {
+    persona: `<svg class="ct-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+    sobre:   `<svg class="ct-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>`,
+    check:   `<svg class="ct-marca ct-si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`,
+    cruz:    `<svg class="ct-marca ct-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
+  };
+
+  /* ── Contraseñas ──────────────────────────────────────────
+     Las mismas reglas que el panel de los bazares. La idea no es
+     estorbar: es que se vea, mientras escribes, qué le falta. */
+  const PW_OBVIAS = [
+    'password', 'contrasena', 'contraseña', '12345678', '123456789',
+    'qwerty', 'iloveyou', 'admin', 'bienvenido', 'mexico', 'stmpmarket',
+    'stiimpys', 'abc123', 'letmein', 'football', 'princess', 'monkey',
+  ];
+
+  function reglasPass(pw) {
+    const limpio = pw.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return {
+      len:   pw.length >= 8,
+      upper: /[A-Z]/.test(pw),
+      lower: /[a-z]/.test(pw),
+      num:   /[0-9]/.test(pw),
+      sym:   /[^A-Za-z0-9]/.test(pw),
+      // Repetir un carácter o escribir "password1!" cumple lo demás y
+      // sigue siendo de las primeras que alguien probaría.
+      comun: pw.length >= 8
+             && !PW_OBVIAS.some(mala => limpio.includes(mala))
+             && !/^(.)\1+$/.test(pw)
+             && !/^(0?123456789|abcdefgh)/.test(limpio),
+    };
+  }
+
+  function revisarPass() {
+    const pw = document.getElementById('ctPass')?.value || '';
+    const r  = reglasPass(pw);
+    const cumplidas = Object.values(r).filter(Boolean).length;
+    const total = Object.keys(r).length;
+
+    document.querySelectorAll('#ctPwReglas li').forEach(li => {
+      li.classList.toggle('ok', !!r[li.dataset.regla]);
+    });
+
+    const nivel = document.getElementById('ctPwNivel');
+    const texto = document.getElementById('ctPwTexto');
+    const clase = !pw ? '' : cumplidas <= 2 ? 'floja' : cumplidas < total ? 'media' : 'fuerte';
+    if (nivel) {
+      nivel.style.width = pw ? (cumplidas / total) * 100 + '%' : '0%';
+      nivel.className = clase;
+    }
+    if (texto) {
+      texto.textContent = !pw ? 'Escribe una contraseña'
+        : cumplidas <= 2 ? 'Muy fácil de adivinar'
+        : cumplidas < total ? 'Casi: te falta lo que está en gris'
+        : 'Contraseña segura';
+      texto.className = 'ct-pw-nivel-txt ' + clase;
+    }
+    revisarForm();
+    return { reglas: r, cumplidas, total, pw };
+  }
+
+  /* ── @username ────────────────────────────────────────────
+     Se comprueba el formato mientras se escribe. Que esté libre solo
+     lo sabe el servidor, y lo dice al enviar: preguntárselo en cada
+     tecla serían decenas de consultas por registro. */
+  function revisarUsername() {
+    const input = document.getElementById('ctUsername');
+    const ayuda = document.getElementById('ctUsernameAyuda');
+    if (!input || !ayuda) return true;
+
+    // Se limpia mientras escribe, así ve exactamente lo que se guardará
+    const limpio = input.value.trim().replace(/^@+/, '').toLowerCase()
+                        .replace(/[^a-z0-9._-]/g, '').slice(0, 30);
+    if (limpio !== input.value) input.value = limpio;
+
+    const vacio = limpio.length === 0;
+    const ok    = /^[a-z0-9._-]{3,30}$/.test(limpio);
+
+    ayuda.textContent = vacio
+      ? 'Si lo dejas en blanco, te asignamos uno con tu nombre.'
+      : ok ? `Se verá como @${limpio}`
+           : 'De 3 a 30 caracteres: letras, números, punto, guion o guion bajo.';
+    ayuda.className = 'ct-ayuda' + (vacio ? '' : ok ? ' ok' : ' mal');
+
+    revisarForm();
+    return vacio || ok;
+  }
+
+  /* ── ¿Se puede enviar ya? ─────────────────────────────────
+     El botón queda apagado hasta que todo está en orden. Se puede
+     hacer porque lo que falta está a la vista: la lista de la
+     contraseña, el aviso de que no coinciden y la casilla. Apagar un
+     botón sin decir por qué es lo que desespera. */
+  function revisarForm() {
+    if (modo !== 'registro') return true;
+    const v = id => (document.getElementById(id)?.value || '').trim();
+
+    const pass  = document.getElementById('ctPass')?.value || '';
+    const pass2 = document.getElementById('ctPass2')?.value || '';
+    const r     = reglasPass(pass);
+
+    const ayuda2 = document.getElementById('ctPass2Ayuda');
+    if (ayuda2) {
+      const iguales = pass2 && pass === pass2;
+      ayuda2.textContent = !pass2 ? '' : iguales ? 'Coinciden' : 'No coinciden';
+      ayuda2.className = 'ct-ayuda' + (!pass2 ? '' : iguales ? ' ok' : ' mal');
+    }
+
+    const usuario = v('ctUsername');
+    const listo =
+      v('ctNombre').length >= 2 &&
+      /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v('ctEmail')) &&
+      Object.values(r).every(Boolean) &&
+      pass2 === pass && pass.length > 0 &&
+      (!usuario || /^[a-z0-9._-]{3,30}$/.test(usuario)) &&
+      !!document.getElementById('ctAcepto')?.checked;
+
+    const btn = document.getElementById('ctEnviar');
+    if (btn && !btn.classList.contains('cargando')) btn.disabled = !listo;
+    return listo;
+  }
+
+  function verPass(btn) {
+    const input = document.getElementById('ctPass');
+    if (!input) return;
+    const ver = input.type === 'password';
+    input.type = ver ? 'text' : 'password';
+    btn.classList.toggle('viendo', ver);
+  }
+
+  /* ── Olvidé mi contraseña ─────────────────────────────────
+     Se responde lo mismo exista o no la cuenta: decir "ese correo no
+     está registrado" le diría a cualquiera quién tiene cuenta aquí. */
+  function pintarOlvide() {
+    document.getElementById('ctaTitulo').innerHTML = 'Recuperar <em>tu cuenta</em>';
+    document.getElementById('ctaSub').textContent =
+      'Te mandamos un enlace por correo para poner una contraseña nueva.';
+
+    document.getElementById('ctContenido').innerHTML = `
+      <div class="ct-card">
+        <div class="ct-error" id="ctError"></div>
+        <div class="ct-ok" id="ctOk" hidden></div>
+
+        <form id="ctForm" autocomplete="on">
+          <label class="ct-campo">
+            <span>Tu correo</span>
+            <input type="email" id="ctEmail" autocomplete="email" maxlength="120"
+                   placeholder="el correo de tu cuenta">
+          </label>
+          <button type="submit" class="ct-btn" id="ctEnviar">Mandarme el enlace</button>
+        </form>
+
+        <button type="button" class="ct-olvide" onclick="MiCuenta.modo('entrar')">
+          Volver a entrar
+        </button>
+      </div>
+
+      <aside class="ct-lado">
+        <h2>¿Cómo funciona?</h2>
+        <ul>
+          <li>Te llega un correo con un enlace que <b>vence en una hora</b>.</li>
+          <li>Ese enlace solo sirve una vez.</li>
+          <li>Al cambiarla se cierran las sesiones abiertas en otros aparatos.</li>
+        </ul>
+        <p class="ct-lado-nota">
+          Si no te llega, revisa el correo no deseado. Y si tu cuenta la creaste
+          con otro correo, prueba con ése.
+        </p>
+      </aside>`;
+
+    document.getElementById('ctForm').addEventListener('submit', pedirRescate);
+  }
+
+  async function pedirRescate(e) {
+    e.preventDefault();
+    error('');
+    const btn   = document.getElementById('ctEnviar');
+    const email = document.getElementById('ctEmail').value.trim();
+    if (!email) return error('Escribe tu correo');
+
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Mandando…';
+
+    try {
+      const r = await Cuenta.recuperar(email);
+      const ok = document.getElementById('ctOk');
+      if (ok) {
+        ok.textContent = r.mensaje || 'Revisa tu correo.';
+        ok.hidden = false;
+      }
+      document.getElementById('ctForm').hidden = true;
+    } catch (err) {
+      error(err.message);
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  }
+
+  /* ── Poner la contraseña nueva (con el enlace del correo) ── */
+  function pintarRescate() {
+    document.getElementById('ctaTitulo').innerHTML = 'Nueva <em>contraseña</em>';
+    document.getElementById('ctaSub').textContent =
+      'Elige una que no vayas a olvidar. Al guardarla entras directo.';
+
+    document.getElementById('ctContenido').innerHTML = `
+      <div class="ct-card">
+        <div class="ct-error" id="ctError"></div>
+
+        <form id="ctForm" autocomplete="on">
+          <label class="ct-campo">
+            <span>Contraseña nueva</span>
+            <div class="ct-pw-wrap">
+              <input type="password" id="ctPass" maxlength="200" autocomplete="new-password"
+                     placeholder="Crea una contraseña segura" oninput="MiCuenta.revisarPass()">
+              <button type="button" class="ct-pw-ojo" tabindex="-1"
+                      aria-label="Mostrar contraseña" onclick="MiCuenta.verPass(this)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </label>
+
+          <div class="ct-pw-guia" id="ctPwGuia">
+            <div class="ct-pw-barra"><span id="ctPwNivel"></span></div>
+            <div class="ct-pw-nivel-txt" id="ctPwTexto">Escribe una contraseña</div>
+            <ul class="ct-pw-reglas" id="ctPwReglas">
+              <li data-regla="len"><span class="ct-pw-punto"></span>8 caracteres o más</li>
+              <li data-regla="upper"><span class="ct-pw-punto"></span>Una mayúscula</li>
+              <li data-regla="lower"><span class="ct-pw-punto"></span>Una minúscula</li>
+              <li data-regla="num"><span class="ct-pw-punto"></span>Un número</li>
+              <li data-regla="sym"><span class="ct-pw-punto"></span>Un símbolo (!@#$…)</li>
+              <li data-regla="comun"><span class="ct-pw-punto"></span>Que no sea una contraseña obvia</li>
+            </ul>
+          </div>
+
+          <button type="submit" class="ct-btn" id="ctEnviar">Guardar y entrar</button>
+        </form>
+      </div>
+
+      <aside class="ct-lado">
+        <h2>Después de guardarla</h2>
+        <ul>
+          <li>Entras a tu cuenta al instante.</li>
+          <li>Se cierran las sesiones que hubiera abiertas en otros aparatos.</li>
+          <li>El enlace que usaste deja de servir.</li>
+        </ul>
+      </aside>`;
+
+    document.getElementById('ctForm').addEventListener('submit', guardarRescate);
+  }
+
+  async function guardarRescate(e) {
+    e.preventDefault();
+    error('');
+    const btn = document.getElementById('ctEnviar');
+    const pass = document.getElementById('ctPass').value;
+
+    const { reglas, cumplidas, total } = revisarPass();
+    if (cumplidas < total) {
+      const falta = {
+        len: 'al menos 8 caracteres', upper: 'una mayúscula', lower: 'una minúscula',
+        num: 'un número', sym: 'un símbolo', comun: 'que no sea una contraseña obvia',
+      };
+      return error('A tu contraseña le falta ' +
+        Object.keys(reglas).filter(k => !reglas[k]).map(k => falta[k]).join(', ') + '.');
+    }
+
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'Guardando…';
+
+    try {
+      await Cuenta.restablecer({ token: tokenRescate, password: pass });
+      // Fuera de la URL: dejar el token en la barra invita a compartirlo
+      history.replaceState(null, '', 'cuenta.html');
+      tokenRescate = null;
+      modo = 'entrar';
+      aviso('¡Listo! Ya estás dentro');
+      pestana = 'compras';
+      pintarPanel();
+    } catch (err) {
+      error(err.message);
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  }
+
+  async function enviar(e) {
+    e.preventDefault();
+    error('');
+
+    const btn    = document.getElementById('ctEnviar');
+    const email  = document.getElementById('ctEmail').value.trim();
+    const pass   = document.getElementById('ctPass').value;
+    const nombre = document.getElementById('ctNombre')?.value.trim() || '';
+
+    if (!email || !pass) return error('Faltan datos');
+
+    const usuario = document.getElementById('ctUsername')?.value.trim() || '';
+
+    if (modo === 'registro') {
+      if (!nombre) return error('Escribe tu nombre');
+      const { reglas, cumplidas, total } = revisarPass();
+      if (cumplidas < total) {
+        const falta = {
+          len: 'al menos 8 caracteres', upper: 'una mayúscula', lower: 'una minúscula',
+          num: 'un número', sym: 'un símbolo', comun: 'que no sea una contraseña obvia',
+        };
+        const pendientes = Object.keys(reglas).filter(k => !reglas[k]).map(k => falta[k]);
+        return error('A tu contraseña le falta ' + pendientes.join(', ') + '.');
+      }
+      const pass2 = document.getElementById('ctPass2')?.value || '';
+      if (pass !== pass2) return error('Las dos contraseñas no coinciden');
+      if (!document.getElementById('ctAcepto')?.checked) {
+        return error('Para crear la cuenta tienes que aceptar los términos');
+      }
+    }
+
+    // Estado de carga: el botón se apaga y se marca, para que no se pueda
+    // pulsar dos veces y se note que algo está pasando.
+    const original = btn.querySelector('.ct-btn-txt')?.textContent || btn.textContent;
+    btn.disabled = true;
+    btn.classList.add('cargando');
+    const txt = btn.querySelector('.ct-btn-txt');
+    if (txt) txt.textContent = 'Un momento…';
+
+    try {
+      if (modo === 'registro') await Cuenta.registro(nombre, email, pass, usuario);
+      else                     await Cuenta.entrar(email, pass);
+      aviso('¡Listo!');
+      pestana = 'compras';
+      pintarPanel();
+    } catch (err) {
+      error(err.message);
+      btn.classList.remove('cargando');
+      if (txt) txt.textContent = original;
+      // Se vuelve a evaluar en vez de encender el botón a ciegas: si el
+      // servidor rechazó el @username, sigue habiendo algo que corregir.
+      btn.disabled = modo === 'registro' ? !revisarForm() : false;
+    }
+  }
+
+  /* ═════════════════════════════════════════════════════════
+     CON SESIÓN — el centro de control
+     ═════════════════════════════════════════════════════════ */
+  function pintarPanel() {
+    const p = Cuenta.perfil();
+    if (!p) return pintarFormulario();
+
+    document.getElementById('ctaTitulo').innerHTML =
+      `Hola, <em>${esc((p.nombre || '').split(' ')[0])}</em>`;
+    document.getElementById('ctaSub').innerHTML =
+      p.username
+        ? `Tu identidad en Stiimpys es <b>@${esc(p.username)}</b> — compártela cuando compres por WhatsApp.`
+        : 'Tus compras, tu carrito y tus reseñas en un solo lugar.';
+
+    const cont = document.getElementById('ctContenido');
+    cont.classList.add('ct-wrap-panel');
+    cont.innerHTML = `
+      <div class="ct-panel">
+        <nav class="ct-navtabs" role="tablist">
+          ${botonTab('compras',   'Mis Compras',       IC_BOLSA)}
+          ${botonTab('subastas',  'Mis Subastas',      IC_MARTILLO, avisoSubastas())}
+          ${botonTab('favoritos', 'Mi Carrito',        IC_CARRITO)}
+          ${botonTab('resenas',   'Mis Reseñas',       IC_ESTRELLA)}
+          ${botonTab('ajustes',   'Ajustes de Perfil', IC_ENGRANE)}
+        </nav>
+        <div class="ct-panel-body" id="ctPanelBody">
+          <div class="ct-cargando">Cargando…</div>
+        </div>
+      </div>`;
+
+    pintarPestana();
+  }
+
+  const IC_BOLSA    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
+  const IC_CARRITO  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2.4l2.2 10.3a1.7 1.7 0 0 0 1.7 1.3h8.1a1.7 1.7 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.6" cy="19.6" r="1.3"/><circle cx="17.2" cy="19.6" r="1.3"/></svg>';
+  const IC_ESTRELLA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+  const IC_MARTILLO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 13-7.5 7.5a2.12 2.12 0 0 1-3-3L11 10"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg>';
+  const IC_ENGRANE  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+
+  function botonTab(id, texto, icono, aviso = '') {
+    return `<button class="ct-navtab ${pestana === id ? 'active' : ''}" role="tab"
+                    aria-selected="${pestana === id}" onclick="MiCuenta.tab('${id}')">
+      ${icono}<span>${texto}</span>${aviso}
+    </button>`;
+  }
+
+  // Punto rojo en la pestaña cuando algo pide tu atención: te superaron
+  // en una subasta, o ganaste una y todavía no hablas con el bazar.
+  function avisoSubastas() {
+    if (!_misSubastas) return '';
+    const urgentes = _misSubastas.filter(s => s.estado === 'superado' || s.estado === 'gane').length;
+    return urgentes ? `<i class="ct-navtab-aviso">${urgentes}</i>` : '';
+  }
+
+  function cambiarPestana(id) {
+    pestana = id;
+    document.querySelectorAll('.ct-navtab').forEach((b, i) => {
+      const activo = ['compras', 'subastas', 'favoritos', 'resenas', 'ajustes'][i] === id;
+      b.classList.toggle('active', activo);
+      b.setAttribute('aria-selected', String(activo));
+    });
+    pintarPestana();
+  }
+
+  function cuerpo() { return document.getElementById('ctPanelBody'); }
+
+  function pintarPestana() {
+    if (pestana === 'compras')   return pintarCompras();
+    if (pestana === 'subastas')  return pintarMisSubastas();
+    if (pestana === 'favoritos') return pintarFavoritos();
+    if (pestana === 'resenas')   return pintarMisResenas();
+    if (pestana === 'ajustes')   return pintarAjustes();
+  }
+
+  function vacio(titulo, sub, cta = '') {
+    return `<div class="ct-vacio-box">
+      <div class="ct-vacio-titulo">${esc(titulo)}</div>
+      <div class="ct-vacio-sub">${esc(sub)}</div>
+      ${cta}
+    </div>`;
+  }
+
+  /* ── MIS SUBASTAS ────────────────────────────────────────── */
+  const SB_ESTADOS = {
+    superado:      { txt: 'Te superaron',      clase: 'urge'  },
+    gane:          { txt: '¡Ganaste!',         clase: 'gane'  },
+    ganando:       { txt: 'Vas ganando',       clase: 'bien'  },
+    'sin-reserva': { txt: 'No llegó a la reserva', clase: 'gris' },
+    perdi:         { txt: 'No la ganaste',     clase: 'gris'  },
+  };
+
+  async function pintarMisSubastas() {
+    const cont = cuerpo();
+    if (!cont) return;
+    cont.innerHTML = `<div class="ct-cargando">Cargando tus subastas…</div>`;
+
+    try {
+      _misSubastas = (await Cuenta.misSubastas()).subastas || [];
+    } catch (err) {
+      cont.innerHTML = vacio('No se pudieron cargar', err.message);
+      return;
+    }
+    if (pestana !== 'subastas') return;
+
+    // Refrescar el punto rojo de la pestaña con lo que acaba de llegar
+    const tab = document.querySelectorAll('.ct-navtab')[1];
+    if (tab) {
+      tab.querySelector('.ct-navtab-aviso')?.remove();
+      const urgentes = _misSubastas.filter(x => x.estado === 'superado' || x.estado === 'gane').length;
+      if (urgentes) tab.insertAdjacentHTML('beforeend', `<i class="ct-navtab-aviso">${urgentes}</i>`);
+    }
+
+    if (!_misSubastas.length) {
+      cont.innerHTML = vacio(
+        'Todavía no has ofertado',
+        'Cuando ofertes en una subasta, aquí ves en cuánto va y si sigues ganando.',
+        '<a class="ct-vacio-cta" href="tienda.html">Ver el catálogo</a>');
+      return;
+    }
+
+    cont.innerHTML = `<div class="ct-sb-lista">${_misSubastas.map(filaMiSubasta).join('')}</div>`;
+    arrancarRelojSubastas();
+  }
+
+  function filaMiSubasta(s) {
+    const e = SB_ESTADOS[s.estado] || SB_ESTADOS.perdi;
+    const p = s.prenda;
+    const wa = s.bazar?.whatsapp ? String(s.bazar.whatsapp).replace(/[^0-9]/g, '') : '';
+    const msg = encodeURIComponent(
+      `¡Hola! Soy @${Cuenta.perfil()?.username || ''} y gané la subasta de "${p?.nombre || ''}" ` +
+      `con ${dinero(s.ofertaActual)} MXN. ¿Cómo la recojo?`);
+
+    return `
+      <div class="ct-sb ${e.clase}">
+        <a class="ct-sb-foto" href="prenda.html?id=${p?.id}">
+          ${p?.imagen ? `<img src="${esc(p.imagen)}" alt="" loading="lazy">` : '<span>Sin foto</span>'}
+        </a>
+
+        <div class="ct-sb-datos">
+          <div class="ct-sb-top">
+            <span class="ct-sb-estado ${e.clase}">${e.txt}</span>
+            ${!s.cerrada
+              ? `<span class="ct-sb-reloj${new Date(s.fin).getTime() - Date.now() < 3600000 ? ' urge' : ''}"
+                       data-fin="${esc(s.fin)}">${
+                    typeof tiempoRestante === 'function' ? tiempoRestante(s.fin) : ''}</span>`
+              : `<span class="ct-sb-reloj fin">Terminó</span>`}
+          </div>
+
+          ${p?.marca ? `<div class="ct-sb-marca">${esc(p.marca)}</div>` : ''}
+          <a class="ct-sb-nombre" href="prenda.html?id=${p?.id}">${esc(p?.nombre || 'Prenda')}</a>
+          ${s.bazar ? `<div class="ct-sb-bazar">en ${esc(s.bazar.nombre)}</div>` : ''}
+
+          <div class="ct-sb-cifras">
+            <div><span>Tu oferta</span><b>${dinero(s.miOferta)}</b></div>
+            <div><span>${s.cerrada ? 'Se fue en' : 'Va en'}</span><b>${dinero(s.ofertaActual)}</b></div>
+            ${!s.cerrada ? `<div><span>Para pujar</span><b>${dinero(s.minimo)}</b></div>` : ''}
+          </div>
+
+          ${s.tieneReserva && !s.reservaAlcanzada && !s.cerrada
+            ? '<div class="ct-sb-nota">Aún no llega al precio de reserva.</div>' : ''}
+
+          <div class="ct-sb-acciones">
+            ${s.estado === 'superado'
+              ? `<a class="ct-sb-btn" href="prenda.html?id=${p?.id}">Volver a ofertar</a>` : ''}
+            ${s.estado === 'gane' && wa
+              ? `<a class="ct-sb-btn wa" href="https://wa.me/${wa}?text=${msg}" target="_blank" rel="noopener">Escribir a Stiimpys</a>` : ''}
+            ${s.estado === 'ganando'
+              ? `<a class="ct-sb-btn fantasma" href="prenda.html?id=${p?.id}">Ver la subasta</a>` : ''}
+            ${s.estado === 'sin-reserva'
+              ? `<span class="ct-sb-explica">Ibas ganando, pero la oferta no alcanzó el mínimo.</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Los contadores bajan solos mientras la pestaña esté abierta
+  let _relojSubastas = null;
+  function arrancarRelojSubastas() {
+    clearInterval(_relojSubastas);
+    _relojSubastas = setInterval(() => {
+      const relojes = document.querySelectorAll('.ct-sb-reloj[data-fin]');
+      if (!relojes.length || pestana !== 'subastas') {
+        clearInterval(_relojSubastas); _relojSubastas = null; return;
+      }
+      relojes.forEach(el => {
+        const ms = new Date(el.dataset.fin).getTime() - Date.now();
+        if (ms <= 0) { el.textContent = 'Terminó'; el.classList.add('fin'); el.removeAttribute('data-fin'); return; }
+        el.textContent = typeof tiempoRestante === 'function' ? tiempoRestante(el.dataset.fin) : '';
+        el.classList.toggle('urge', ms < 3600000);
+      });
+    }, 1000);
+  }
+
+  /* ── MIS COMPRAS ─────────────────────────────────────────── */
+  async function pintarCompras() {
+    const cont = cuerpo();
+    if (!cont) return;
+    cont.innerHTML = `<div class="ct-cargando">Cargando tus compras…</div>`;
+
+    try {
+      if (!_compras) _compras = (await Cuenta.compras()).compras || [];
+    } catch (err) {
+      cont.innerHTML = vacio('No se pudieron cargar', err.message);
+      return;
+    }
+    if (pestana !== 'compras') return;
+
+    if (!_compras.length) {
+      cont.innerHTML = vacio(
+        'Todavía no tienes compras',
+        'Cuando Stiimpys marque una prenda como vendida a tu @username, aparecerá aquí.',
+        `<a class="ct-btn ct-btn-suave ct-vacio-cta" href="tienda.html">Ver el catálogo</a>`);
+      return;
+    }
+
+    const gastado = _compras.reduce((s, c) => s + Number(c.prenda?.precio || 0), 0);
+
+    cont.innerHTML = `
+      <div class="ct-resumen">
+        <div class="ct-resumen-dato"><b>${_compras.length}</b><span>prenda${_compras.length !== 1 ? 's' : ''}</span></div>
+        <div class="ct-resumen-dato"><b>${dinero(gastado)}</b><span>en total</span></div>
+        <div class="ct-resumen-dato"><b>${_compras.filter(c => c.miResena).length}</b><span>calificada${_compras.filter(c => c.miResena).length !== 1 ? 's' : ''}</span></div>
+      </div>
+      <div class="ct-compras">${_compras.map(tarjetaCompra).join('')}</div>`;
+  }
+
+  function tarjetaCompra(c) {
+    const pr   = c.prenda || {};
+    const img  = (Array.isArray(pr.imagenes) && pr.imagenes[0]) || '';
+    const src  = (typeof imgOptimizada === 'function') ? imgOptimizada(img, 240) : img;
+    const bz   = (typeof getBazarById === 'function') ? getBazarById(c.bazarId) : null;
+
+    const boton = c.miResena
+      ? `<div class="ct-resena-hecha">
+           ✓ Reseña enviada ${estrellas(c.miResena.estrellas, 'st-estrellas ct-hecha-estrellas')}
+         </div>`
+      : `<button class="ct-btn ct-btn-calificar" onclick="MiCuenta.calificar(${c.id})">
+           ★ Calificar compra
+         </button>`;
+
+    return `<article class="ct-compra">
+      <div class="ct-compra-foto">
+        ${src ? `<img src="${esc(src)}" alt="${esc(pr.nombre)}" loading="lazy">`
+              : '<div class="ct-compra-sinfoto"></div>'}
+      </div>
+      <div class="ct-compra-datos">
+        <div class="ct-compra-nombre">${esc(pr.nombre || 'Prenda')}</div>
+        <div class="ct-compra-meta">
+          Talla ${esc(pr.talla || '–')}${pr.marca ? ' · ' + esc(pr.marca) : ''}
+        </div>
+        <div class="ct-compra-precio">${dinero(pr.precio)}</div>
+        <div class="ct-compra-pie">
+          ${bz ? `<a class="ct-compra-bazar" href="tienda.html?bazar=${encodeURIComponent(bz.slug)}">@${esc(bz.slug)}</a>`
+                : '<span class="ct-compra-bazar">Stiimpys</span>'}
+          <span class="ct-compra-fecha">${esc(fechaCorta(c.fecha))}</span>
+        </div>
+      </div>
+      <div class="ct-compra-accion">${boton}</div>
+    </article>`;
+  }
+
+  /* ── MODAL: CALIFICAR BAZAR ──────────────────────────────── */
+  let _ventaCalificando = null;
+  let _estrellasElegidas = 0;
+  let _etiquetasElegidas = new Set();
+
+  function abrirCalificar(ventaId) {
+    const compra = (_compras || []).find(c => c.id === ventaId);
+    if (!compra) return;
+
+    _ventaCalificando  = ventaId;
+    _estrellasElegidas = 0;
+    _etiquetasElegidas = new Set();
+
+    const bz = (typeof getBazarById === 'function') ? getBazarById(compra.bazarId) : null;
+
+    document.getElementById('ctModalBody').innerHTML = `
+      <p class="cf-intro">
+        ¿Cómo te fue con <b>${esc(bz?.nombre || 'Stiimpys')}</b> en tu compra de
+        <b>${esc(compra.prenda?.nombre || 'la prenda')}</b>?
+      </p>
+
+      <div class="cf-estrellas" id="cfEstrellas" role="radiogroup" aria-label="Puntuación">
+        ${[1, 2, 3, 4, 5].map(n => `
+          <button type="button" class="cf-estrella" data-n="${n}"
+                  role="radio" aria-checked="false" aria-label="${n} estrella${n !== 1 ? 's' : ''}"
+                  onclick="MiCuenta.estrellas(${n})">★</button>`).join('')}
+        <span class="cf-estrellas-txt" id="cfEstrellasTxt">Toca las estrellas</span>
+      </div>
+
+      <div class="cf-bloque">
+        <span class="cf-label">¿Qué salió bien?</span>
+        <div class="cf-etiquetas">
+          ${ETIQUETAS.map(e => `
+            <button type="button" class="cf-etiqueta" data-e="${esc(e)}"
+                    onclick="MiCuenta.etiqueta(this)">${esc(e)}</button>`).join('')}
+        </div>
+      </div>
+
+      <label class="cf-bloque">
+        <span class="cf-label">Tu comentario</span>
+        <textarea id="cfComentario" maxlength="500" rows="4"
+                  placeholder="Cuéntale a los demás cómo fue la compra…"></textarea>
+      </label>
+
+      <div class="cf-error" id="cfError"></div>`;
+
+    document.getElementById('ctModalOverlay').classList.add('active');
+    document.getElementById('ctModal').classList.add('open');
+  }
+
+  function cerrarCalificar() {
+    document.getElementById('ctModalOverlay')?.classList.remove('active');
+    document.getElementById('ctModal')?.classList.remove('open');
+    _ventaCalificando = null;
+  }
+
+  function elegirEstrellas(n) {
+    _estrellasElegidas = n;
+    document.querySelectorAll('.cf-estrella').forEach(b => {
+      const activa = Number(b.dataset.n) <= n;
+      b.classList.toggle('on', activa);
+      b.setAttribute('aria-checked', String(Number(b.dataset.n) === n));
+    });
+    const txt = ['', 'Mala', 'Regular', 'Bien', 'Muy bien', 'Excelente'][n] || '';
+    const el = document.getElementById('cfEstrellasTxt');
+    if (el) el.textContent = txt;
+  }
+
+  function alternarEtiqueta(btn) {
+    const e = btn.dataset.e;
+    if (_etiquetasElegidas.has(e)) _etiquetasElegidas.delete(e);
+    else _etiquetasElegidas.add(e);
+    btn.classList.toggle('on', _etiquetasElegidas.has(e));
+  }
+
+  async function enviarResena() {
+    if (_ventaCalificando == null) return;
+    const err = document.getElementById('cfError');
+    const mostrar = m => { if (err) { err.textContent = m || ''; err.classList.toggle('visible', !!m); } };
+
+    if (!_estrellasElegidas) return mostrar('Elige de 1 a 5 estrellas');
+
+    const btn = document.getElementById('cfEnviar');
+    const txt = btn?.textContent;
+    if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
+    mostrar('');
+
+    try {
+      const r = await Cuenta.calificar(
+        _ventaCalificando,
+        _estrellasElegidas,
+        [..._etiquetasElegidas],
+        document.getElementById('cfComentario')?.value || ''
+      );
+
+      // La compra ya tiene reseña: el botón pasa a "✓ Reseña enviada"
+      const compra = (_compras || []).find(c => c.id === _ventaCalificando);
+      if (compra) { compra.miResena = r.resena; compra.resenaBazar = true; }
+
+      cerrarCalificar();
+      pintarCompras();
+      aviso('¡Gracias! Tu reseña ya está publicada');
+    } catch (e) {
+      mostrar(e.message || 'No se pudo enviar la reseña');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = txt; }
+    }
+  }
+
+  /* ── MI CARRITO (pestaña 'favoritos', antes la wishlist) ──── */
+  function listaFavoritos() {
+    try { return JSON.parse(localStorage.getItem('bazar_wishlist')) || []; }
+    catch { return []; }
+  }
+
+  function pintarFavoritos() {
+    const cont = cuerpo();
+    if (!cont) return;
+
+    const lista = listaFavoritos();
+    if (!lista.length) {
+      cont.innerHTML = vacio(
+        'Tu carrito está vacío',
+        'Toca el botón del carrito en cualquier prenda del catálogo y aparece aquí.',
+        `<a class="ct-btn ct-btn-suave ct-vacio-cta" href="tienda.html">Ver el catálogo</a>`);
+      return;
+    }
+
+    // Un botón de pago por bazar: cada bazar cobra su propio pedido
+    const porBazar = new Map();
+    lista.forEach(p => { const b = String(p.bazarId || 1); porBazar.set(b, (porBazar.get(b) || 0) + 1); });
+    const nombreBz = id => { try { const b = (typeof getBazares === 'function' ? getBazares() : []).find(x => String(x.id) === id); return b ? '@' + b.slug : ''; } catch { return ''; } };
+    const botones = [...porBazar.entries()].map(([b, n]) =>
+      `<a class="ct-btn" href="pagar.html?bazar=${encodeURIComponent(b)}">Ir a pagar${porBazar.size > 1 ? ` ${n} de ${esc(nombreBz(b) || 'este bazar')}` : ''}</a>`).join('');
+    cont.innerHTML = `
+      <div class="ct-resumen">
+        <div class="ct-resumen-dato"><b>${lista.length}</b><span>prenda${lista.length !== 1 ? 's' : ''} en tu carrito</span></div>
+      </div>
+      <div class="ct-favoritos">
+        ${lista.map(favorito).join('')}
+      </div>
+      <div class="ct-carrito-pagar">${botones}<a class="ct-btn ct-btn-suave" href="carrito.html">Ver carrito completo</a></div>
+      <label class="ct-aviso-carrito"><input type="checkbox" id="ctAvisosCarrito" ${Cuenta.perfil()?.avisosCarrito !== false ? 'checked' : ''}
+        onchange="Cuenta.guardarPerfil({ avisosCarrito: this.checked }).then(() => toast(this.checked ? 'Te avisaremos por correo' : 'Ya no te mandaremos estos avisos', 'ok')).catch(e => { this.checked = !this.checked; toast(e.message || 'No se pudo guardar', 'error'); })">
+        <span>Avisarme por correo si algo de mi carrito baja de precio, se libera o se vende</span></label>
+      <p class="ct-nota">Agregar una prenda al carrito no la aparta: al pagar se aparta para ti ${minutosPago()} minutos mientras completas el pago. Los pagos los procesan Clip y PayPal como intermediarios de pago. <a href="terminos.html#pagos">Cómo funciona</a></p>`;
+  }
+
+  function favorito(p) {
+    const img = (Array.isArray(p.imagenes) && p.imagenes[0]) || '';
+    const src = (typeof imgOptimizada === 'function') ? imgOptimizada(img, 240) : img;
+    const id  = String(p.id);
+
+    return `<article class="ct-fav">
+      <div class="ct-fav-foto">
+        ${src ? `<img src="${esc(src)}" alt="${esc(p.nombre)}" loading="lazy">`
+              : '<div class="ct-compra-sinfoto"></div>'}
+      </div>
+      <div class="ct-fav-datos">
+        <div class="ct-compra-nombre">${esc(p.nombre)}</div>
+        <div class="ct-compra-meta">Talla ${esc(p.talla || '–')}${p.marca ? ' · ' + esc(p.marca) : ''}</div>
+        <div class="ct-compra-precio">${dinero(p.precio_venta)}</div>
+      </div>
+      <div class="ct-fav-acciones">
+        <a class="ct-mini-btn" href="prenda.html?id=${encodeURIComponent(id)}">Ver prenda</a>
+        <button class="ct-mini-btn ct-mini-btn-quitar" onclick="MiCuenta.quitarFavorito('${esc(id)}')"
+                aria-label="Quitar del carrito">Quitar</button>
+      </div>
+    </article>`;
+  }
+
+  function quitarFavorito(id) {
+    const lista = listaFavoritos().filter(p => String(p.id) !== String(id));
+    try { localStorage.setItem('bazar_wishlist', JSON.stringify(lista)); } catch (_) {}
+    // Avisar para que la cuenta guarde la lista nueva en el servidor
+    window.dispatchEvent(new CustomEvent('wishlist:cambio'));
+    pintarFavoritos();
+    aviso('Quitada de tu carrito');
+  }
+
+  /* ── MIS RESEÑAS (mi reputación como comprador) ──────────── */
+  async function pintarMisResenas() {
+    const cont = cuerpo();
+    if (!cont) return;
+    cont.innerHTML = `<div class="ct-cargando">Cargando tu reputación…</div>`;
+
+    let datos;
+    try {
+      if (!_misReseñas) _misReseñas = await Cuenta.misResenas();
+      datos = _misReseñas;
+    } catch (err) {
+      cont.innerHTML = vacio('No se pudo cargar', err.message);
+      return;
+    }
+    if (pestana !== 'resenas') return;
+
+    const lista = datos.resenas || [];
+    if (!lista.length) {
+      cont.innerHTML = vacio(
+        'Todavía sin valoraciones',
+        'Aquí aparece lo que Stiimpys dice de ti como comprador después de cada venta.');
+      return;
+    }
+
+    cont.innerHTML = `
+      <div class="ct-reputacion">
+        <div class="ct-rep-num">${Number(datos.promedio || 0).toFixed(1)}</div>
+        <div>
+          ${estrellas(datos.promedio, 'st-estrellas ct-rep-estrellas')}
+          <div class="ct-rep-total">${datos.total} valoración${datos.total !== 1 ? 'es' : ''} como comprador</div>
+        </div>
+      </div>
+      <div class="ct-resenas">
+        ${lista.map(r => `
+          <article class="rs-card">
+            <div class="rs-card-head">
+              <div class="rs-card-quien">
+                <div class="rs-autor">${esc(nombreBazar(r.bazarId))}</div>
+                ${r.prendaNombre ? `<div class="rs-prenda">por ${esc(r.prendaNombre)}</div>` : ''}
+              </div>
+              ${estrellas(r.estrellas, 'st-estrellas rs-card-estrellas')}
+            </div>
+            ${r.comentario ? `<p class="rs-comentario">${esc(r.comentario)}</p>` : ''}
+            ${Array.isArray(r.etiquetas) && r.etiquetas.length
+              ? `<div class="rs-etiquetas">${r.etiquetas.map(e => `<span class="rs-etiqueta">${esc(e)}</span>`).join('')}</div>`
+              : ''}
+            <div class="rs-fecha">${esc(fechaCorta(r.creadoEn))}</div>
+          </article>`).join('')}
+      </div>`;
+  }
+
+  function nombreBazar(id) {
+    const b = (typeof getBazarById === 'function') ? getBazarById(id) : null;
+    return b?.nombre || 'Stiimpys';
+  }
+
+  /* ── AJUSTES DE PERFIL ───────────────────────────────────── */
+  function pintarAjustes() {
+    const cont = cuerpo();
+    const p = Cuenta.perfil();
+    if (!cont || !p) return;
+
+    const inicial = (p.nombre || '?').charAt(0).toUpperCase();
+
+    cont.innerHTML = `
+      <div class="ct-ajustes">
+        <div class="ct-foto-fila">
+          <div class="ct-foto-wrap" onclick="document.getElementById('ctFotoInput').click()" title="Cambiar foto">
+            ${p.avatar
+              ? `<img class="ct-foto" id="ctFotoImg" src="${esc(p.avatar)}" alt="Tu foto de perfil">`
+              : `<span class="ct-foto ct-foto-inicial" id="ctFotoImg">${esc(inicial)}</span>`}
+            <span class="ct-foto-lapiz">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </span>
+          </div>
+          <div class="ct-foto-info">
+            <div class="ct-foto-nombre">${esc(p.nombre)}</div>
+            <div class="ct-foto-user">@${esc(p.username || '—')}</div>
+            <div class="ct-foto-email">${esc(p.email)}</div>
+          </div>
+          <input type="file" id="ctFotoInput" accept="image/*" hidden
+                 onchange="MiCuenta.subirFoto(this.files[0])">
+        </div>
+
+        <div class="ct-error" id="ctError"></div>
+
+        <div class="ct-form-grid">
+          <label class="ct-campo">
+            <span>Nombre completo</span>
+            <input type="text" id="ajNombre" maxlength="60" value="${esc(p.nombre)}" autocomplete="name">
+          </label>
+
+          <label class="ct-campo">
+            <span>Tu @username</span>
+            <div class="ct-input-arroba">
+              <span>@</span>
+              <input type="text" id="ajUsername" maxlength="30" value="${esc(p.username || '')}"
+                     autocomplete="off" spellcheck="false">
+            </div>
+          </label>
+
+          <label class="ct-campo">
+            <span>Teléfono / WhatsApp</span>
+            <input type="tel" id="ajTelefono" maxlength="25" value="${esc(p.telefono || '')}"
+                   autocomplete="tel" placeholder="899 123 4567">
+          </label>
+
+          <label class="ct-campo ct-campo-ancho">
+            <span>Dirección de envío habitual</span>
+            <input type="text" id="ajDireccion" maxlength="200" value="${esc(p.direccion || '')}"
+                   autocomplete="street-address" placeholder="Calle, número, colonia, ciudad y CP">
+          </label>
+        </div>
+
+        <p class="ct-nota">
+          El <b>@username</b> es lo que Stiimpys escribe en su panel al venderte una
+          prenda. Si lo cambias, tus compras y tus reseñas se mueven contigo.
+        </p>
+
+        <div class="ct-acciones">
+          <button class="ct-btn" id="ajGuardar" onclick="MiCuenta.guardarAjustes()">Guardar cambios</button>
+          <button class="ct-btn ct-btn-salir" onclick="MiCuenta.salir()">Cerrar sesión</button>
+        </div>
+      </div>`;
+  }
+
+  async function guardarAjustes() {
+    const btn = document.getElementById('ajGuardar');
+    const txt = btn?.textContent;
+    if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+    error('');
+
+    try {
+      await Cuenta.guardarPerfil({
+        nombre:    document.getElementById('ajNombre').value.trim(),
+        username:  document.getElementById('ajUsername').value.trim(),
+        telefono:  document.getElementById('ajTelefono').value.trim(),
+        direccion: document.getElementById('ajDireccion').value.trim(),
+      });
+      // El @username pudo cambiar: las compras se vuelven a pedir
+      _compras = null; _misReseñas = null;
+      aviso('Perfil actualizado');
+      pintarPanel();
+    } catch (err) {
+      error(err.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = txt; }
+    }
+  }
+
+  async function subirFoto(file) {
+    if (!file) return;
+    aviso('Subiendo tu foto…');
+    const lector = new FileReader();
+    lector.onload = async e => {
+      try {
+        const url = await Cuenta.subirFoto(e.target.result);
+        await Cuenta.guardarPerfil({ avatar: url });
+        aviso('Foto actualizada');
+        pintarAjustes();
+      } catch (err) {
+        error(err.message || 'No se pudo subir la foto');
+      }
+    };
+    lector.readAsDataURL(file);
+  }
+
+  /* ── Acciones sueltas ────────────────────────────────────── */
+  async function salir() {
+    await Cuenta.salir();
+    modo = 'entrar';
+    _compras = null; _misReseñas = null;
+    document.getElementById('ctContenido')?.classList.remove('ct-wrap-panel');
+    pintarFormulario();
+    aviso('Sesión cerrada');
+  }
+
+  function cambiarModo(nuevo) {
+    modo = nuevo;
+    pintarFormulario();
+  }
+
+  window.MiCuenta = {
+    modo: cambiarModo,
+    tab: cambiarPestana,
+    salir, guardarAjustes, subirFoto, quitarFavorito,
+    calificar: abrirCalificar,
+    cerrarCalificar,
+    estrellas: elegirEstrellas,
+    etiqueta: alternarEtiqueta,
+    enviarResena,
+    revisarPass, verPass, revisarUsername, revisarForm,
+  };
+
+  window.addEventListener('cuenta:lista', () => {
+    // Solo repintar todo cuando cambia el estado de sesión, no en cada guardado
+    const hay = Cuenta.haySesion();
+    const yaEsPanel = !!document.getElementById('ctPanelBody');
+    if (hay && !yaEsPanel) pintarPanel();
+    if (!hay && yaEsPanel) pintarFormulario();
+    if (!hay && !document.getElementById('ctForm')) pintarFormulario();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('ctModal')?.classList.contains('open')) {
+      cerrarCalificar();
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const q = new URLSearchParams(location.search);
+    if (q.get('registro') === '1') modo = 'registro';
+    // Llegaste desde el correo de rescate
+    const t = q.get('rescate');
+    if (t) { tokenRescate = t; modo = 'rescate'; }
+    // v41: llegó desde "No quiero estos avisos" del correo
+    if (q.get('avisos') === 'apagados') setTimeout(() => typeof toast === 'function' && toast('Listo: ya no te mandaremos avisos de tu carrito. Puedes volver a prenderlos en Mi Carrito.', 'ok'), 600);
+  });
+})();

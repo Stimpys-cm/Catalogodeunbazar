@@ -45,6 +45,7 @@ function wlAlternar() {
 
 let avisoTimer;
 function aviso(msg) {
+  if (typeof Avisos === 'object') return Avisos.mostrar(msg);
   const t = document.getElementById('toast');
   if (!t) return;
   t.textContent = msg;
@@ -196,7 +197,7 @@ function pintarSEO(p, bz) {
         ? 'https://schema.org/SoldOut'
         : 'https://schema.org/InStock',
       url,
-      seller: { '@type': 'Organization', name: (bz && bz.nombre) || 'STMP MARKET' },
+      seller: { '@type': 'Organization', name: 'Stiimpys' },
     },
   };
 
@@ -226,7 +227,7 @@ function pintarPrenda(p) {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', color);
 
-  document.title = `${p.nombre}${p.marca ? ' · ' + p.marca : ''} | STMP MARKET`;
+  document.title = `${p.nombre}${p.marca ? ' · ' + p.marca : ''} | Stiimpys`;
   pintarSEO(p, bz);
 
   // Migas de pan
@@ -259,7 +260,7 @@ function pintarPrenda(p) {
     ['Marca', p.marca || 'Sin marca'],
     cats.length ? ['Categoría', cats.join(', ')] : null,
     ['Ubicación', (bz && bz.ubicacion) || 'Reynosa, Tamps.'],
-    ['Disponibilidad', p.vendido ? 'Vendida' : enSubasta ? 'En subasta · pieza única' : 'Disponible · pieza única'],
+    ['Disponibilidad', p.vendido ? 'Vendida' : enSubasta ? 'En subasta · pieza única' : p.apartada ? 'Apartada · puede liberarse si no se paga' : 'Disponible · pieza única'],
   ].filter(Boolean);
 
   document.getElementById('ppContenido').innerHTML = `
@@ -295,7 +296,8 @@ function pintarPrenda(p) {
       ${enSubasta ? '' : `
       <div class="pp-precio-fila">
         <span class="pp-precio">${pMoney(p.precio_venta)}</span>
-        ${p.vendido ? `<span class="pp-vendida">Vendida</span>` : `<span class="pp-unica">Pieza única</span>`}
+        ${!p.vendido && Number(p.precioAnterior) > Number(p.precio_venta) ? `<s class="pp-antes">${pMoney(p.precioAnterior)}</s>` : ''}
+        ${p.vendido ? `<span class="pp-vendida">Vendida</span>` : p.apartada ? `<span class="pp-apartada">Apartada</span>` : `<span class="pp-unica">Pieza única</span>`}
       </div>`}
 
       <div id="sbPanel" hidden></div>
@@ -306,7 +308,7 @@ function pintarPrenda(p) {
       <div class="pp-acciones${enSubasta ? ' sin-wa' : ''}">
         ${enSubasta ? '' : `<a class="pp-btn-wa" href="${waUrl}" target="_blank" rel="noopener">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.558 4.147 1.535 5.886L0 24l6.274-1.507A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.853 0-3.587-.5-5.084-1.367l-.361-.214-3.733.897.931-3.618-.235-.374A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-          Apartar por WhatsApp
+          ${p.apartada && !p.vendido ? 'Avísame si se libera' : 'Apartar por WhatsApp'}
         </a>`}
         <button class="pp-btn-fav ${wlTiene(id) ? 'active' : ''}" id="ppFav" onclick="wlAlternar()" aria-label="Guardar en wishlist">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -404,10 +406,11 @@ function compartir(btn) {
   const url = location.href;
   const orig = btn.innerHTML;
   if (navigator.share) {
-    navigator.share({ title: prenda?.nombre || 'STMP MARKET', url }).catch(() => {});
+    navigator.share({ title: prenda?.nombre || 'Stiimpys', url }).catch(() => {});
     return;
   }
-  navigator.clipboard.writeText(url).catch(() => {});
+  if (typeof Avisos === 'object') Avisos.copiar(url, { que: 'Link' });
+  else navigator.clipboard.writeText(url).catch(() => {});
   btn.textContent = '✓ Link copiado';
   setTimeout(() => { btn.innerHTML = orig; }, 2000);
 }
@@ -453,7 +456,7 @@ function prendaNoDisponible() {
       <p>Puede que se haya vendido o que el bazar la haya quitado del catálogo.</p>
       <a class="h-btn h-btn-primary" href="tienda.html">Ver el catálogo</a>
     </div>`;
-  document.title = 'Prenda no disponible | STMP MARKET';
+  document.title = 'Prenda no disponible | Stiimpys';
 
   const recientes = getDB().filter(x => !x.vendido && !x.oculto).slice(0, 10);
   pintarRail('ppRailRecientes', recientes, 'ppSeccionRecientes');

@@ -24,25 +24,28 @@
 // La cuenta de un comprador NO da acceso a nada del panel: son colecciones
 // distintas y esta función nunca toca 'usuarios'.
 
-import { getDB, invalidarSyncCache } from './_db.js';
-import { verifyPassword, hashPassword } from './_password.js';
-import { rateLimit, resetRateLimit } from './_rateLimit.js';
-import { verificarTokenGoogle, googleActivo } from './_google.js';
+import { getDB, invalidarSyncCache } from './_lib/db.js';
+import { verifyPassword, hashPassword } from './_lib/password.js';
+import { rateLimit, resetRateLimit } from './_lib/rateLimit.js';
+import { verificarTokenGoogle, googleActivo } from './_lib/google.js';
 import {
   normalizarUsername, usernameValido, generarUsername, siguienteId,
   ventaPublica, resenaPublica, promedio, asegurarIndices,
   ETIQUETAS_BAZAR,
-} from './_ventas.js';
-import { leerAjustes, cerrada, mensajeDe } from './_ajustes.js';
-import { getUser } from './_auth.js';
-import { enviarCorreo, plantilla, correoConfigurado } from './_correo.js';
+} from './_lib/ventas.js';
+import { leerAjustes, cerrada, mensajeDe } from './_lib/ajustes.js';
+import { getUser } from './_lib/auth.js';
+import { enviarCorreo, plantilla, correoConfigurado } from './_lib/correo.js';
 import {
   leerSubasta, historial, ofertar, subastaPublica, ofertaPublica,
   registrarInvitado, asegurarIndicesSubasta, subastasDe,
-} from './_subastas.js';
-import { esGlobal } from './_bazar.js';
+} from './_lib/subastas.js';
+import { esGlobal } from './_lib/bazar.js';
 import crypto from 'crypto';
+import { exigirTurnstile } from './_lib/turnstile.js';
+import { registrarFalla } from './_lib/actividad.js';
 
+import { conEscudo } from './_lib/escudo.js';
 const COOKIE = 'cliente';
 const DIAS_SESION = 30;
 const MAX_WISHLIST = 200;
@@ -102,6 +105,8 @@ const perfilPublico = c => ({
   direccion: c.direccion || '',
   avatar: c.avatar || '',
   creadoEn: c.creadoEn,
+  // v41: avisos por correo si algo del carrito cambia (prendidos de inicio)
+  avisosCarrito: c.avisosCarrito !== false,
 });
 
 
@@ -112,7 +117,7 @@ async function clienteDeSesion(req) {
   return db.collection('clientes').findOne({ sesionToken: token });
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   const op = String(req.query.op || '');
 
@@ -135,6 +140,7 @@ export default async function handler(req, res) {
     // no está registrado" cualquiera podría averiguar quién tiene cuenta.
     if (op === 'recuperar' && req.method === 'POST') {
       if (!(await rateLimit(req, res, { key: 'recuperar', max: 5, windowSec: 3600 }))) return;
+      if (!(await exigirTurnstile(req, res))) return;   // v41
 
       const email = texto(req.body?.email, 120).toLowerCase();
       const respuestaNeutra = {
@@ -164,13 +170,15 @@ export default async function handler(req, res) {
           },
         });
 
-        const origen = (req.headers['x-forwarded-proto'] || 'https') + '://' +
-                       (req.headers['x-forwarded-host'] || req.headers.host || 'stiimpys.store');
+        // v33: el dominio del enlace sale de SITE_URL, nunca de las cabeceras de la petición
+        // (así nadie puede hacer que el correo apunte a otro sitio y robar el enlace)
+        const origen = (process.env.SITE_URL || 'https://stiimpys.store').replace(/\/$/, '');
         const enlace = `${origen}/cuenta.html?rescate=${token}`;
 
         await enviarCorreo({
+          contexto: { tipo: 'cuenta' },
           para: email,
-          asunto: 'Cambia tu contraseña de STMP MARKET',
+          asunto: 'Cambia tu contraseña de Stiimpys',
           texto: `Para poner una contraseña nueva entra aquí: ${enlace}\n\n` +
                  `El enlace vence en una hora. Si no fuiste tú, ignora este correo: tu contraseña no cambia.`,
           html: plantilla({
@@ -321,6 +329,7 @@ export default async function handler(req, res) {
     // ── REGISTRO ─────────────────────────────────────────────
     if (op === 'registro' && req.method === 'POST') {
       if (!(await rateLimit(req, res, { key: 'registro', max: 5, windowSec: 3600 }))) return;
+      if (!(await exigirTurnstile(req, res))) return;   // v41
 
       const nombre = texto(req.body?.nombre, 60);
       const email  = texto(req.body?.email, 120).toLowerCase();
@@ -386,6 +395,10 @@ export default async function handler(req, res) {
       const email = texto(req.body?.email, 120).toLowerCase();
       const pass  = typeof req.body?.password === 'string' ? req.body.password : '';
       if (!email || !pass) return res.status(400).json({ error: 'Correo y contraseña requeridos' });
+      // v40: máximo 20 intentos por cuenta cada 15 min aunque vengan de muchas conexiones
+      const porCuenta = { headers: {}, socket: { remoteAddress: 'cuenta' } };
+      const claveCuenta = 'entrar-cuenta:' + crypto.createHash('sha256').update(email).digest('hex').slice(0, 16);
+      if (!(await rateLimit(porCuenta, res, { key: claveCuenta, max: 20, windowSec: 900 }))) return;
 
       const cliente = await col.findOne({ email });
       // Misma respuesta exista o no la cuenta
@@ -493,6 +506,15 @@ export default async function handler(req, res) {
       return res.status(200).json({ sesion: true, perfil: perfilPublico(cliente) });
     }
 
+    // ── v41 · Dejar de recibir los avisos del carrito (enlace del correo) ──
+    if (op === 'avisos-baja' && req.method === 'GET') {
+      const id = Number(req.query.c);
+      const { firmaBajaValida } = await import('./_lib/carrito-avisos.js');
+      if (id && firmaBajaValida(id, req.query.t)) await col.updateOne({ id }, { $set: { avisosCarrito: false } });
+      res.setHeader('Location', '/cuenta.html?avisos=apagados');
+      return res.status(302).end();
+    }
+
     // ── WISHLIST ─────────────────────────────────────────────
     if (op === 'wishlist') {
       const cliente = await clienteDeSesion(req);
@@ -547,6 +569,7 @@ export default async function handler(req, res) {
       if ('direccion' in (req.body || {})) {
         cambios.direccion = texto(req.body.direccion, 200);
       }
+      if ('avisosCarrito' in (req.body || {})) cambios.avisosCarrito = req.body.avisosCarrito !== false;
       if ('avatar' in (req.body || {})) {
         const avatar = texto(req.body.avatar, 400);
         // Solo se acepta una URL de imagen ya subida (Cloudinary) o vaciarla
@@ -695,6 +718,10 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('[cuenta:' + op + ']', err);
+    await registrarFalla(err, { origen: 'cuenta', op });
     return res.status(500).json({ error: 'No se pudo completar la operación' });
   }
 }
+
+// v40 · Todas las funciones pasan primero por el escudo (ver api/_lib/escudo.js)
+export default conEscudo(handler);

@@ -1,0 +1,89 @@
+ADMINISTRADOR DE INSTAGRAM — STMP MARKET (versión 4)
+====================================================
+
+NOVEDADES v4 — diseño editorial minimalista
+   • Portadas de post nuevas: la foto se funde con una franja limpia
+     (crema, blanco o negro) con el nombre en serif, talla y estado en
+     letras pequeñas espaciadas y el precio en cursiva. Vendido: foto en
+     gris, sello blanco VENDIDO al centro y "VENDIDO" en rojo sobrio en
+     lugar del precio. El tono se elige en Ajustes.
+   • Historias nuevas en 3 estilos: Crema, Noir y Portada (foto a
+     pantalla completa tipo revista). La de VENDIDO usa el mismo diseño
+     con la foto en gris. Tu estilo guardado anterior se convierte solo
+     (Claro → Crema, Oscuro → Noir, Color → Portada).
+   • Panel de Instagram rediseñado: títulos y cifras en Playfair Display,
+     tinta negra sobre papel crema, líneas finas, sin degradados.
+
+NOVEDADES v3
+   • Las fotos de Instagram ya se ven en el panel: Instagram bloquea que
+     sus imágenes se muestren en otros sitios, así que ahora tu servidor
+     las trae y se las pasa al panel (solo acepta fotos de Instagram).
+   • Sección "Historias": vista previa real de la historia de cada
+     prenda disponible y publicar con un clic. Puedes dejar un estilo
+     como predeterminado.
+
+
+1) COPIA LOS 14 ARCHIVOS a tu proyecto (reemplaza los que existen):
+   api/_instagram.js · api/_instagramPanel.js · api/acciones.js
+   api/inventario-item.js · api/_bazar.js · admin.html · estudio.html
+   js/admin.js · js/instagram-panel.js · js/estudio.js
+   css/instagram-panel.css · css/admin-inventory-responsive.css
+   css/estudio.css · vercel.json
+   (vercel.json ya trae el arreglo de las imágenes de Instagram.)
+
+2) PERMISOS NUEVOS EN LA APP DE META (STMP Market)
+   developers.facebook.com → tu app → Casos de uso → Instagram API →
+   Permisos y funciones → "Agregar" en:
+     instagram_manage_insights      (estadísticas del Resumen)
+     instagram_manage_messages      (Mensajes directos)
+     pages_manage_metadata          (Mensajes directos)
+   Luego en el Explorador de la API Graph: agrégalos también a la lista,
+   "Generate Access Token", y extiéndelo otra vez en el Access Token
+   Debugger ("Extend Access Token"). Pon el token nuevo en Vercel en
+   IG_STIIMPYS_TOKEN.
+
+   En la app de Instagram (cuenta @stiimpys):
+     Configuración → Mensajes y respuestas a historias → Herramientas
+     conectadas → activa "Permitir acceso a los mensajes".
+
+3) PUBLICACIONES PROGRAMADAS
+   En Vercel → Settings → Environment Variables agrega:
+     CRON_SECRET = una contraseña larga inventada (ej. 32 letras y números)
+   Vercel revisa los programados 1 vez al día (plan gratis). Para que
+   salgan a la hora exacta, crea una cuenta gratis en cron-job.org y un
+   cron cada 5 minutos a:
+     https://stiimpys.store/api/acciones?op=ig-cron&key=TU_CRON_SECRET
+   (El panel también publica lo pendiente cada vez que lo abres.)
+
+4) REDEPLOY en Vercel para que tome todo.
+
+QUÉ HAY EN LA PESTAÑA INSTAGRAM
+   Resumen        seguidores, alcance, interacciones, visitas, crecimiento,
+                  mejor día y hora para publicar, tus mejores posts y
+                  pendientes (prendas sin publicar, vendidas que en IG se
+                  ven disponibles, programados).
+   Publicaciones  filtros Disponibles / Vendidas / Sin prenda. Cada post se
+                  liga a su prenda. "Seleccionar varias" para aplicar la
+                  plantilla, marcar VENDIDO o borrar en lote.
+   Comentarios    todos los comentarios de tus últimos 20 posts, los que
+                  faltan por contestar primero, con respuestas rápidas.
+   Mensajes       tus DMs con respuestas rápidas (Instagram solo deja
+                  contestar dentro de 24 h del último mensaje del cliente).
+   Crear          post, carrusel o historia, ahora o programado, con
+                  portada con la plantilla editorial.
+   Historias      historias listas para cada prenda: Crema, Noir o Portada.
+   Programados    lo que va a salir y lo que ya salió.
+   Ajustes        automatización, plantilla y su tono, firma, hashtags y
+                  respuestas rápidas.
+
+LA PLANTILLA EDITORIAL
+   Disponible: foto que se funde con la franja; nombre, talla · estado y
+               precio en cursiva.
+   Vendido:    foto en gris, sello VENDIDO al centro y "VENDIDO" en rojo.
+   Ajustes → "Tono de la franja": Crema, Blanco o Noir.
+   Para los posts viejos: Publicaciones → liga cada post a su prenda →
+   Seleccionar varias → "Aplicar plantilla" (las vendidas salen en gris).
+   IMPORTANTE: Instagram no deja cambiar la foto de un post ya publicado,
+   así que se vuelve a publicar y se borra el original: pierde sus likes y
+   comentarios, y aparece como post nuevo arriba del perfil. Hazlo por
+   tandas pequeñas (Instagram permite ~100 publicaciones por día).

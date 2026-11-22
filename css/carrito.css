@@ -1,0 +1,164 @@
+/* ═══════════════════════════════════════════════════════════════
+   css/carrito.css — v35 · El carrito de compras (antes "wishlist")
+   ───────────────────────────────────────────────────────────────
+   Va al final de las hojas de la tienda pública. Aquí viven:
+   1. El arreglo del panel que se desbordaba a la derecha.
+   2. Los botones de carrito (tarjeta, detalle, ficha) en lugar del corazón.
+   3. Detalles del panel del carrito.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1 · Arreglo: las prendas se salían del grupo ─────────────
+   .wl-grupo-items es una cuadrícula de una columna "auto". Con nombres
+   largos (que no se parten: white-space: nowrap) la columna crecía al
+   ancho del nombre completo y empujaba la tarjeta fuera del panel, con
+   barra de desplazamiento horizontal. minmax(0, 1fr) la deja del ancho
+   del panel y el nombre se corta con "…" como estaba pensado. */
+.wl-grupo { min-width: 0; }
+.wl-grupo-items { grid-template-columns: minmax(0, 1fr); }
+.wl-item { min-width: 0; }
+.wishlist-panel-body { overflow-x: hidden; }
+
+/* ── 2 · Botones de carrito ────────────────────────────────── */
+/* El ícono es un carrito con "+" (agregar) o "✓" (ya está en tu carrito) */
+.card-fav-btn svg, .pd-btn-fav svg, .pp-btn-fav svg { fill: none !important; }
+.ic-ok { display: none; }
+.active > svg .ic-mas, .active .ic-mas { display: none; }
+.active > svg .ic-ok, .active .ic-ok { display: inline; }
+
+/* Tarjeta del catálogo: botón redondo sobre la foto */
+.card-fav-btn.active {
+  background: var(--bz-color, var(--accent)) !important;
+  border-color: transparent !important;
+}
+.card-fav-btn.active svg { stroke: #fff !important; }
+
+/* Detalle (cajón del catálogo) */
+.pd-btn-fav.active {
+  background: var(--bz-color, var(--accent));
+  border-color: var(--bz-color, var(--accent));
+}
+.pd-btn-fav.active svg { stroke: #fff !important; }
+
+/* Ficha de la prenda: botón con texto "Agregar al carrito" a todo lo ancho */
+.pp-acciones { flex-wrap: wrap; }
+.pp-acciones .pp-btn-fav.pp-btn-carrito {
+  order: -1; flex: 1 1 100%; width: auto;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 16px 18px; border-radius: 16px;
+  font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 800;
+  letter-spacing: .12em; text-transform: uppercase;
+  /* v37: como el "Agregar al carrito" de Mercado Libre: azul claro debajo de "Comprar ahora" */
+  color: var(--bz-color, var(--accent));
+  background: rgba(45, 107, 228, .12);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: background .2s, color .2s, transform .12s, box-shadow .2s;
+}
+.pp-acciones .pp-btn-fav.pp-btn-carrito svg { width: 20px; height: 20px; stroke: currentColor !important; }
+.pp-acciones .pp-btn-fav.pp-btn-carrito:hover { background: rgba(45, 107, 228, .18); }
+.pp-acciones .pp-btn-fav.pp-btn-carrito:active { transform: scale(.985); }
+/* Ya está en el carrito: borde azul con ✓ y abre el carrito */
+.pp-acciones .pp-btn-fav.pp-btn-carrito.active {
+  color: var(--bz-color, var(--accent));
+  background: #fff;
+  border-color: var(--bz-color, var(--accent));
+}
+.pp-acciones .pp-btn-fav.pp-btn-carrito.active:hover { background: rgba(45, 107, 228, .06); }
+.pp-btn-carrito .pp-carrito-sub { font-weight: 600; letter-spacing: .04em; text-transform: none; opacity: .85; }
+@media (max-width: 760px) {
+  .pp-acciones .pp-btn-fav.pp-btn-carrito { flex: 1 1 100%; }
+}
+
+/* Encabezado y barra inferior: el contador se ve como globito sobre el carrito */
+.btn-wishlist-header svg { overflow: visible; }
+
+/* ── 3 · Panel del carrito ─────────────────────────────────── */
+.wl-nota {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin: 2px 2px 8px; padding: 12px 14px;
+  font-size: 12px; line-height: 1.55; color: var(--text2, #5c5750);
+  background: rgba(45, 107, 228, .05); border: 1px solid rgba(45, 107, 228, .14); border-radius: 12px;
+}
+.wl-nota svg { width: 16px; height: 16px; flex: none; margin-top: 1px; color: var(--accent); }
+.wl-nota a { color: var(--accent); font-weight: 700; }
+.wishlist-empty .wl-vacio-ic { width: 52px; height: 52px; color: var(--border); margin-bottom: 14px; }
+.tp-seguro a { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+
+/* "Mis compras" en la cuenta: el carrito con su botón de pagar */
+.ct-carrito-pagar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+
+/* ── 4 · v36 · Apartada mientras alguien paga (10 min) con contador ── */
+.cuenta { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; letter-spacing: .02em; }
+.apartada-corner.en-pago { display: inline-flex; align-items: center; gap: 4px; letter-spacing: .1em; }
+.apartada-corner.en-pago .cuenta { color: #fff; letter-spacing: .04em; }
+.apartada-corner.en-pago .cuenta-poca { color: #ff8a7a; }
+.pp-apartada.pp-en-pago { gap: 5px; }
+.pp-apartada.pp-en-pago .cuenta { font-weight: 800; }
+.pp-aviso-pago {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin: 12px 0 4px; padding: 12px 14px; border-radius: 14px;
+  font-size: 13px; line-height: 1.5; color: #8a5a00;
+  background: rgba(246, 200, 107, .16); border: 1px solid rgba(214, 153, 46, .32);
+}
+.pp-aviso-pago svg { flex: none; margin-top: 1px; color: #b7791f; }
+.pp-aviso-pago b { font-size: 14px; }
+.wl-item-sello.en-pago { background: rgba(138, 90, 0, .9); letter-spacing: .04em; font-size: 8.5px; }
+.wl-item-en-pago .wl-item-price { color: var(--muted); }
+.wl-item-en-pago .wl-item-sub { color: #8a5a00; }
+
+/* ── 5 · v37 · "Agregaste a tu carrito" (como Amazon / Mercado Libre) ── */
+.ca-fondo { position: fixed; inset: 0; z-index: 10030; background: rgba(17, 20, 28, .42); opacity: 0; transition: opacity .25s ease; }
+.ca-fondo.ver { opacity: 1; }
+.ca-hoja {
+  position: fixed; z-index: 10031; top: 0; right: 0; bottom: 0; width: min(400px, 100vw);
+  display: flex; flex-direction: column; gap: 16px; padding: 22px 22px 24px; overflow-y: auto;
+  background: #fff; box-shadow: -18px 0 50px -20px rgba(17, 20, 28, .45);
+  font-family: 'DM Sans', system-ui, sans-serif; color: #15161a;
+  transform: translateX(105%); transition: transform .36s cubic-bezier(.32, .72, 0, 1);
+}
+.ca-hoja.ver { transform: none; }
+.ca-agarre { display: none; }
+.ca-cab { display: flex; align-items: center; gap: 10px; }
+.ca-cab h2 { margin: 0; flex: 1; font: 800 18px/1.2 'DM Sans', system-ui, sans-serif !important; letter-spacing: 0 !important; text-transform: none !important; color: #1d7a45; }
+.ca-ok { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: #1d9a55; color: #fff; flex: none; }
+.ca-ok svg { width: 16px; height: 16px; }
+.ca-x { width: 34px; height: 34px; border-radius: 50%; border: 0; background: #f1eee9; color: #5d5953; cursor: pointer; font-size: 14px; }
+.ca-prenda { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 14px; align-items: center; padding: 12px; border: 1px solid #ece7df; border-radius: 14px; }
+.ca-prenda img, .ca-sinfoto { width: 76px; aspect-ratio: 4 / 5; border-radius: 10px; object-fit: cover; background: #efeae2; display: block; }
+.ca-prenda b { display: block; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+.ca-prenda small { display: block; font-size: 13px; color: #78736b; margin: 2px 0 4px; }
+.ca-precio { font: 400 24px/1.1 'Bebas Neue', sans-serif; color: var(--accent, #2d6be4); }
+.ca-precio .cur { font-size: .5em; }
+.ca-sub { padding: 14px 16px; border-radius: 14px; background: #f7f5f1; }
+.ca-sub p { margin: 0; font-size: 14px; }
+.ca-sub p span { color: #78736b; }
+.ca-total { margin-top: 2px !important; font: 400 30px/1.1 'Bebas Neue', sans-serif !important; }
+.ca-total s { font: 500 15px 'DM Sans', sans-serif; color: #9a948b; margin-right: 4px; }
+.ca-total .cur { font-size: .5em; color: #78736b; }
+.ca-ok-txt { color: #1d7a45; font-weight: 600; margin-top: 4px !important; }
+.ca-sig { margin-top: 8px !important; }
+.ca-barra { height: 6px; border-radius: 99px; background: #e5e0d7; overflow: hidden; margin-top: 8px; }
+.ca-barra i { display: block; height: 100%; background: var(--accent, #2d6be4); border-radius: inherit; }
+.ca-btns { display: grid; gap: 10px; }
+.ca-btn {
+  display: flex; align-items: center; justify-content: center; min-height: 50px; border-radius: 12px;
+  background: var(--accent, #2d6be4); color: #fff; font-weight: 700; font-size: 16px; text-decoration: none;
+  box-shadow: 0 6px 16px -8px rgba(45, 107, 228, .7);
+}
+.ca-btn:hover { filter: brightness(1.06); }
+.ca-btn.suave { background: rgba(45, 107, 228, .12); color: var(--accent, #2d6be4); box-shadow: none; }
+.ca-seguir { border: 0; background: none; padding: 8px; font: 600 14px 'DM Sans', sans-serif; color: #5d5953; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 600px) {
+  .ca-hoja { top: auto; left: 0; width: 100%; max-height: 88dvh; border-radius: 18px 18px 0 0;
+    padding: 8px 18px calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateY(105%);
+    box-shadow: 0 -12px 40px -16px rgba(17, 20, 28, .45); }
+  .ca-agarre { display: block; width: 40px; height: 5px; border-radius: 3px; background: #d6d0c6; margin: 2px auto 2px; flex: none; }
+}
+
+/* v37 · Barra fija de la ficha en celular: carrito + "Comprar ahora" */
+.pp-barra-carrito {
+  flex: none; width: 50px; height: 48px; border-radius: 12px; display: grid; place-items: center; cursor: pointer;
+  border: 0; background: rgba(45, 107, 228, .12); color: var(--bz-color, var(--accent));
+}
+.pp-barra-carrito.active { background: var(--bz-color, var(--accent)); color: #fff; }
+.pp-barra-wa.comprar { background: #1a1f2e; justify-content: center; min-width: 150px; }

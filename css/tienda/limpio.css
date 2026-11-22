@@ -1,0 +1,269 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   limpio.css · v38/v39 — reglas finales de la tienda pública
+   ───────────────────────────────────────────────────────────────────────
+   Se carga AL FINAL de cada página pública (inicio, tienda, prenda, cuenta,
+   términos, carrito y pago; también redes y vender, que hoy llevan al
+   inicio). v38: acomodo. v39: misma estética del inicio y nada que se
+   transparente al pasar el mouse (al final del archivo). Manda sobre:
+     · el ancho del contenido y el margen a los lados,
+     · la separación entre secciones,
+     · el redondeo de tarjetas y bloques.
+   Antes cada hoja (global, tienda, inicio, dispositivos, inicio-premium…)
+   ponía sus propios márgenes y a 1280 px el encabezado empezaba a 40 px,
+   las secciones a 20 px y los banners a 60 px. Si algo vuelve a verse
+   "chueco", el arreglo va aquí, no en las hojas de arriba.
+   No cambia colores, letras ni lo que hace cada botón.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --lp-ancho: 1200px;          /* ancho máximo del contenido */
+  --lp-margen: 40px;           /* margen a los lados */
+  --lp-sep: 72px;              /* espacio entre secciones */
+  --lp-radio: 16px;            /* tarjetas: prendas, categorías, pasos, preguntas… */
+  --lp-radio-bloque: 24px;     /* bloques grandes: "Sobre", banners */
+}
+@media (max-width: 1024px) { :root { --lp-margen: 24px; --lp-sep: 60px; } }
+@media (max-width: 600px)  { :root { --lp-margen: 16px; --lp-sep: 48px; } }
+@media (max-width: 380px)  { :root { --lp-margen: 14px; } }
+
+/* ── 1 · Un solo ancho para todo ─────────────────────────────────────────
+   Todos los contenedores miden lo mismo y dejan el mismo margen, así el
+   logo, el título del hero, cada sección, los banners y el pie empiezan y
+   terminan en la misma línea. */
+.header-row,
+.h-hero-inner,
+.h-wrap:not(.legal-wrap),
+.sf-inner,
+.sf-aviso,
+.sf-base,
+.shop-toolbar,
+.shop-layout,
+.vd-grid,
+.cr {
+  box-sizing: border-box;
+  max-width: calc(var(--lp-ancho) + 2 * var(--lp-margen)) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: max(var(--lp-margen), env(safe-area-inset-left, 0px)) !important;
+  padding-right: max(var(--lp-margen), env(safe-area-inset-right, 0px)) !important;
+}
+/* Pago (v39): en compu, el mismo ancho que el encabezado. Las páginas de una
+   sola columna (Mis pedidos, recibo) siguen centradas y angostas, y en
+   celular las franjas del resumen van de orilla a orilla. */
+@media (min-width: 901px) {
+  main.ck:not(:has(> :only-child)) {
+    max-width: calc(var(--lp-ancho) + 2 * var(--lp-margen));
+    padding-left: var(--lp-margen); padding-right: var(--lp-margen);
+  }
+}
+/* Términos: la columna de lectura sigue angosta (860 px), con el mismo margen */
+.legal-wrap.h-wrap {
+  padding-left: max(var(--lp-margen), env(safe-area-inset-left, 0px)) !important;
+  padding-right: max(var(--lp-margen), env(safe-area-inset-right, 0px)) !important;
+}
+/* Barra de categorías del catálogo: en celular es una tira que se desliza */
+@media (min-width: 601px) {
+  .cat-nav-inner {
+    max-width: calc(var(--lp-ancho) + 2 * var(--lp-margen));
+    padding-left: var(--lp-margen); padding-right: var(--lp-margen);
+  }
+}
+@media (max-width: 600px) {
+  .cat-nav-inner { padding-left: var(--lp-margen); padding-right: var(--lp-margen); }
+}
+
+/* Catálogo: la cuadrícula de prendas empieza en la misma línea que el resto
+   (en celular tenía 10 px de más a cada lado). */
+.shop-layout .grid { padding-left: 0 !important; padding-right: 0 !important; }
+
+/* Los banners y bloques ocupan todo el ancho del contenido (antes se
+   metían 40 px más que el resto). */
+.home .h-cta,
+.home .h-vender,
+.home .h-about { margin-left: 0; margin-right: 0; max-width: none; }
+
+/* ── 2 · Mismo espacio entre secciones ─────────────────────────────────── */
+.home main > section.h-section { padding-top: var(--lp-sep); padding-bottom: 0; }
+footer.site-footer { margin-top: var(--lp-sep); }
+
+/* ── 3 · Mismas esquinas ───────────────────────────────────────────────── */
+.home .h-card, .home .h-cats a, .home .h-cat, .home .h-stat, .home .h-step, .home .h-fact,
+.home .h-faq details, .home .hb-card {
+  border-radius: var(--lp-radio);
+}
+.home .h-about, .home .h-cta, .home .h-vender { border-radius: var(--lp-radio-bloque); }
+
+/* ── 4 · Logo: "STIIMPYS." siempre en una línea y sin espacio antes del punto */
+.header-row .logo {
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── 5 · Hero equilibrado ──────────────────────────────────────────────────
+   Dos columnas iguales, centradas a la misma altura (antes 480 / 650 px). */
+@media (min-width: 901px) {
+  .home .h-hero-inner.h-hero-bz {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+  }
+}
+
+/* ── 6 · Celular ─────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  /* "Página oficial · Reynosa, México" alineado a la izquierda como lo demás */
+  .home .h-hero-top::before { align-self: flex-start; text-align: left; margin-bottom: -.2rem; }
+}
+@media (max-width: 600px) {
+  /* Los dos botones del hero del mismo ancho */
+  .home .h-hero-bz .h-cta-row {
+    align-self: stretch;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    width: 100%;
+  }
+  .home .h-hero-bz .h-cta-row .h-btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+  /* El encabezado nunca se sale de la pantalla: si falta espacio, cede el
+     texto del botón "Ver catálogo" (el logo y el carrito no se encogen). */
+  .header-actions { min-width: 0; }
+}
+@media (max-width: 340px) {
+  /* Inicio en pantallas muy angostas (320 px): "Ver catálogo" ya no cabe y
+     se salía, así que se quita del encabezado. El catálogo sigue a un toque
+     en los botones del hero, en la tarjeta de Stiimpys y en el pie. */
+  .home .header-actions .h-nav-cta { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   v39 · Misma estética del inicio en todas las páginas públicas
+   (todas llevan html.home, el mismo encabezado y el mismo pie)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Encabezado de las demás páginas: el título de cada una (Catálogo, Mi cuenta,
+   Términos…) con el mismo fondo del hero del inicio: papel, brillo azul arriba
+   a la derecha y la rejilla tenue. */
+.home main .hero.h-shop-hero {
+  position: relative;
+  overflow: clip;
+  background:
+    radial-gradient(120% 90% at 88% 0%, rgba(45, 107, 228, .10) 0%, transparent 55%),
+    radial-gradient(90% 70% at 0% 100%, rgba(21, 23, 29, .05) 0%, transparent 60%),
+    var(--pm-paper);
+  border-bottom: 1px solid var(--pm-line);
+}
+.home main .hero.h-shop-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--pm-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--pm-line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: radial-gradient(120% 80% at 70% 10%, #000 0%, transparent 70%);
+  mask-image: radial-gradient(120% 80% at 70% 10%, #000 0%, transparent 70%);
+  opacity: .5;
+  pointer-events: none;
+}
+.home main .hero.h-shop-hero > .h-wrap { position: relative; z-index: 1; }
+.home main .hero.h-shop-hero :is(h1, h2) { color: var(--pm-ink); letter-spacing: -.005em; }
+.home main .hero.h-shop-hero :is(h1, h2) em { color: var(--pm-accent); }
+.home main .hero.h-shop-hero p { color: var(--pm-ink-soft); }
+/* "Volver al inicio" con la misma ceja azul del inicio ("Página oficial · Reynosa") */
+.home .h-crumb {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 0; border: 0; background: none; box-shadow: none;
+  color: var(--pm-accent);
+  font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase;
+  margin-bottom: 1.1rem;
+}
+.home .h-crumb:hover { color: var(--pm-accent-ink); transform: none; }
+
+/* Catálogo: en compu el buscador va abierto como en el inicio; en celular y
+   tableta sigue siendo la lupa que se abre (tienda.js). */
+@media (min-width: 901px) {
+  .h-search-tienda.search-wrap {
+    width: auto !important; max-width: 420px !important; flex: 1;
+    padding: 8px 14px;
+    background: var(--pm-paper-2);
+    border: 1px solid var(--pm-line-2);
+    box-shadow: none;
+  }
+  .h-search-tienda.search-wrap:focus-within { border-color: var(--pm-accent); box-shadow: 0 0 0 4px rgba(45, 107, 228, .12); }
+  .h-search-tienda.search-wrap input { width: 100%; opacity: 1; pointer-events: auto; }
+}
+@media (max-width: 900px) {
+  .h-search-tienda.h-header-search { display: flex; flex: unset; }
+  .h-search-tienda.search-wrap:not(.expanded) {
+    width: 40px; max-width: 40px;
+    background: transparent; border-color: transparent; box-shadow: none;
+  }
+}
+
+/* Una sola tienda: la etiqueta "@stiimpys" en cada tarjeta y el renglón
+   "Bazar" del detalle sobran (db.js pone html.multi-bazar si se reabre). */
+html:not(.multi-bazar) .card-bazar-row,
+html:not(.multi-bazar) .pd-spec:has(.pd-bazar-link) { display: none !important; }
+
+/* La barra de abajo del catálogo en celular necesita su espacio
+   (inicio.css le quita el relleno al body en las páginas .home). */
+@media (max-width: 480px) {
+  html.home body:has(.bottom-nav) { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   v39 · Nada se transparenta al pasar el mouse
+   Antes varios botones bajaban su opacidad (se veían deslavados), el sello
+   de subasta desaparecía y las tarjetas se cubrían con un brillo blanco.
+   Ahora el botón se oscurece un poco y el texto cambia de color.
+   ═══════════════════════════════════════════════════════════════════════ */
+.header-actions .btn-ig:hover, .btn-contact:hover, .empty-cta:hover, .wl-btn-wa:hover,
+.pd-btn-wa:hover, .wl-btn-todo:hover, .wl-grupo-wa:hover, .h-nav-cta:hover,
+.bz-link-cta:hover, .hb-btn-primary:hover, .ct-modal-save:hover, .tp-comprar:hover,
+.pp-btn-wa:hover {
+  opacity: 1 !important;
+  filter: brightness(.93);
+}
+.hero-slugs a:hover { opacity: 1 !important; color: var(--pm-accent, #2d6be4); }
+.card:hover .card-subasta { opacity: 1 !important; }
+.motion-pro .card[data-motion-tilt]:hover::before,
+.motion-pro .h-card[data-motion-tilt]:hover::before,
+.motion-pro .hb-card[data-motion-tilt]:hover::before,
+.motion-pro .bz-card[data-motion-tilt]:hover::before,
+.motion-pro .rd-card[data-motion-tilt]:hover::before,
+.motion-pro .h-bazar[data-motion-tilt]:hover::before { opacity: 0 !important; }
+
+/* v40 · Título del hero en tableta (≤900 px): el contenedor centra a sus hijos y, con
+   la letra Bebas real (más angosta), el título quedaba centrado y no en el margen
+   como todo lo demás (a 768 px empezaba en 120 px en vez de 24). Se estira al ancho. */
+@media (max-width: 900px) {
+  .home .h-hero-inner #heroTitulo { align-self: stretch; }
+}
+
+/* v41 · Datos del vendedor (los escribe la dueña en el panel: Ventas → Promociones y pagos) */
+.sf-legal { max-width: var(--lp-ancho, 1200px); margin: 0 auto; padding: 14px var(--lp-margen, 40px) 0;
+  display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12px; line-height: 1.5; opacity: .78; }
+.sf-legal[hidden], .legal-datos[hidden] { display: none !important; }
+.sf-legal b { font-weight: 600; }
+.legal-datos { margin: 12px 0 0; padding-left: 18px; }
+.legal-datos li { margin: 4px 0; }
+
+/* v41 · Mi cuenta → Mi Carrito: interruptor de avisos por correo */
+.ct-aviso-carrito { display: flex; gap: 10px; align-items: flex-start; margin: 14px 0 0; font-size: 13.5px; line-height: 1.45; cursor: pointer; }
+.ct-aviso-carrito input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--azul, #2563eb); flex: none; }
+
+/* v41 · Freno para robots (Turnstile): solo aparece si Cloudflare pide confirmar */
+.cf-turnstile-caja { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 10050; }
+.cf-turnstile-caja:empty { display: none; }
+
+/* v42 · Logo de Stiimpys (img/logo-*.webp) en el encabezado y el pie */
+.header-row .logo { gap: 0; }
+.header-row .logo .logo-img { display: block; height: 48px; width: auto; }
+.header-row .logo .logo-txt, .header-row .logo .logo-full, .header-row .logo .logo-short { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 600px) { .header-row .logo .logo-img { height: 40px; } }
+.sf-logo { display: inline-block; line-height: 0; }
+.sf-logo img { width: 150px; height: auto; display: block; }

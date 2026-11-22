@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   STMP MARKET · INICIO — microinteracciones premium
+   STIIMPYS · INICIO — microinteracciones premium
    Vanilla, cero dependencias, cero requests. Complementa a movimiento.js
    (que ya hace el reveal-on-scroll). Todo lo cosmético degrada con gracia:
    si algo falla, la página sigue perfecta. Respeta prefers-reduced-motion.
@@ -33,15 +33,20 @@
     const dur = Math.min(1100, 380 + objetivo * 12);
     const t0 = performance.now();
     const ease = t => 1 - Math.pow(1 - t, 3);
+    let escrito = null;
     (function paso(now) {
+      // v38 · Si mientras cuenta llega el inventario nuevo, inicio.js pone el
+      // número real y la animación se detiene: antes lo pisaba y la tarjeta
+      // del hero y las estadísticas podían quedar con números distintos.
+      if (escrito !== null && el.textContent !== escrito) return;
       const t = Math.min(1, (now - t0) / dur);
-      el.textContent = Math.round(ease(t) * objetivo).toLocaleString('es-MX');
+      escrito = el.textContent = Math.round(ease(t) * objetivo).toLocaleString('es-MX');
       if (t < 1) requestAnimationFrame(paso);
     })(t0);
   }
 
   function vigilarStats() {
-    const ids = ['statPrendas', 'statBazares', 'statNuevas'];
+    const ids = ['statPrendas', 'statNuevas', 'statMarcas'];
     const els = ids.map(id => document.getElementById(id)).filter(Boolean);
     if (!els.length) return;
     // Solo contamos cuando el bloque de stats es visible.

@@ -1,28 +1,26 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="home">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <title>Términos y condiciones | STMP MARKET</title>
+  <!-- v37 · La animación entre páginas es adorno: si el navegador la cancela, que no cuente como error -->
+  <script>addEventListener('pagereveal',function(e){var v=e.viewTransition;if(v){[v.ready,v.finished,v.updateCallbackDone].forEach(function(p){p&&p.catch(function(){})})}});addEventListener('pageswap',function(e){var v=e.viewTransition;if(v){[v.ready,v.finished,v.updateCallbackDone].forEach(function(p){p&&p.catch(function(){})})}});addEventListener('unhandledrejection',function(e){var r=e.reason;if(r&&/^(InvalidStateError|AbortError)$/.test(r.name||'')&&/Transition was|view ?transition/i.test(r.message||''))e.preventDefault()})</script>
+  <title>Términos y condiciones | Stiimpys</title>
 
-  <meta name="description" content="Términos y condiciones de STMP MARKET: catálogo de bazares independientes. Prendas de segunda mano vendidas tal cual, sin cambios, devoluciones ni garantías.">
+  <meta name="description" content="Términos de compra en Stiimpys: prendas de segunda mano vendidas tal como se muestran, pagos con intermediarios, envíos, apartados y aviso de privacidad.">
   <meta name="theme-color" content="#2d6be4">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://stiimpys.store/terminos.html">
 
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   <link rel="dns-prefetch" href="https://res.cloudinary.com">
-  <link rel="stylesheet" href="css/global.css">
-  <link rel="stylesheet" href="css/tienda.css">
-  <link rel="stylesheet" href="css/inicio.css">
-  <link rel="stylesheet" href="css/dispositivos.css">
-  <link rel="stylesheet" href="css/estetica.css">
-  <link rel="stylesheet" href="css/premium.css">
-  <link rel="stylesheet" href="css/motionsites.css">
+  <!-- Letras propias (css/fuentes): se piden antes para que el texto no cambie de letra al cargar -->
+  <link rel="preload" href="css/fuentes/dm-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="css/fuentes/bebas-neue-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/dist/sencilla.css?v=3d7b8d3715">
   <style>
     html, body { overflow-x: hidden; max-width: 100%; }
     .logo-short { display: none; }
@@ -31,23 +29,59 @@
       .logo-short { display: inline; }
     }
   </style>
-  <script src="js/db.js" defer></script>
-  <script src="js/legal.js" defer></script>
-  <script src="js/mantenimiento.js" defer></script>
-  <script src="js/movimiento.js" defer></script>
-  <script src="js/motion-pro.js" defer></script>
-  <script src="js/experiencia.js" defer></script>
+  <script src="js/dist/sencilla.js?v=e62585e799" defer></script>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 </head>
 <body data-seccion="">
 
+<!-- ── HEADER + TICKER (igual en todas las páginas públicas · v39) ── -->
 <header>
+  <div class="ticker-bar">
+    <div class="ticker-track">
+      <span>Stiimpys · Página oficial</span>
+      <span>Streetwear · Vintage · Reynosa</span>
+      <span>Envíos a todo México</span>
+      <span>Paga en línea o aparta por WhatsApp</span>
+      <span>Stiimpys · Página oficial</span>
+      <span>Streetwear · Vintage · Reynosa</span>
+      <span>Envíos a todo México</span>
+      <span>Paga en línea o aparta por WhatsApp</span>
+      <span>Stiimpys · Página oficial</span>
+      <span>Streetwear · Vintage · Reynosa</span>
+      <span>Envíos a todo México</span>
+      <span>Paga en línea o aparta por WhatsApp</span>
+    </div>
+  </div>
+
   <div class="header-row">
-    <a href="inicio.html" class="logo">
-      <span class="logo-full">STMP MARKET</span>
-      <span class="logo-short">STMP</span><span>.</span>
+    <a href="inicio.html" class="logo" aria-label="Stiimpys, ir al inicio">
+      <img class="logo-img" src="img/logo-negro-chico.webp" alt="" width="69" height="48" decoding="async" fetchpriority="high"><span class="logo-txt">STIIMPYS</span>
     </a>
+
+    <form class="search-wrap expanded h-header-search" action="tienda.html" method="get" role="search">
+      <button class="search-icon-btn" type="submit" aria-label="Buscar prendas">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+      </button>
+      <input type="search" name="q" placeholder="Buscar prendas, marcas o tallas..." autocomplete="off" aria-label="Buscar prendas">
+    </form>
+
     <div class="header-actions">
-      <a href="tienda.html" class="h-nav-cta"><span class="cta-largo">Ver </span>catálogo</a>
+      <button class="btn-wishlist-header" onclick="toggleWishlistPanel()" aria-label="Mi carrito" id="wishlistHeaderBtn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 4h2.4l2.2 10.3a1.7 1.7 0 0 0 1.7 1.3h8.1a1.7 1.7 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.6" cy="19.6" r="1.3"/><circle cx="17.2" cy="19.6" r="1.3"/>
+        </svg>
+        <span class="wishlist-count" id="wishlistCount" style="display:none">0</span>
+      </button>
+      <span id="cuentaSlot"></span>
+      <a href="tienda.html" class="h-nav-cta"><span class="cta-largo">Ver&nbsp;</span>catálogo</a>
+      <a href="https://www.instagram.com/stiimpys" class="h-nav-ig" target="_blank" rel="noopener" aria-label="Instagram de Stiimpys" title="@stiimpys en Instagram">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/>
+        </svg>
+      </a>
     </div>
   </div>
 </header>
@@ -59,74 +93,76 @@
         <svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
         Volver al inicio
       </a>
-      <h2>Términos y <em>condiciones</em></h2>
-      <p>Léelos antes de apartar una prenda. Al contactar a un bazar a través de este catálogo aceptas lo que aquí se describe.</p>
+      <h1>Términos y <em>condiciones</em></h1>
+      <p>Léelos antes de comprar o apartar una prenda. Al usar el Sitio, agregar prendas al carrito, pagar o escribirnos aceptas lo que aquí se describe.</p>
     </div>
   </section>
 
   <div class="legal-wrap h-wrap">
 
-    <p class="legal-fecha">Última actualización: <span id="legalFecha">agosto de 2026</span></p>
+    <p class="legal-fecha">Última actualización: <span id="legalFecha">noviembre de 2026</span></p>
 
     <div class="legal-destacado">
-      <h2>Lo más importante en tres líneas</h2>
+      <h2>Lo más importante</h2>
       <ul>
-        <li><b>No hay cambios ni devoluciones.</b> Todas las ventas son definitivas.</li>
-        <li><b>No hay garantía de ningún tipo.</b> Las prendas son de segunda mano y se venden tal como se muestran y describen.</li>
-        <li><b>STMP MARKET es solo un catálogo.</b> La venta, el pago y el envío se acuerdan directamente entre tú y el bazar dueño de la prenda.</li>
+        <li><b>Stiimpys vende directamente todas las prendas de este sitio.</b> Es un bazar de streetwear y vintage de Reynosa, Tamaulipas.</li>
+        <li><b>Los pagos en línea se hacen a través de intermediarios de pago</b> (Clip y PayPal). Ellos procesan el cobro y el dinero llega a la cuenta de Stiimpys. Stiimpys no recibe ni guarda los datos de tu tarjeta.</li>
+        <li><b>No hay cambios ni devoluciones, ni garantía.</b> Las prendas son de segunda mano y se venden tal como se muestran. Solo se devuelve el dinero en los casos del punto 4.</li>
+        <li><b>El carrito no aparta.</b> Al tocar Pagar, la prenda se aparta para ti <b><span data-minutos-pago>10</span> minutos</b> (con contador); si no completas el pago, vuelve a la tienda.</li>
       </ul>
     </div>
 
     <nav class="legal-indice" aria-label="Índice">
       <a href="#quienes">1. Qué es este sitio</a>
-      <a href="#bazares">2. Los bazares y su responsabilidad</a>
+      <a href="#vendedor">2. Quién vende</a>
       <a href="#prendas">3. Estado de las prendas</a>
       <a href="#sin-cambios">4. Sin cambios ni devoluciones</a>
       <a href="#garantias">5. Sin garantías</a>
       <a href="#precios">6. Precios y disponibilidad</a>
-      <a href="#compra">7. Cómo se cierra la compra</a>
-      <a href="#envios">8. Envíos y entregas</a>
-      <a href="#deslinde">9. Deslinde de responsabilidad</a>
-      <a href="#contenido">10. Fotos y contenido</a>
-      <a href="#uso">11. Uso del sitio</a>
-      <a href="#privacidad">12. Aviso de privacidad</a>
-      <a href="#cambios-terminos">13. Cambios a estos términos</a>
-      <a href="#contacto">14. Contacto</a>
+      <a href="#compra">7. Cómo se compra</a>
+      <a href="#pagos">8. Pagos a través de intermediarios</a>
+      <a href="#envios">9. Envíos y entregas</a>
+      <a href="#deslinde">10. Deslinde de responsabilidad</a>
+      <a href="#contenido">11. Fotos y contenido</a>
+      <a href="#uso">12. Uso del sitio y cuentas</a>
+      <a href="#privacidad">13. Aviso de privacidad</a>
+      <a href="#cambios-terminos">14. Cambios a estos términos</a>
+      <a href="#contacto">15. Contacto</a>
     </nav>
 
     <section class="legal-sec" id="quienes">
       <h2>1. Qué es este sitio</h2>
       <p>
-        STMP MARKET (el "Sitio") es un <b>catálogo digital</b> donde uno o varios bazares
-        independientes muestran prendas de ropa y accesorios, en su mayoría de segunda mano.
-        El Sitio funciona únicamente como escaparate y medio de contacto.
+        Este sitio (el "Sitio") es la <b>tienda en línea oficial de Stiimpys</b>, un bazar de
+        streetwear, vintage y prendas únicas, en su mayoría de segunda mano, de Reynosa,
+        Tamaulipas. Desde el Sitio puedes ver el catálogo, agregar prendas a un carrito,
+        pagarlas en línea, apartarlas con un anticipo o escribirnos por WhatsApp.
       </p>
       <p>
-        <b>El Sitio no vende, no cobra, no almacena ni envía prendas.</b> No procesa pagos,
-        no interviene en la negociación y no participa en la entrega. No existe carrito de
-        compra, cuenta de cliente ni pasarela de pago: cada operación ocurre fuera del Sitio,
-        directamente entre la persona interesada y el bazar dueño de la prenda.
+        El cobro en línea no lo hace directamente el Sitio: lo procesan intermediarios de pago
+        (ver el punto 8). El Sitio registra cada pedido para que tengas tu comprobante y su
+        seguimiento.
       </p>
     </section>
 
-    <section class="legal-sec" id="bazares">
-      <h2>2. Los bazares y su responsabilidad</h2>
+    <section class="legal-sec" id="vendedor">
+      <span id="bazares" aria-hidden="true"></span>
+      <h2>2. Quién vende</h2>
       <p>
-        Cada prenda publicada pertenece a un bazar identificado por su nombre y su usuario
-        (por ejemplo <span class="legal-slug">@stiimpys</span>). Ese bazar es el <b>único
-        responsable</b> de:
+        <b>Todas las prendas las vende Stiimpys</b> (<span class="legal-slug">@stiimpys</span>).
+        Stiimpys es responsable de:
       </p>
       <ul>
-        <li>La existencia, propiedad, autenticidad, origen y legalidad de la prenda.</li>
-        <li>La veracidad de las fotos, medidas, talla, marca, estado y descripción.</li>
-        <li>El precio, la disponibilidad y las condiciones de apartado.</li>
-        <li>El cobro, la facturación si la hubiera, el empaque, el envío y la entrega.</li>
-        <li>Cualquier acuerdo, promesa o compromiso hecho por su cuenta con el comprador.</li>
+        <li>La existencia y la propiedad de cada prenda que publica.</li>
+        <li>Que las fotos, medidas, talla, marca, estado y descripción correspondan a la prenda.</li>
+        <li>El precio, la disponibilidad, las promociones y las condiciones de apartado.</li>
+        <li>El empaque, el envío y la entrega.</li>
+        <li>Devolverte el dinero en los casos que marca el punto 4.</li>
       </ul>
       <p>
-        Los bazares son terceros independientes. <b>No son empleados, socios ni representantes
-        del Sitio</b>, y el Sitio no los supervisa ni responde por ellos.
+        Sus datos de contacto están en el punto 15, en tu comprobante y en la página de inicio.
       </p>
+      <ul class="legal-datos" data-legal="lista" hidden></ul>
     </section>
 
     <section class="legal-sec" id="prendas">
@@ -146,15 +182,15 @@
       </ul>
       <p>
         Estas características <b>no se consideran defectos</b> ni motivo de reclamación. Si
-        tienes dudas sobre medidas o estado, pregúntalas por WhatsApp <b>antes</b> de pagar.
+        tienes dudas sobre medidas o estado, pregúntanos por WhatsApp <b>antes</b> de pagar.
       </p>
     </section>
 
     <section class="legal-sec legal-sec-fuerte" id="sin-cambios">
       <h2>4. Sin cambios ni devoluciones</h2>
       <p class="legal-clave">
-        Todas las ventas son <b>finales y definitivas</b>. No se aceptan cambios, devoluciones,
-        cancelaciones ni reembolsos, totales o parciales, por ningún motivo.
+        Todas las ventas son <b>finales y definitivas</b>. No se aceptan cambios ni devoluciones
+        de prendas, y no hay reembolsos por arrepentimiento.
       </p>
       <p>Esto incluye, de forma enunciativa y no limitativa:</p>
       <ul>
@@ -165,14 +201,24 @@
         <li>Desgaste, marcas o detalles propios de una prenda usada.</li>
         <li>Demoras del servicio de paquetería.</li>
       </ul>
+      <p><b>Cuándo sí se devuelve tu dinero.</b> Stiimpys te devuelve lo que pagaste por una prenda si:</p>
+      <ul>
+        <li>Pagaste una prenda que ya se había vendido o apartado a otra persona (puede pasar si dos personas pagan casi al mismo tiempo).</li>
+        <li>El pedido se canceló antes de que se confirmara tu pago y aun así se te cobró.</li>
+        <li>Stiimpys no puede entregarte la prenda que pagaste.</li>
+      </ul>
+      <p>
+        La devolución se hace por el mismo intermediario con el que pagaste (Clip o PayPal) o
+        por el medio que acordemos. El tiempo en que se ve reflejada depende del intermediario
+        y de tu banco.
+      </p>
       <p>
         Por eso insistimos: revisa las fotos, pide todas las medidas y aclara cualquier duda
-        con el bazar <b>antes</b> de realizar cualquier pago. Cada prenda es única y no hay
-        reposición.
+        con nosotros <b>antes</b> de pagar. Cada prenda es única y no hay reposición.
       </p>
       <p class="legal-nota">
-        Si un bazar decide, por su cuenta y voluntad, hacer una excepción con algún comprador,
-        es una decisión suya y no crea obligación alguna para el Sitio ni para los demás bazares.
+        Si en algún caso Stiimpys decide, por su voluntad, hacer una excepción con algún
+        comprador, eso no crea obligación para otros casos.
       </p>
     </section>
 
@@ -182,8 +228,8 @@
         Las prendas se venden <b>sin garantía de ningún tipo</b>, ni expresa ni implícita.
       </p>
       <p>
-        En la medida en que la ley lo permite, el Sitio y los bazares rechazan toda garantía
-        de comerciabilidad, de idoneidad para un fin particular, de durabilidad, de calidad
+        En la medida en que la ley lo permite, Stiimpys rechaza toda garantía de
+        comerciabilidad, de idoneidad para un fin particular, de durabilidad, de calidad
         satisfactoria y de no infracción. No se garantiza que una prenda dure determinado
         tiempo, resista determinado uso, no destiña, no encoja ni conserve su estado.
       </p>
@@ -196,90 +242,94 @@
     <section class="legal-sec" id="precios">
       <h2>6. Precios y disponibilidad</h2>
       <ul>
-        <li>Todos los precios están en <b>pesos mexicanos (MXN)</b>.</li>
-        <li>Los precios <b>no incluyen envío</b> salvo que el bazar indique lo contrario.</li>
-        <li>Los precios y la disponibilidad pueden cambiar en cualquier momento y sin aviso.</li>
+        <li>Todos los precios están en <b>pesos mexicanos (MXN)</b> y se cobran en pesos. Si eliges ver precios en dólares, son solo una referencia.</li>
+        <li>Los precios <b>no incluyen envío</b>. El costo de entrega se muestra en la página de pago antes de que pagues.</li>
+        <li>Los descuentos por llevar varias prendas y los cupones se aplican en el carrito y en la página de pago, y ahí ves el total exacto antes de pagar.</li>
+        <li>Los precios y la disponibilidad pueden cambiar en cualquier momento y sin aviso, pero <b>se respeta el total que viste al pagar</b>.</li>
         <li>Cada prenda suele ser <b>pieza única</b>: al venderse, deja de estar disponible.</li>
-        <li>
-          El catálogo se actualiza de forma automática, pero puede haber un desfase breve:
-          que una prenda aparezca en el Sitio <b>no garantiza</b> que siga disponible. La
-          disponibilidad real la confirma el bazar por WhatsApp.
-        </li>
-        <li>Un error evidente de captura en un precio no obliga al bazar a respetarlo.</li>
+        <li>Que una prenda aparezca en el Sitio o esté en tu carrito <b>no garantiza</b> que siga disponible al momento de pagar.</li>
+        <li>Un error evidente de captura en un precio no obliga a Stiimpys a respetarlo; si ya pagaste, se te devuelve el dinero.</li>
       </ul>
     </section>
 
     <section class="legal-sec" id="compra">
-      <h2>7. Cómo se cierra la compra</h2>
-      <p>
-        El Sitio solo te conecta: al tocar el botón de WhatsApp se abre una conversación con
-        el bazar dueño de la prenda. A partir de ahí, <b>todo se acuerda entre ustedes dos</b>:
-        precio final, forma de pago, apartado, envío y entrega.
+      <h2>7. Cómo se compra</h2>
+      <ul>
+        <li><b>Carrito.</b> Agrega las prendas que quieras. El carrito <b>no aparta nada</b>: la prenda es de quien complete el pago primero.</li>
+        <li><b>Pagar en línea.</b> En la página de pago eliges entrega en persona o envío a domicilio, ves el total y pagas con tarjeta o PayPal a través del intermediario (punto 8). Al tocar Pagar, las prendas se <b>apartan para ti 10 minutos</b>, con un contador; si no completas el pago en ese tiempo, el link de pago vence y las prendas vuelven a la tienda.</li>
+        <li><b>Apartar con anticipo.</b> Cuando está disponible, pagas una parte en línea y el resto antes de la fecha límite que se te muestra al pagar, en línea desde tu comprobante o en persona. Mientras esté apartada, nadie más puede comprarla.</li>
+        <li><b>Por WhatsApp.</b> También puedes escribirnos. Una prenda apartada así solo cuenta como apartada cuando Stiimpys lo confirma; un mensaje o un "me interesa" no aparta nada.</li>
+        <li><b>Comprobante.</b> El recibo que te da el Sitio es un <b>comprobante del pedido</b>, no una factura fiscal (CFDI). Si necesitas factura, pídela por WhatsApp.</li>
+      </ul>
+    </section>
+
+    <section class="legal-sec legal-sec-fuerte" id="pagos">
+      <h2>8. Pagos a través de intermediarios</h2>
+      <p class="legal-clave">
+        Los pagos en línea se hacen <b>a través de intermediarios de pago</b>, que procesan el
+        cobro por cuenta de Stiimpys.
       </p>
-      <p>
-        El Sitio <b>no es parte de esa relación</b>, no la supervisa, no guarda copia de esas
-        conversaciones y no interviene en ningún desacuerdo entre comprador y bazar.
-      </p>
-      <p>
-        Una prenda se considera apartada solo cuando el bazar lo confirma expresamente. Un
-        mensaje enviado, un "me interesa" o guardar algo en la lista de favoritos no aparta
-        nada ni obliga a nadie.
-      </p>
+      <ul>
+        <li><b>Clip</b> (pago con tarjeta de crédito o débito) y <b>PayPal</b> (cuenta PayPal o tarjeta), cuando están activos.</li>
+        <li>Al pagar te llevamos a la <b>página segura del intermediario</b>. Ahí escribes los datos de tu tarjeta o de tu cuenta. <b>Stiimpys no ve ni guarda los datos de tu tarjeta.</b></li>
+        <li>El dinero llega a la <b>cuenta que Stiimpys tiene con ese intermediario</b>.</li>
+        <li>Para procesar el pago, el Sitio le comparte al intermediario el monto, el número de pedido y los datos de contacto que escribiste (nombre, teléfono y, si lo diste, correo).</li>
+        <li>Cada intermediario aplica sus propios términos, su aviso de privacidad y sus revisiones de seguridad; puede rechazar un pago o pedir verificaciones adicionales. Consulta sus políticas en sus sitios.</li>
+        <li>La compra se da por pagada <b>solo cuando el intermediario confirma el pago</b> al Sitio. Si el pago no se completa dentro de los <span data-minutos-pago>10</span> minutos del apartado, no se cobra ni se vende nada.</li>
+        <li>Aclaraciones, contracargos y devoluciones de un cargo siguen los procesos del intermediario y de tu banco. Antes de iniciar una aclaración, escríbenos: casi siempre se resuelve más rápido.</li>
+        <li>Si pagas en efectivo o por transferencia (por ejemplo, al apartar por WhatsApp o al recoger en persona), hazlo solo a los datos que te dé Stiimpys por sus medios oficiales (punto 15).</li>
+      </ul>
     </section>
 
     <section class="legal-sec" id="envios">
-      <h2>8. Envíos y entregas</h2>
+      <h2>9. Envíos y entregas</h2>
       <ul>
-        <li>El envío lo gestiona y cobra <b>cada bazar</b>, no el Sitio.</li>
+        <li>El envío y la entrega los hace <b>Stiimpys</b>. Las tarifas de paquetería que ves al pagar se cotizan con servicios de terceros (como envia.com) y se cobran junto con tu pedido.</li>
+        <li>Las entregas en persona son en los puntos y horarios que se muestran al pagar; se coordinan por WhatsApp.</li>
         <li>Los tiempos de entrega dependen de la paquetería y son estimados, nunca garantizados.</li>
         <li>
-          Una vez entregado el paquete a la paquetería, los riesgos de retraso, extravío,
-          robo o daño corren por cuenta de quien acordaron comprador y bazar. Consulta con
-          el bazar si el envío incluye seguro y guía rastreable.
+          Una vez entregado el paquete a la paquetería, los riesgos de retraso, extravío, robo o
+          daño se atienden con la paquetería. Pregúntanos si el envío incluye seguro.
         </li>
         <li>Los datos de entrega correctos son responsabilidad del comprador.</li>
-        <li>Las entregas en persona se acuerdan libremente entre las partes, bajo su propio riesgo.</li>
+        <li>Si apartaste con anticipo, la prenda se envía cuando liquidas el total.</li>
       </ul>
     </section>
 
     <section class="legal-sec legal-sec-fuerte" id="deslinde">
-      <h2>9. Deslinde de responsabilidad</h2>
+      <h2>10. Deslinde de responsabilidad</h2>
       <p>
-        En la máxima medida permitida por la legislación aplicable, <b>STMP MARKET, sus
-        titulares, administradores y colaboradores se deslindan de toda responsabilidad</b> por:
+        En la máxima medida permitida por la legislación aplicable, <b>Stiimpys, sus
+        titulares y colaboradores no son responsables</b> por:
       </p>
       <ul>
-        <li>La calidad, autenticidad, origen, legalidad, higiene o seguridad de las prendas.</li>
-        <li>Diferencias entre lo publicado y la prenda física.</li>
-        <li>Incumplimientos, retrasos, cancelaciones o malos tratos por parte de un bazar o de un comprador.</li>
-        <li>Pagos hechos a un bazar, incluyendo depósitos, transferencias o apartados no reembolsados.</li>
+        <li>Fallas, rechazos, retenciones o demoras de los intermediarios de pago (Clip, PayPal) o de tu banco.</li>
+        <li>Pagos hechos a personas, cuentas o números que no sean los oficiales de Stiimpys.</li>
         <li>Fraudes, engaños o suplantaciones cometidos por terceros dentro o fuera del Sitio.</li>
+        <li>Incumplimientos o malos tratos por parte de un comprador.</li>
         <li>Pérdidas, daños, robos o retrasos durante el envío.</li>
         <li>Reacciones alérgicas, irritaciones o afectaciones de salud derivadas del uso de una prenda.</li>
-        <li>Daños directos, indirectos, incidentales, especiales, punitivos o lucro cesante.</li>
+        <li>Daños indirectos, incidentales, especiales, punitivos o lucro cesante.</li>
         <li>Fallas técnicas, interrupciones, pérdida de datos o errores en la información del Sitio.</li>
-        <li>Contenido publicado por los bazares, incluidas fotos, descripciones y marcas mencionadas.</li>
       </ul>
       <p>
-        Cualquier reclamación relacionada con una prenda debe dirigirse <b>al bazar que la
-        publicó</b>. En caso de que alguna autoridad determinara alguna responsabilidad del
-        Sitio, esta se limitará, como máximo, al monto que el Sitio hubiera cobrado por esa
-        operación, que ordinariamente es <b>cero</b>.
+        Cualquier reclamación sobre una prenda o un pedido se hace con Stiimpys por los medios
+        del punto 15. Nada de lo aquí escrito limita los derechos que la ley te reconoce como
+        consumidor.
       </p>
     </section>
 
     <section class="legal-sec" id="contenido">
-      <h2>10. Fotos y contenido</h2>
+      <h2>11. Fotos y contenido</h2>
       <p>
-        Las fotos y descripciones son propiedad de cada bazar, que declara tener derecho a
-        usarlas y publicarlas. No pueden copiarse, reproducirse ni reutilizarse sin permiso
-        de su titular.
+        Las fotos y descripciones son de Stiimpys. No pueden copiarse, reproducirse ni
+        reutilizarse sin permiso.
       </p>
       <p>
         Las marcas mencionadas (Nike, Adidas, Carhartt y cualquier otra) pertenecen a sus
-        respectivos titulares y se citan únicamente para describir la prenda. <b>El Sitio no
-        está afiliado, patrocinado ni autorizado por esas marcas</b>, ni certifica la
-        autenticidad de ninguna pieza; esa responsabilidad es del bazar que la publica.
+        respectivos titulares y se citan únicamente para describir la prenda. <b>Stiimpys no
+        está afiliado, patrocinado ni autorizado por esas marcas.</b> Si tienes dudas sobre una
+        pieza en particular, pregúntanos antes de pagar.
       </p>
       <p>
         Si eres titular de derechos y consideras que una publicación los infringe, escríbenos
@@ -288,41 +338,50 @@
     </section>
 
     <section class="legal-sec" id="uso">
-      <h2>11. Uso del sitio</h2>
+      <h2>12. Uso del sitio y cuentas</h2>
       <ul>
-        <li>El Sitio es de uso libre y gratuito para quien navega el catálogo.</li>
+        <li>Navegar el catálogo es libre y gratuito. Puedes comprar sin crear una cuenta.</li>
         <li>Debes ser mayor de edad, o contar con permiso de tu padre, madre o tutor, para realizar una compra.</li>
+        <li>Si creas una cuenta de comprador, eres responsable de tu contraseña y de lo que se haga con tu sesión. Tu cuenta no da acceso a ninguna parte de la administración de la tienda.</li>
         <li>
-          Queda prohibido usar el Sitio para fines ilícitos, extraer datos de forma
-          automatizada, intentar vulnerar el panel de administración, suplantar a un bazar
-          o publicar contenido falso.
+          Queda prohibido usar el Sitio para fines ilícitos, hacer pagos con medios que no te
+          pertenecen, extraer datos de forma automatizada, intentar vulnerar el Sitio o su
+          administración, suplantar a Stiimpys o publicar contenido falso.
         </li>
-        <li>
-          El acceso al panel de administración está restringido a cuentas autorizadas. Cada
-          cuenta es responsable de su contraseña y de lo que se haga desde su sesión.
-        </li>
-        <li>Podemos retirar cualquier publicación o suspender un bazar que incumpla estos términos.</li>
+        <li>Podemos retirar cualquier publicación, cancelar un pedido sospechoso de fraude o suspender una cuenta que incumpla estos términos.</li>
       </ul>
     </section>
 
     <section class="legal-sec" id="privacidad">
-      <h2>12. Aviso de privacidad</h2>
-      <p>
-        El Sitio <b>no te pide registrarte</b> ni recopila tu nombre, correo, teléfono ni datos
-        de pago para navegar el catálogo.
-      </p>
+      <h2>13. Aviso de privacidad</h2>
+      <p>Para navegar el catálogo no necesitas darnos ningún dato. Estos son los datos que se usan, para qué y con quién se comparten:</p>
       <ul>
         <li>
-          Tu lista de favoritos (wishlist) se guarda <b>solo en tu propio navegador</b>. No se
-          envía a ningún servidor y se pierde si borras los datos de navegación.
+          <b>Tu carrito</b> se guarda en tu navegador. Si tienes cuenta, también en ella, para
+          que lo veas en cualquier dispositivo.
         </li>
         <li>
-          Al escribir por WhatsApp compartes tu número y tus mensajes <b>con el bazar</b>, bajo
-          las políticas de WhatsApp. El Sitio no tiene acceso a esas conversaciones.
+          <b>Al hacer un pedido</b> escribes tu nombre, tu teléfono y, si quieres, tu correo; y si
+          eliges envío, tu dirección. Stiimpys los usa solo para procesar el pago, entregarte la
+          prenda, mandarte tu comprobante y darte seguimiento.
         </li>
         <li>
-          Los datos que entregues a un bazar para tu envío (nombre, dirección, teléfono) los
-          trata ese bazar, que es el responsable de su resguardo.
+          <b>Intermediarios de pago:</b> Clip o PayPal reciben el monto, el número de pedido y tus
+          datos de contacto para procesar el cobro (punto 8). Los datos de tu tarjeta los
+          recibe solo el intermediario.
+        </li>
+        <li>
+          <b>Otros proveedores que hacen funcionar el Sitio:</b> el hospedaje y la base de datos,
+          el servicio que guarda las fotos, el servicio que envía los correos de tu comprobante
+          y el que cotiza envíos (con tu código postal). Solo reciben lo necesario para su función.
+        </li>
+        <li>
+          <b>Cuenta de comprador:</b> guarda tu nombre, correo, usuario, tus compras, tu carrito
+          y tus reseñas. Puedes pedir que se borre.
+        </li>
+        <li>
+          <b>WhatsApp:</b> al escribirnos compartes tu número y tus mensajes con Stiimpys, bajo
+          las políticas de WhatsApp.
         </li>
         <li>
           El hospedaje del Sitio puede registrar datos técnicos habituales (dirección IP,
@@ -330,65 +389,72 @@
         </li>
       </ul>
       <p>
-        Para ejercer tus derechos sobre datos personales que hayas entregado a un bazar,
-        contáctalo directamente por sus medios publicados.
+        No vendemos tus datos ni los usamos para publicidad de terceros. Para consultar,
+        corregir o borrar tus datos, o para oponerte a su uso, escríbenos (punto 15).
       </p>
     </section>
 
     <section class="legal-sec" id="cambios-terminos">
-      <h2>13. Cambios a estos términos</h2>
+      <h2>14. Cambios a estos términos</h2>
       <p>
         Estos términos pueden actualizarse en cualquier momento. La versión vigente es la
-        publicada en esta página, con la fecha de actualización que aparece arriba. Seguir
-        usando el Sitio después de un cambio significa que lo aceptas.
+        publicada en esta página, con la fecha de actualización que aparece arriba. A cada
+        compra se le aplican los términos vigentes el día en que pagaste.
       </p>
       <p>
         Estos términos se rigen por las leyes de los Estados Unidos Mexicanos. Para cualquier
         controversia, las partes se someten a los tribunales competentes de Reynosa,
-        Tamaulipas, renunciando a cualquier otro fuero.
+        Tamaulipas, sin perjuicio de los derechos que te da la Ley Federal de Protección al
+        Consumidor y de acudir a la Procuraduría Federal del Consumidor (Profeco).
       </p>
     </section>
 
     <section class="legal-sec" id="contacto">
-      <h2>14. Contacto</h2>
+      <h2>15. Contacto</h2>
       <p>
-        Para dudas sobre una prenda, escribe directamente al bazar que la publica: encontrarás
-        su WhatsApp e Instagram en <a href="inicio.html#bazares">su ficha</a> y en cada prenda
-        del <a href="tienda.html">catálogo</a>.
+        Para dudas sobre una prenda o un pedido, derechos de autor, privacidad o reportes,
+        escríbenos por WhatsApp o Instagram. También encontrarás estos datos en tu
+        comprobante y en la <a href="inicio.html">página de inicio</a>.
       </p>
-      <p>Para temas del Sitio, derechos de autor o reportes, escribe al bazar principal.</p>
       <div class="legal-contactos" id="legalContactos"></div>
+      <ul class="legal-datos" data-legal="lista" hidden></ul>
     </section>
 
   </div>
 </main>
 
+<!-- ── FOOTER (igual en todas las páginas públicas · v39) ──── -->
 <footer class="site-footer">
   <div class="sf-inner">
     <div class="sf-col sf-brand">
-      <a href="inicio.html" class="sf-logo">STMP MARKET<span>.</span></a>
+      <a href="inicio.html" class="sf-logo" aria-label="Stiimpys, ir al inicio"><img src="img/logo-blanco-chico.webp" alt="Stiimpys Bazar" width="150" height="104" loading="lazy" decoding="async"></a>
       <p class="sf-desc">
-        Catálogo digital de bazares independientes. Streetwear, vintage y prendas
-        únicas de segunda mano. Cada prenda pertenece al bazar que la publica.
+        Página oficial de Stiimpys. Streetwear, vintage y prendas únicas de
+        segunda mano, seleccionadas a mano en Reynosa.
       </p>
       <div class="sf-ubi">Reynosa, Tamaulipas · México</div>
+      <div data-formas-pago="pie"><div class="fp fp-pie"><span class="fp-tit">Formas de pago</span><ul class="fp-lista"><li class="fp-item" data-fp="tarjeta"><span class="fp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.2"/><path d="M2.5 9.6h19M6.5 15h4"/></svg></span><span class="fp-txt"><b>Tarjeta</b><small>Crédito o débito</small></span></li><li class="fp-item" data-fp="efectivo"><span class="fp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg></span><span class="fp-txt"><b>Efectivo</b><small>Al entregar en persona</small></span></li><li class="fp-item" data-fp="transferencia"><span class="fp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h14.5M15 5l3.5 3.5L15 12"/><path d="M20 15.5H5.5M9 12l-3.5 3.5L9 19"/></svg></span><span class="fp-txt"><b>Transferencia</b><small>SPEI desde tu banco</small></span></li></ul></div></div>
     </div>
 
     <div class="sf-col">
-      <h3>Comprar</h3>
+      <h2>Comprar</h2>
       <a href="tienda.html">Ver catálogo</a>
-      <a href="redes.html">Los bazares</a>
+      <a href="tienda.html?orden=descuento">Ofertas</a>
+      <a href="carrito.html">Mi carrito</a>
+      <a href="pagar.html?mis=1">Mis pedidos</a>
       <a href="inicio.html#comofunciona">Cómo comprar</a>
-      <a href="tienda.html">Novedades</a>
-    </div>
-
-    <div class="sf-col sf-bazares">
-      <h3>Bazares</h3>
-      <div id="footerBazares"><a href="redes.html">Ver todos</a></div>
     </div>
 
     <div class="sf-col">
-      <h3>Legal</h3>
+      <h2>Stiimpys</h2>
+      <a href="inicio.html">Inicio</a>
+      <a href="https://www.instagram.com/stiimpys" target="_blank" rel="noopener">Instagram @stiimpys</a>
+      <a href="https://wa.me/528995284602" id="waFooter" target="_blank" rel="noopener">WhatsApp</a>
+      <a href="cuenta.html">Mi cuenta</a>
+    </div>
+
+    <div class="sf-col">
+      <h2>Legal</h2>
       <a href="terminos.html">Términos y condiciones</a>
       <a href="terminos.html#sin-cambios">Cambios y devoluciones</a>
       <a href="terminos.html#garantias">Garantías</a>
@@ -400,13 +466,15 @@
     <strong>Precios en pesos mexicanos (MXN).</strong>
     <strong>Importante:</strong> todas las prendas son de segunda mano y se venden
     <em>tal como se muestran</em>. <b>No se aceptan cambios ni devoluciones</b> y
-    <b>no se ofrece ninguna garantía</b>. STMP MARKET es solo un catálogo: la venta,
-    el pago y el envío se acuerdan directamente con cada bazar.
+    <b>no se ofrece ninguna garantía</b>. Los pagos en línea se procesan a través de
+    intermediarios de pago (Clip y PayPal): Stiimpys no recibe ni guarda los datos de tu tarjeta.
     <a href="terminos.html">Leer los términos completos</a>
   </div>
 
+  <!-- v41 · Datos del vendedor (los escribe la dueña en el panel; si están vacíos no se ve) -->
+  <p class="sf-legal" data-legal="pie" hidden></p>
   <div class="sf-base">
-    <span>STMP MARKET &copy; <span id="anioActual">2026</span> · Todos los derechos reservados</span>
+    <span>Stiimpys &copy; <span id="anioActual">2026</span> · Todos los derechos reservados</span>
     <span class="sf-base-links">
       <a href="terminos.html">Términos</a>
       <a href="terminos.html#privacidad">Privacidad</a>

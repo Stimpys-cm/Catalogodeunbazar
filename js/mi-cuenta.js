@@ -1,4 +1,4 @@
-// js/mi-cuenta.js — pantalla de cuenta.html en STMP MARKET
+// js/mi-cuenta.js — pantalla de cuenta.html en Stiimpys
 //
 // Dos estados:
 //   sin sesión → entrar / crear cuenta
@@ -37,6 +37,7 @@
     : '';
 
   function aviso(msg) {
+    if (typeof Avisos === 'object') return Avisos.mostrar(msg);
     const t = document.getElementById('toast');
     if (!t) return;
     t.textContent = msg;
@@ -73,8 +74,8 @@
     document.getElementById('ctaTitulo').innerHTML = esRegistro
       ? 'Crear <em>cuenta</em>' : 'Entrar a <em>tu cuenta</em>';
     document.getElementById('ctaSub').textContent = esRegistro
-      ? 'Con una cuenta tus compras, tus favoritos y tus reseñas viven en STMP MARKET.'
-      : 'Entra para ver tus compras y tus prendas guardadas.';
+      ? 'Con una cuenta tus compras, tu carrito y tus reseñas viven en Stiimpys.'
+      : 'Entra para ver tus compras y tu carrito.';
 
     document.getElementById('ctContenido').innerHTML = `
       <div class="ct-card">
@@ -183,8 +184,9 @@
           </button>`}
 
         <p class="ct-nota">
-          Tu cuenta guarda tu nombre, tu correo, tus compras y tus prendas
-          favoritas. La compra se sigue cerrando por WhatsApp con cada bazar.
+          Tu cuenta guarda tu nombre, tu correo, tus compras y tu carrito.
+          Los pagos en línea los procesan Clip y PayPal como intermediarios;
+          tu cuenta no guarda datos de tarjeta.
           <a href="terminos.html#privacidad">Aviso de privacidad</a>
         </p>
       </div>
@@ -192,9 +194,9 @@
       <aside class="ct-lado">
         <h3>Con tu cuenta</h3>
         <ul>
-          <li><b>Eres alguien en la comunidad.</b> Tu @username es tu identidad: es lo que el bazar anota al venderte una prenda.</li>
-          <li><b>No pierdes tus favoritos.</b> Te siguen del celular a la computadora, sin volver a buscarlos.</li>
-          <li><b>Tienes historial.</b> Cada compra queda registrada y puedes calificar al bazar.</li>
+          <li><b>Eres alguien en la comunidad.</b> Tu @username es tu identidad: es lo que Stiimpys anota al venderte una prenda.</li>
+          <li><b>No pierdes tu carrito.</b> Te sigue del celular a la computadora, sin volver a buscar las prendas.</li>
+          <li><b>Tienes historial.</b> Cada compra queda registrada y puedes calificarla.</li>
           <li><b>Ganas reputación.</b> Un comprador con historial y buenas reseñas genera más confianza en el siguiente trato.</li>
         </ul>
         <p class="ct-lado-nota">
@@ -654,8 +656,8 @@
       `Hola, <em>${esc((p.nombre || '').split(' ')[0])}</em>`;
     document.getElementById('ctaSub').innerHTML =
       p.username
-        ? `Tu identidad en STMP MARKET es <b>@${esc(p.username)}</b> — dásela al bazar cuando compres.`
-        : 'Tus compras, tus favoritos y tus reseñas en un solo lugar.';
+        ? `Tu identidad en Stiimpys es <b>@${esc(p.username)}</b> — compártela cuando compres por WhatsApp.`
+        : 'Tus compras, tu carrito y tus reseñas en un solo lugar.';
 
     const cont = document.getElementById('ctContenido');
     cont.classList.add('ct-wrap-panel');
@@ -664,7 +666,7 @@
         <nav class="ct-navtabs" role="tablist">
           ${botonTab('compras',   'Mis Compras',       IC_BOLSA)}
           ${botonTab('subastas',  'Mis Subastas',      IC_MARTILLO, avisoSubastas())}
-          ${botonTab('favoritos', 'Favoritos',         IC_CORAZON)}
+          ${botonTab('favoritos', 'Mi Carrito',        IC_CARRITO)}
           ${botonTab('resenas',   'Mis Reseñas',       IC_ESTRELLA)}
           ${botonTab('ajustes',   'Ajustes de Perfil', IC_ENGRANE)}
         </nav>
@@ -677,7 +679,7 @@
   }
 
   const IC_BOLSA    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';
-  const IC_CORAZON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+  const IC_CARRITO  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2.4l2.2 10.3a1.7 1.7 0 0 0 1.7 1.3h8.1a1.7 1.7 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.6" cy="19.6" r="1.3"/><circle cx="17.2" cy="19.6" r="1.3"/></svg>';
   const IC_ESTRELLA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
   const IC_MARTILLO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 13-7.5 7.5a2.12 2.12 0 0 1-3-3L11 10"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg>';
   const IC_ENGRANE  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
@@ -802,17 +804,17 @@
           </div>
 
           ${s.tieneReserva && !s.reservaAlcanzada && !s.cerrada
-            ? '<div class="ct-sb-nota">Aún no llega al precio de reserva del bazar.</div>' : ''}
+            ? '<div class="ct-sb-nota">Aún no llega al precio de reserva.</div>' : ''}
 
           <div class="ct-sb-acciones">
             ${s.estado === 'superado'
               ? `<a class="ct-sb-btn" href="prenda.html?id=${p?.id}">Volver a ofertar</a>` : ''}
             ${s.estado === 'gane' && wa
-              ? `<a class="ct-sb-btn wa" href="https://wa.me/${wa}?text=${msg}" target="_blank" rel="noopener">Contactar al bazar</a>` : ''}
+              ? `<a class="ct-sb-btn wa" href="https://wa.me/${wa}?text=${msg}" target="_blank" rel="noopener">Escribir a Stiimpys</a>` : ''}
             ${s.estado === 'ganando'
               ? `<a class="ct-sb-btn fantasma" href="prenda.html?id=${p?.id}">Ver la subasta</a>` : ''}
             ${s.estado === 'sin-reserva'
-              ? `<span class="ct-sb-explica">Ibas ganando, pero la oferta no alcanzó el mínimo del bazar.</span>` : ''}
+              ? `<span class="ct-sb-explica">Ibas ganando, pero la oferta no alcanzó el mínimo.</span>` : ''}
           </div>
         </div>
       </div>`;
@@ -853,7 +855,7 @@
     if (!_compras.length) {
       cont.innerHTML = vacio(
         'Todavía no tienes compras',
-        'Cuando un bazar marque una prenda como vendida a tu @username, aparecerá aquí.',
+        'Cuando Stiimpys marque una prenda como vendida a tu @username, aparecerá aquí.',
         `<a class="ct-btn ct-btn-suave ct-vacio-cta" href="tienda.html">Ver el catálogo</a>`);
       return;
     }
@@ -880,7 +882,7 @@
            ✓ Reseña enviada ${estrellas(c.miResena.estrellas, 'st-estrellas ct-hecha-estrellas')}
          </div>`
       : `<button class="ct-btn ct-btn-calificar" onclick="MiCuenta.calificar(${c.id})">
-           ★ Calificar Bazar
+           ★ Calificar compra
          </button>`;
 
     return `<article class="ct-compra">
@@ -896,7 +898,7 @@
         <div class="ct-compra-precio">${dinero(pr.precio)}</div>
         <div class="ct-compra-pie">
           ${bz ? `<a class="ct-compra-bazar" href="tienda.html?bazar=${encodeURIComponent(bz.slug)}">@${esc(bz.slug)}</a>`
-                : '<span class="ct-compra-bazar">Bazar</span>'}
+                : '<span class="ct-compra-bazar">Stiimpys</span>'}
           <span class="ct-compra-fecha">${esc(fechaCorta(c.fecha))}</span>
         </div>
       </div>
@@ -921,7 +923,7 @@
 
     document.getElementById('ctModalBody').innerHTML = `
       <p class="cf-intro">
-        ¿Cómo te fue con <b>${esc(bz?.nombre || 'este bazar')}</b> en tu compra de
+        ¿Cómo te fue con <b>${esc(bz?.nombre || 'Stiimpys')}</b> en tu compra de
         <b>${esc(compra.prenda?.nombre || 'la prenda')}</b>?
       </p>
 
@@ -1013,7 +1015,7 @@
     }
   }
 
-  /* ── FAVORITOS ───────────────────────────────────────────── */
+  /* ── MI CARRITO (pestaña 'favoritos', antes la wishlist) ──── */
   function listaFavoritos() {
     try { return JSON.parse(localStorage.getItem('bazar_wishlist')) || []; }
     catch { return []; }
@@ -1026,19 +1028,27 @@
     const lista = listaFavoritos();
     if (!lista.length) {
       cont.innerHTML = vacio(
-        'Sin favoritos todavía',
-        'Toca el corazón en cualquier prenda del catálogo y se guarda aquí.',
+        'Tu carrito está vacío',
+        'Toca el botón del carrito en cualquier prenda del catálogo y aparece aquí.',
         `<a class="ct-btn ct-btn-suave ct-vacio-cta" href="tienda.html">Ver el catálogo</a>`);
       return;
     }
 
+    // Un botón de pago por bazar: cada bazar cobra su propio pedido
+    const porBazar = new Map();
+    lista.forEach(p => { const b = String(p.bazarId || 1); porBazar.set(b, (porBazar.get(b) || 0) + 1); });
+    const nombreBz = id => { try { const b = (typeof getBazares === 'function' ? getBazares() : []).find(x => String(x.id) === id); return b ? '@' + b.slug : ''; } catch { return ''; } };
+    const botones = [...porBazar.entries()].map(([b, n]) =>
+      `<a class="ct-btn" href="pagar.html?bazar=${encodeURIComponent(b)}">Ir a pagar${porBazar.size > 1 ? ` ${n} de ${esc(nombreBz(b) || 'este bazar')}` : ''}</a>`).join('');
     cont.innerHTML = `
       <div class="ct-resumen">
-        <div class="ct-resumen-dato"><b>${lista.length}</b><span>prenda${lista.length !== 1 ? 's' : ''} guardada${lista.length !== 1 ? 's' : ''}</span></div>
+        <div class="ct-resumen-dato"><b>${lista.length}</b><span>prenda${lista.length !== 1 ? 's' : ''} en tu carrito</span></div>
       </div>
       <div class="ct-favoritos">
         ${lista.map(favorito).join('')}
-      </div>`;
+      </div>
+      <div class="ct-carrito-pagar">${botones}<a class="ct-btn ct-btn-suave" href="carrito.html">Ver carrito completo</a></div>
+      <p class="ct-nota">Agregar una prenda al carrito no la aparta: al pagar se aparta para ti 10 minutos mientras completas el pago. Los pagos los procesan Clip y PayPal como intermediarios de pago. <a href="terminos.html#pagos">Cómo funciona</a></p>`;
   }
 
   function favorito(p) {
@@ -1059,7 +1069,7 @@
       <div class="ct-fav-acciones">
         <a class="ct-mini-btn" href="prenda.html?id=${encodeURIComponent(id)}">Ver prenda</a>
         <button class="ct-mini-btn ct-mini-btn-quitar" onclick="MiCuenta.quitarFavorito('${esc(id)}')"
-                aria-label="Quitar de favoritos">Quitar</button>
+                aria-label="Quitar del carrito">Quitar</button>
       </div>
     </article>`;
   }
@@ -1070,7 +1080,7 @@
     // Avisar para que la cuenta guarde la lista nueva en el servidor
     window.dispatchEvent(new CustomEvent('wishlist:cambio'));
     pintarFavoritos();
-    aviso('Quitado de favoritos');
+    aviso('Quitada de tu carrito');
   }
 
   /* ── MIS RESEÑAS (mi reputación como comprador) ──────────── */
@@ -1093,7 +1103,7 @@
     if (!lista.length) {
       cont.innerHTML = vacio(
         'Todavía sin valoraciones',
-        'Aquí aparece lo que los bazares dicen de ti como comprador después de cada venta.');
+        'Aquí aparece lo que Stiimpys dice de ti como comprador después de cada venta.');
       return;
     }
 
@@ -1126,7 +1136,7 @@
 
   function nombreBazar(id) {
     const b = (typeof getBazarById === 'function') ? getBazarById(id) : null;
-    return b?.nombre || 'Un bazar';
+    return b?.nombre || 'Stiimpys';
   }
 
   /* ── AJUSTES DE PERFIL ───────────────────────────────────── */
@@ -1188,7 +1198,7 @@
         </div>
 
         <p class="ct-nota">
-          El <b>@username</b> es lo que el bazar escribe en su panel al venderte una
+          El <b>@username</b> es lo que Stiimpys escribe en su panel al venderte una
           prenda. Si lo cambias, tus compras y tus reseñas se mueven contigo.
         </p>
 

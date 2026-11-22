@@ -6,12 +6,14 @@
 // El usuario se toma del token de sesión, no del body/query (evita que
 // alguien reporte o borre la actividad de otra persona).
 
-import { getDB } from './_db.js';
-import { requireAuth } from './_auth.js';
+import { getDB } from './_lib/db.js';
+import { requireAuth } from './_lib/auth.js';
+import { registrarFalla } from './_lib/actividad.js';
 
+import { conEscudo } from './_lib/escudo.js';
 const TIMEOUT_MS = 45000;
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
@@ -52,6 +54,10 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('[activos]', err);
+    await registrarFalla(err, { origen: 'activos' });
     return res.status(500).json({ error: 'No se pudo completar la operación.' });
   }
 }
+
+// v40 · Todas las funciones pasan primero por el escudo (ver api/_lib/escudo.js)
+export default conEscudo(handler);

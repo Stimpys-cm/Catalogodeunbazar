@@ -32,7 +32,7 @@ function bazarDeSeguro(p) {
   catch (_) { return null; }
 }
 
-// ─── WISHLIST (mismo almacenamiento que la tienda) ───────────
+// ─── CARRITO (mismo almacenamiento que la tienda; antes "wishlist") ───
 function wlLista() {
   try { return JSON.parse(localStorage.getItem(WL_KEY_PP)) || []; }
   catch { return []; }
@@ -43,11 +43,54 @@ function wlGuardar(list) {
 }
 function wlTiene(id) { return wlLista().some(i => String(i.id) === String(id)); }
 
+// Texto del botón de la ficha según si la prenda ya está en el carrito
+function wlPintarBoton() {
+  const btn = document.getElementById('ppFav'); if (!btn || !prenda) return;
+  const en = wlTiene(prenda._id || prenda.id);
+  btn.classList.toggle('active', en);
+  btn.setAttribute('aria-pressed', en);
+  const car = document.getElementById('ppBarraCarrito');
+  if (car) { car.classList.toggle('active', en); car.setAttribute('aria-label', en ? 'En tu carrito: ver carrito' : 'Agregar al carrito'); }
+  const t = btn.querySelector('.pp-carrito-txt');
+  if (t) t.innerHTML = en ? 'En tu carrito <span class="pp-carrito-sub">· Ver carrito</span>' : 'Agregar al carrito';
+}
+
+// v37 · Barra fija del celular como la de Mercado Libre: carrito + "Comprar ahora".
+// Solo si el bazar cobra en línea y la prenda está disponible; si no, queda WhatsApp.
+function barraDeCompra(p, btn, waUrl) {
+  if (!btn) return;
+  if (!btn.dataset.original) btn.dataset.original = btn.innerHTML;
+  const cfg = (typeof getTienda === 'function' && getTienda()?.porBazar?.[String(p.bazarId || 1)]) || null;
+  const puede = !p.vendido && !p.apartada && cfg?.pagoEnLinea;
+  let car = document.getElementById('ppBarraCarrito');
+  if (!puede) {
+    car?.remove();
+    btn.classList.remove('comprar'); btn.innerHTML = btn.dataset.original; btn.href = waUrl; btn.target = '_blank';
+    return;
+  }
+  if (!car) {
+    car = document.createElement('button');
+    car.type = 'button'; car.id = 'ppBarraCarrito'; car.className = 'pp-barra-carrito';
+    car.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2.4l2.2 10.3a1.7 1.7 0 0 0 1.7 1.3h8.1a1.7 1.7 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.6" cy="19.6" r="1.3"/><circle cx="17.2" cy="19.6" r="1.3"/><path class="ic-mas" d="M13.4 9.3v3.6M11.6 11.1h3.6"/><path class="ic-ok" d="m11.4 11.2 1.6 1.6 2.9-3"/></svg>';
+    car.onclick = () => wlAlternar();
+    btn.before(car);
+  }
+  const en = wlTiene(p._id || p.id);
+  car.classList.toggle('active', en);
+  car.setAttribute('aria-label', en ? 'En tu carrito: ver carrito' : 'Agregar al carrito');
+  btn.classList.add('comprar'); btn.removeAttribute('target');
+  btn.href = `pagar.html?bazar=${encodeURIComponent(p.bazarId || 1)}&ids=${encodeURIComponent(p.id)}`;
+  btn.textContent = 'Comprar ahora';
+}
+
+// v35 · Si ya está en el carrito, el botón abre el carrito (se quita desde ahí)
 function wlAlternar() {
   if (!prenda) return;
   const id = prenda._id || prenda.id;
   let list = wlLista();
   const i = list.findIndex(x => String(x.id) === String(id));
+  if (i !== -1) { if (window.Carrito) { Carrito.abrir(); return; } }
+  if (i === -1 && (prenda.vendido || prenda.apartada)) { aviso(prenda.vendido ? 'Esta prenda ya se vendió' : 'Esta prenda está apartada'); return; }
 
   if (i === -1) {
     list.push({
@@ -56,21 +99,27 @@ function wlAlternar() {
       imagenes: Array.isArray(prenda.imagenes) ? prenda.imagenes : [],
       bazarId: prenda.bazarId || 1,
     });
-    aviso('❤️ Guardado en tu wishlist');
+    if (window.Carrito?.avisarAgregada) Carrito.avisarAgregada(prenda.nombre, id);
+    else aviso('Agregada a tu carrito');
   } else {
     list.splice(i, 1);
-    aviso('Eliminado de tu wishlist');
+    if (typeof Avisos === 'object') Avisos.info('Quitada de tu carrito', { origen: 'wishlist', clave: 'wl-' + id, cuerpo: prenda.nombre || '',
+      deshacer: () => { if (!wlTiene(id)) wlAlternar(); } });
+    else aviso('Quitada de tu carrito');
   }
   wlGuardar(list);
-  const btn = document.getElementById('ppFav');
-  if (btn) btn.classList.toggle('active', wlTiene(id));
+  wlPintarBoton();
+  if (typeof updateWishlistBadge === 'function') updateWishlistBadge();
 }
+// Si se quita desde el panel del carrito, el botón de la ficha vuelve a "Agregar"
+window.addEventListener('wishlist:cambio', () => wlPintarBoton());
 
-/* El panel de prendas guardadas vive en js/wishlist.js, compartido
-   con el catálogo. Aquí solo queda el corazón de la prenda. */
+/* El panel del carrito vive en js/wishlist.js, compartido con el
+   catálogo. Aquí solo queda el botón "Agregar al carrito" de la prenda. */
 
 let avisoTimer;
 function aviso(msg) {
+  if (typeof Avisos === 'object') return Avisos.mostrar(msg);
   const t = document.getElementById('toast');
   if (!t) return;
   t.textContent = msg;
@@ -196,7 +245,7 @@ function pintarPrenda(p) {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', color);
 
-  document.title = `${p.nombre}${p.marca ? ' · ' + p.marca : ''} | STMP MARKET`;
+  document.title = `${p.nombre}${p.marca ? ' · ' + p.marca : ''} | Stiimpys`;
 
   // Migas de pan
   const cats = Array.isArray(p.categorias) ? p.categorias : [];
@@ -240,7 +289,7 @@ function pintarPrenda(p) {
     ['Marca', p.marca || 'Sin marca'],
     cats.length ? ['Categoría', cats.join(', ')] : null,
     ['Ubicación', (bz && bz.ubicacion) || 'Reynosa, Tamps.'],
-    ['Disponibilidad', p.vendido ? 'Vendida' : enSubasta ? 'En subasta · pieza única' : 'Disponible · pieza única'],
+    ['Disponibilidad', p.vendido ? 'Vendida' : enSubasta ? 'En subasta · pieza única' : p.apartada ? (p.pagandoHasta ? 'Apartada · alguien la está pagando' : 'Apartada · puede liberarse si no se paga') : 'Disponible · pieza única'],
   ].filter(Boolean);
 
   document.getElementById('ppContenido').innerHTML = `
@@ -279,9 +328,14 @@ function pintarPrenda(p) {
       ${enSubasta ? '' : `
       <div class="pp-precio-fila">
         <span class="pp-precio${pHayOferta(p) ? ' tiene-oferta' : ''}">${pPrecioHTML(p)}</span>
-        ${p.vendido ? `<span class="pp-vendida">Vendida</span>` : `<span class="pp-unica">Pieza única</span>`}
+        ${p.vendido ? `<span class="pp-vendida">Vendida</span>` : p.apartada ? (p.pagandoHasta && window.Contador ? `<span class="pp-apartada pp-en-pago">Apartada · ${Contador.html(p.pagandoHasta, { fin: 'liberando…' })}</span>` : `<span class="pp-apartada">Apartada</span>`) : `<span class="pp-unica">Pieza única</span>`}
       </div>
       ${(!p.vendido && pHayOferta(p)) ? `<div class="pp-ahorro">¡Bajó de precio! Te ahorras $${(Number(p.precioAnterior) - Number(p.precio_venta)).toLocaleString('es-MX')}</div>` : ''}`}
+
+      ${(!p.vendido && p.apartada && p.pagandoHasta && window.Contador) ? `<div class="pp-aviso-pago" role="status">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2.5h5"/></svg>
+        <span>Alguien la está pagando en este momento. Si no completa su pago en <b>${Contador.html(p.pagandoHasta, { fin: '0:00' })}</b>, vuelve a estar disponible aquí mismo.</span>
+      </div>` : ''}
 
       <div id="sbPanel" hidden></div>
 
@@ -293,11 +347,12 @@ function pintarPrenda(p) {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.138.558 4.147 1.535 5.886L0 24l6.274-1.507A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.853 0-3.587-.5-5.084-1.367l-.361-.214-3.733.897.931-3.618-.235-.374A9.96 9.96 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
           Apartar por WhatsApp
         </a>`}
-        <button class="pp-btn-fav ${wlTiene(id) ? 'active' : ''}" id="ppFav" onclick="wlAlternar()" aria-label="Guardar en wishlist">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        ${(p.vendido || p.apartada || enSubasta) ? '' : `<button class="pp-btn-fav pp-btn-carrito ${wlTiene(id) ? 'active' : ''}" id="ppFav" onclick="wlAlternar()" aria-pressed="${wlTiene(id)}">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 4h2.4l2.2 10.3a1.7 1.7 0 0 0 1.7 1.3h8.1a1.7 1.7 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.6" cy="19.6" r="1.3"/><circle cx="17.2" cy="19.6" r="1.3"/><path class="ic-mas" d="M13.4 9.3v3.6M11.6 11.1h3.6"/><path class="ic-ok" d="m11.4 11.2 1.6 1.6 2.9-3"/>
           </svg>
-        </button>
+          <span class="pp-carrito-txt">${wlTiene(id) ? 'En tu carrito <span class="pp-carrito-sub">· Ver carrito</span>' : 'Agregar al carrito'}</span>
+        </button>`}
         <button class="pp-btn-share" onclick="compartir(this)">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           Compartir
@@ -314,7 +369,7 @@ function pintarPrenda(p) {
             <span class="pp-bazar-slug">@${pEsc(bz.slug)}</span>
             ${ppSocial}
           </span>
-          <span class="pp-bazar-ver">Ver su bazar →</span>
+          <span class="pp-bazar-ver">Ver catálogo →</span>
         </a>` : ''}
 
       <div class="pp-ficha">
@@ -335,7 +390,7 @@ function pintarPrenda(p) {
         <ul>
           <li>Envíos a todo México con guía rastreable; el costo lo acuerdas con el bazar.</li>
           <li>Entrega en persona disponible en ${pEsc((bz && bz.ubicacion) || 'Reynosa, Tamps.')}.</li>
-          <li>Se aparta hasta que el bazar confirme por WhatsApp.</li>
+          <li>Se aparta hasta que Stiimpys confirme por WhatsApp.</li>
         </ul>
       </div>
 
@@ -375,6 +430,7 @@ function pintarPrenda(p) {
     } else {
       if (precioBarra) precioBarra.innerHTML = pPrecioHTML(p);
       if (btnBarra) { btnBarra.href = waUrl; btnBarra.onclick = null; }
+      barraDeCompra(p, btnBarra, waUrl);
     }
   }
 
@@ -392,10 +448,11 @@ function compartir(btn) {
   const url = location.href;
   const orig = btn.innerHTML;
   if (navigator.share) {
-    navigator.share({ title: prenda?.nombre || 'STMP MARKET', url }).catch(() => {});
+    navigator.share({ title: prenda?.nombre || 'Stiimpys', url }).catch(() => {});
     return;
   }
-  navigator.clipboard.writeText(url).catch(() => {});
+  if (typeof Avisos === 'object') Avisos.copiar(url, { que: 'Link' });
+  else navigator.clipboard.writeText(url).catch(() => {});
   btn.textContent = '✓ Link copiado';
   setTimeout(() => { btn.innerHTML = orig; }, 2000);
 }
@@ -448,7 +505,7 @@ function noSePudoCargar(detalle) {
         <a class="h-btn h-btn-wa" href="tienda.html">Ir al catálogo</a>
       </div>
     </div>`;
-  document.title = 'No se pudo cargar | STMP MARKET';
+  document.title = 'No se pudo cargar | Stiimpys';
 }
 
 // Espera a la base de datos, pero no para siempre
@@ -475,10 +532,10 @@ function prendaNoDisponible() {
     <div class="pp-vacio">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <h1>Esta prenda ya no está disponible</h1>
-      <p>Puede que se haya vendido o que el bazar la haya quitado del catálogo.</p>
+      <p>Puede que se haya vendido o que ya no esté en el catálogo.</p>
       <a class="h-btn h-btn-primary" href="tienda.html">Ver el catálogo</a>
     </div>`;
-  document.title = 'Prenda no disponible | STMP MARKET';
+  document.title = 'Prenda no disponible | Stiimpys';
 
   const recientes = getDB().filter(x => !x.vendido && !x.oculto).slice(0, 10);
   pintarRail('ppRailRecientes', recientes, 'ppSeccionRecientes');

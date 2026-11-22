@@ -4,7 +4,7 @@
 //
 // Se configura con dos variables de entorno en Vercel:
 //   RESEND_API_KEY   la llave de resend.com (su plan gratis da 3,000/mes)
-//   CORREO_DESDE     p.ej. "STMP MARKET <hola@stiimpys.store>"
+//   CORREO_DESDE     p.ej. "Stiimpys <hola@stiimpys.store>"
 //
 // Si no están puestas, enviar() devuelve { ok:false, sinConfigurar:true }
 // y quien llama decide qué decirle a la persona. El sitio funciona igual;
@@ -14,9 +14,27 @@
 export const correoConfigurado = () =>
   !!(process.env.RESEND_API_KEY && process.env.CORREO_DESDE);
 
-export async function enviarCorreo({ para, asunto, html, texto }) {
-  if (!correoConfigurado()) return { ok: false, sinConfigurar: true };
+// v33: cada envío (o falla) queda en el Centro de actividad, con el destinatario enmascarado.
+// contexto: { tipo, pedidoId, bazarId } para relacionarlo con su pedido.
+async function anotar(contexto, para, asunto, ok, error, ms) {
+  try {
+    const { registrarEvento, enmascararCorreo, marcarSistema } = await import('./_actividad.js');
+    if (ok) await marcarSistema('ultimoCorreo', null, 0);
+    await registrarEvento({ categoria: 'correo', tipo: `correo.${contexto?.tipo || 'envio'}`, resultado: ok ? 'ok' : 'error', usuario: 'resend',
+      accion: ok ? `Correo enviado: ${String(asunto || '').slice(0, 90)}` : `No salió el correo: ${String(asunto || '').slice(0, 90)}`,
+      bazarId: contexto?.bazarId, pedidoId: contexto?.pedidoId, detalle: { para: enmascararCorreo(para) }, error, ms });
+  } catch (_) {}
+}
 
+export async function enviarCorreo({ para, asunto, html, texto, contexto = null }) {
+  if (!correoConfigurado()) return { ok: false, sinConfigurar: true };
+  const t0 = Date.now();
+  const r = await enviarCorreoReal({ para, asunto, html, texto });
+  await anotar(contexto, para, asunto, r.ok, r.ok ? null : { message: r.detalle || r.error, status: r.estado }, Date.now() - t0);
+  return { ok: r.ok, ...(r.ok ? {} : { error: r.error }) };
+}
+
+async function enviarCorreoReal({ para, asunto, html, texto }) {
   try {
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -35,12 +53,14 @@ export async function enviarCorreo({ para, asunto, html, texto }) {
     if (!r.ok) {
       const detalle = await r.text().catch(() => '');
       console.error('[correo]', r.status, detalle.slice(0, 300));
-      return { ok: false, error: 'El correo no salió' };
+      let msg = detalle.slice(0, 200);
+      try { msg = JSON.parse(detalle).message || msg; } catch (_) {}
+      return { ok: false, error: 'El correo no salió', detalle: `Resend ${r.status}: ${msg}`, estado: r.status };
     }
     return { ok: true };
   } catch (err) {
     console.error('[correo]', err);
-    return { ok: false, error: 'El correo no salió' };
+    return { ok: false, error: 'El correo no salió', detalle: err?.message || String(err) };
   }
 }
 
@@ -58,7 +78,7 @@ export function plantilla({ titulo, cuerpo, boton, enlace, pie }) {
              style="max-width:520px;background:#ffffff;border-radius:16px;padding:32px;
                     font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
         <tr><td style="font-size:13px;letter-spacing:3px;color:#8b8578;font-weight:700;padding-bottom:24px;">
-          STMP MARKET<span style="color:#2d6be4;">.</span>
+          STIIMPYS<span style="color:#2d6be4;">.</span>
         </td></tr>
         <tr><td style="font-size:22px;font-weight:700;color:#1a1f2e;padding-bottom:14px;line-height:1.3;">
           ${esc(titulo)}

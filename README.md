@@ -1,319 +1,134 @@
-# Bazar En Linea
+# Stiimpys
 
 <div align="center">
-  <!-- BANNER PRINCIPAL DE LA MARCA (Recomendado: 1200x400px aprox. con estética Chapter Nineteen) -->
-  <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784126788/banner_bazar_en_linea_kf5bcl.png" alt="Banner Principal - Bazar En Linea" width="100%" style="border-radius: 8px;" />
-  <br><br>
+  <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784126788/banner_bazar_en_linea_kf5bcl.png" alt="Stiimpys" width="100%" style="border-radius: 8px;" />
 </div>
 
-> Catalogo digital de ropa streetwear & vintage con panel de administracion, sincronizacion en tiempo real, gestion de inventario, drops programados y auditoria -- desplegado en Vercel con MongoDB Atlas y Cloudinary.
+> Tienda en línea de streetwear y vintage de Reynosa, Tamaulipas, con panel de administración, pagos en línea (Clip y PayPal), envíos (envia.com), Instagram automático e IA para registrar prendas. Desplegada en Vercel con MongoDB Atlas y Cloudinary.
 
-**Demo en vivo:** https://stiimpys.store/
-
----
-
-## Caracteristicas
-
-- **Inventario en tiempo real** -- los cambios aparecen en todas las pantallas en menos de 3 segundos sin recargar (polling adaptativo: 3s / 6s / 15s segun actividad)
-- **Fotos en la nube** -- imagenes almacenadas en Cloudinary, sin limites de tamano
-- **Busqueda y filtros** -- por nombre, marca, categoria, talla y estado
-- **Multi-usuario** -- admin y vendedores con permisos diferenciados
-- **Drops programados** -- crea colecciones y programalas para publicacion automatica
-- **Sesion unica por cuenta** -- evita accesos compartidos; override con clave maestra para admin
-- **Verificacion Cloudflare Turnstile** -- protege la entrada al bazar
-- **Wishlist** -- los visitantes guardan prendas favoritas en el navegador
-- **Compra directa por WhatsApp** -- boton de contacto por prenda con mensaje pre-armado
-- **Open Graph / Previews** -- cada prenda tiene meta tags para compartir en WhatsApp, Discord, Twitter
-- **Zoom con lupa** -- vista detalle de producto con zoom hover en desktop
-- **Usuarios en linea** -- badge en tiempo real de quien esta en el panel
-- **Auditoria completa** -- registro de actividad con archivado automatico y descarga de respaldos
-- **Avatar de perfil** -- foto de perfil para cada usuario, almacenada en servidor
-- **Sonidos de accion** -- feedback auditivo opcional (estilo iOS)
-- **Preferencias de usuario** -- vista compacta, confirmacion de borrado, sonido
-- **Responsive** -- funciona en celular, tablet y escritorio
-
-
+**En vivo:** https://stiimpys.store/
 
 ---
 
-## Vista Previa del Sistema
-
-<table width="100%">
-  <tr>
-    <td width="50%" align="center">
-      <strong>🛒 Catálogo Público (Tienda)</strong>
-      <br />
-      <!-- CAPTURA DE LA TIENDA PÚBLICA EN DESKTOP -->
-      <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784127024/image_odgxbe.webp" alt="Vista de la Tienda" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
-    </td>
-    <td width="50%" align="center">
-      <strong>⚙️ Panel de Administración (Desktop)</strong>
-      <br />
-      <!-- CAPTURA DEL PANEL DE CONTROL / INVENTARIO ADMIN -->
-      <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784127100/image_wc0pfp.webp" alt="Panel de Administración" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" align="center">
-      <strong>📱 Interfaz Adaptativa (Móvil)</strong>
-      <br />
-      <!-- CAPTURA EN FORMATO VERTICAL MÓVIL (puedes usar un mockup de celular o recorte vertical) -->
-      <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784127193/IMG_4478_tejy3e.webp" alt="Diseño Responsive Móvil" width="60%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
-    </td>
-    <td width="50%" align="center">
-      <strong>📦 Planificación de Drops</strong>
-      <br />
-      <!-- CAPTURA DE LA PESTAÑA DE DROPS PROGRAMADOS O LOGS -->
-      <img src="https://res.cloudinary.com/dendyzqsn/image/upload/v1784127354/image_ivyfas.png" alt="Gestión de Drops Programados" width="100%" style="border-radius: 6px; border: 1px solid #eaeaea;" />
-    </td>
-  </tr>
-</table>
-
----
-
-
-## Stack tecnologico
-
-<!-- BADGES VISUALES DE LAS TECNOLOGÍAS USADAS -->
-  <img src="https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white" alt="HTML5" />
-  <img src="https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white" alt="CSS3" />
-  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JS" />
-  <img src="https://img.shields.io/badge/Vercel-000000?style=flat-square&logo=vercel&logoColor=white" alt="Vercel" />
-  <img src="https://img.shields.io/badge/MongoDB_Atlas-47A248?style=flat-square&logo=mongodb&logoColor=white" alt="MongoDB" />
-  <img src="https://img.shields.io/badge/Cloudinary-3448C5?style=flat-square&logo=cloudinary&logoColor=white" alt="Cloudinary" />
-  <img src="https://img.shields.io/badge/Cloudflare_Turnstile-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare" />
-</p>
-
-| Capa | Tecnologia |
-|---|---|
-| Frontend | HTML5 · CSS3 · JavaScript vanilla |
-| Hosting | [Vercel](https://vercel.com) (gratuito) |
-| Base de datos | [MongoDB Atlas](https://cloud.mongodb.com) (gratuito M0) |
-| Imagenes | [Cloudinary](https://cloudinary.com) (gratuito) |
-| API | Vercel Serverless Functions (Node.js) |
-| Verificacion | [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/) |
-| Seguridad | bcryptjs · sesion por token · rate limiting en MongoDB |
-
----
-
-## Estructura del proyecto
+## Cómo está acomodado el proyecto
 
 ```
-bazar-en-linea/
-├── api/                        # Serverless Functions (backend)
-│   ├── _db.js                  # Conexion compartida a MongoDB (singleton)
-│   ├── _auth.js                # Middleware de autenticacion (token bearer + cookie)
-│   ├── _password.js            # Verificacion y hasheo de contrasenas (bcrypt)
-│   ├── _rateLimit.js           # Rate limiter con MongoDB + TTL
-│   ├── auth.js                 # POST login (sesion unica + override)
-│   ├── inventario.js           # GET/PUT lista completa de prendas
-│   ├── inventario-item.js      # PATCH/DELETE prenda individual
-│   ├── config.js               # GET/PUT categorias, marcas, usuarios, drops
-│   ├── activos.js              # GET/POST/DELETE usuarios activos (keep-alive)
-│   ├── sync.js                 # GET todas las colecciones en una llamada (con cache)
-│   ├── upload.js               # POST subir imagen a Cloudinary
-│   ├── acciones.js             # GET/POST logs, borrar prenda, gestionar usuarios
-│   ├── change-password.js      # POST cambiar contrasena (verifica actual)
-│   ├── prenda.js               # GET HTML con Open Graph tags por prenda
-│   └── session-check.js        # POST verifica vigencia de sesion
+/                      Páginas del sitio (cada .html es una dirección: /tienda.html, /pagar.html…)
+│                      y la configuración de Vercel. Aquí no va nada más.
+├── api/               Las 12 funciones del servidor (el límite del plan gratis de Vercel)
+│   └── _lib/          Ayudantes del servidor (no cuentan como funciones): base de datos,
+│                      sesión, pagos, envíos, Instagram, IA, seguridad (escudo.js)…
 ├── css/
-│   ├── global.css              # Variables, toast, modal
-│   ├── tienda.css              # Estilos catalogo publico
-│   ├── admin.css               # Estilos panel de admin
-│   ├── login.css               # Estilos login
-│   ├── lightbox.css            # Estilos visor de imagenes
-│   └── utils.css               # Estilos de utilerias
+│   ├── comun/         Estilos que usan la tienda y el panel (letras, base, estética)
+│   ├── tienda/        Estilos de la tienda pública (limpio.css va al final y manda)
+│   ├── panel/         Estilos del panel, del login y del Estudio
+│   ├── fuentes/       Letras propias (DM Sans, Bebas Neue, Playfair, Poppins) en .woff2
+│   └── dist/          GENERADO: un archivo comprimido por página. No se edita.
 ├── js/
-│   ├── db.js                   # Capa de datos (cache + polling adaptativo + API)
-│   ├── tienda.js               # Logica catalogo publico + wishlist + detalle
-│   ├── admin.js                # Logica panel de administracion (6 pestanas)
-│   ├── login.js                # Logica autenticacion con override
-│   ├── lightbox.js             # Visor de imagenes con swipe tactil
-│   └── utils.js                # Utilidades compartidas (money, toast, confirm, etc.)
-├── index.html                  # Pagina de verificacion Cloudflare Turnstile
-├── tienda.html                 # Catalogo publico
-├── admin.html                  # Panel de administracion
-├── login.html                  # Inicio de sesion
-├── vercel.json                 # Configuracion de rutas Vercel + CORS
-└── package.json                # Dependencias: mongodb, bcryptjs
+│   ├── comun/         Código que comparten tienda y panel (db.js, avisos, íconos…)
+│   ├── tienda/        Código de la tienda pública
+│   ├── panel/         Código del panel, del login y del Estudio
+│   ├── vendor/        Librerías de terceros (QR)
+│   └── dist/          GENERADO: un archivo comprimido por página. No se edita.
+├── img/               Logo de Stiimpys (blanco y negro) e imagen para compartir links
+├── icons/             Íconos de la app (celular)
+├── herramientas/      construir.mjs (arma css/dist y js/dist), paquetes.json (qué archivos
+│                      lleva cada página y en qué orden), generar-tema.py (tema del panel)
+├── pruebas/           Pruebas automáticas (servidor y navegador). No se suben a Vercel.
+└── docs/              Historial de versiones, guía de Instagram y archivos viejos que ya
+                       no usa ninguna página (docs/archivo). No se sube a Vercel.
 ```
 
----
+### Qué carga cada página
 
-## Variables de entorno
+Cada página pide **un** archivo de estilos y **uno** de código (antes eran hasta 25 archivos sueltos).
+La lista de qué lleva cada uno está en `herramientas/paquetes.json`.
 
-| Variable | Descripcion | Donde obtenerla |
+| Página | Estilos | Código |
 |---|---|---|
-| `MONGODB_URI` | URI de conexion a MongoDB Atlas | Atlas -> Connect -> Drivers |
-| `MONGODB_DB` | Nombre de la base de datos (default: `bazar`) | Opcional |
-| `CLOUDINARY_CLOUD_NAME` | Nombre del cloud | Cloudinary Dashboard |
-| `CLOUDINARY_API_KEY` | Llave publica de API | Cloudinary Dashboard |
-| `CLOUDINARY_API_SECRET` | Secreto de API | Cloudinary Dashboard |
-| `MASTER_KEY` | Clave maestra para forzar sesion admin (opcional) | La que tu definas |
+| inicio.html | css/dist/inicio.css | js/dist/inicio.js |
+| tienda.html | css/dist/tienda.css | js/dist/tienda.js |
+| prenda.html | css/dist/prenda.css | js/dist/prenda.js |
+| carrito.html | css/dist/carrito.css | js/dist/carrito.js |
+| pagar.html | css/dist/pagar.css | js/dist/pagar.js |
+| cuenta.html | css/dist/cuenta.css | js/dist/cuenta.js |
+| terminos.html | css/dist/sencilla.css | js/dist/sencilla.js |
+| admin.html | css/dist/admin.css | js/dist/tema.js + js/dist/admin.js |
+| login.html | css/dist/login.css | js/dist/tema.js + js/dist/login-movimiento.js + js/dist/login.js |
+| estudio.html | css/dist/estudio.css | js/dist/estudio.js |
+| caja.html (v42) | css/dist/caja.css | js/dist/caja.js (+ js/vendor/jsqr.js si no hay lector de QR del navegador) |
+| /marca, /categoria (v42) · /talla, /precio, /guias, /drop (v43) | HTML del servidor (api/_lib/paginas.js, por api/prenda.js) | js/tienda/origen.js |
 
 ---
 
-## Instalacion y despliegue
+## Cómo hacer un cambio
 
-### Requisitos previos
+1. Edita el archivo **original** (`css/tienda/…`, `js/panel/…`, etc.). Nunca lo que está en `dist/`.
+2. Arma los paquetes:
+   ```bash
+   npm install          # la primera vez
+   npm run construir
+   ```
+   Esto comprime todo y le pone a cada página la versión nueva (`?v=…`), así los navegadores
+   bajan el cambio en cuanto se publica y el resto del tiempo lo guardan un año.
+3. Corre las pruebas:
+   ```bash
+   npm i --no-save mingo@6
+   npm run pruebas      # servidor, seguridad y "¿se te olvidó construir?"
+   ```
+4. Sube a una rama → vista previa de Vercel → si todo bien, a producción.
 
-- [Node.js](https://nodejs.org) v18+
-- Cuenta en [Vercel](https://vercel.com)
-- Cluster en [MongoDB Atlas](https://cloud.mongodb.com)
-- Cuenta en [Cloudinary](https://cloudinary.com)
-- Site Key de [Cloudflare Turnstile](https://dash.cloudflare.com/sign-up) (opcional)
-
-### Pasos
-
-**1. Clonar el repositorio**
-```bash
-git clone https://github.com/Stimpys-cm/Catalogodeunbazar.git
-cd Catalogodeunbazar
-npm install
-```
-
-**2. Instalar Vercel CLI e iniciar sesion**
-```bash
-npm install -g vercel
-vercel login
-```
-
-**3. Agregar variables de entorno**
-```bash
-vercel env add MONGODB_URI
-vercel env add MONGODB_DB
-vercel env add CLOUDINARY_CLOUD_NAME
-vercel env add CLOUDINARY_API_KEY
-vercel env add CLOUDINARY_API_SECRET
-vercel env add MASTER_KEY
-```
-
-**4. Configurar Turnstile (opcional)**
-Edita `index.html` y reemplaza `SITE_KEY` con tu Site Key de Cloudflare Turnstile.
-
-**5. Desplegar**
-```bash
-vercel --prod
-```
+- ¿Un archivo nuevo de estilos o código? Agrégalo en `herramientas/paquetes.json` en el lugar que le toca (el orden importa) y corre `npm run construir`.
+- ¿Cambiaste colores en una hoja del panel? `python3 herramientas/generar-tema.py` y luego `npm run construir`.
+- ¿Editaste `404.html`? Copia el mismo cambio en `middleware.js` (`PAGINA_404`): tienen que ser idénticos.
 
 ---
 
-## Colecciones en MongoDB
+## Seguridad
 
-| Coleccion | Descripcion |
+- **Escudo de las 12 funciones** (`api/_lib/escudo.js`): quita operadores de MongoDB (`$ne`, `$where`…) y llaves de prototipo de todo lo que llega, rechaza JSON anidado de más, bloquea escrituras que vienen de otros sitios (CSRF), solo acepta los métodos que usa el sitio, pone cabeceras seguras y nunca muestra errores técnicos.
+- **Sesiones**: cookies `HttpOnly`, `Secure`, `SameSite=Lax`; el token del panel vence a las 8 horas y se borra al salir.
+- **Contraseñas**: bcrypt. Límite de intentos por conexión y por cuenta (aunque el ataque venga de muchas conexiones).
+- **Panel escondido**: sin sesión, `/admin.html`, `/login.html`, `/estudio.html` y el código del panel (`js/panel`, `css/panel`, `js/dist/admin.js`…) responden la misma página 404 que cualquier dirección inventada.
+- **Archivos internos**: `middleware.js`, `package.json`, `vercel.json`, `.md`, `.env`, `.git`, `pruebas/`, `docs/` y `herramientas/` responden 404.
+- **Pagos**: el precio, los descuentos y el envío los calcula siempre el servidor; una prenda se aparta de forma atómica antes de abrir el pago; el pago solo cuenta cuando Clip o PayPal lo confirman; máximo 3 pagos abiertos a la vez por WhatsApp y por conexión (nadie puede "apartar" la tienda entera sin pagar).
+- **v43**: aprobar transferencias (a mano o por Banxico), cancelar guías, recolecciones y resumen solo para administradores; cupones REGALO/CUMPLE personales por WhatsApp; código de amigo solo en la primera compra; medidas y links de Google validados; páginas nuevas con todo escapado.
+- **v44**: la firma para subir directo a Cloudinary solo se da con sesión del panel, solo para la carpeta `bazar` y solo para formatos de imagen; el secreto nunca sale del servidor. `ia-aprender` limpia lo que recibe y tiene tope por hora.
+- **v45**: `ia-catalogo` (crear marca/categoría) solo con sesión del panel y permiso `gestionarCatalogo` para vendedores, nombres limpios, sin duplicar (candado); el informe del agente se pinta escapado y solo con links `https` que salieron en la búsqueda.
+- **v46**: el saldo de la IA solo lo ven y cambian administradores (`ia-saldo`, 30/h); `ANTHROPIC_ADMIN_KEY` solo se usa en el servidor para leer el reporte de costos y nunca sale al panel.
+- **v42**: comprobantes SPEI y fotos de reseñas solo como imagen (sin SVG/HTML), máx. 3 MB, subida firmada con nombre al azar; confirmar transferencias y moderar reseñas solo administradores; la CLABE solo sale en el recibo con su clave.
+- **Lo público** (catálogo, ficha del bazar, recibos sin su clave) no lleva costos, teléfonos, direcciones, correos, tokens ni configuración interna.
+
+---
+
+## Variables de entorno (en Vercel)
+
+| Variable | Para qué |
 |---|---|
-| `inventario` | Prendas con nombre, marca, categorias, talla, precio, costo, imagenes, estado, vendido |
-| `categorias` | Catalogo de categorias |
-| `marcas` | Catalogo de marcas |
-| `usuarios` | Usuarios con username, password (hashed), role, sessionToken, avatar |
-| `activos` | Sesiones activas con timestamp |
-| `drops` | Colecciones programadas con fecha de publicacion |
-| `logs` | Registro de actividad (rotacion automatica cada 5000 registros) |
-| `logs_archivados` | Logs viejos archivados (disponibles para descarga) |
-| `rate_limits` | Control de intentos por IP (TTL automatico) |
-| `borrado_limite` | Limite de borrados por hora por vendedor |
+| `MONGODB_URI`, `MONGODB_DB` | Base de datos |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | Fotos |
+| `SESSION_SECRET` | Firma de la cookie del panel (obligatoria en producción) |
+| `RUTA_PANEL` | Dirección secreta del panel. **Ponla siempre**: la de respaldo está escrita en el código |
+| `MASTER_KEY` | Clave maestra para forzar sesión de admin (opcional) |
+| `CLIP_API_KEY`, `CLIP_SECRET_KEY` | Cobro con Clip |
+| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | Cobro con PayPal (opcional) |
+| `ENVIA_TOKEN` | Cotizar envíos con envia.com |
+| `ANTHROPIC_API_KEY` | IA para registrar prendas y el agente investigador (v45: necesita la búsqueda web permitida en la cuenta de Anthropic para los comparables) |
+| `ANTHROPIC_ADMIN_KEY` | Opcional (v46): llave de administrador de Anthropic (`sk-ant-admin…`, solo cuentas de organización) para que el saldo de la IA salga exacto del reporte de costos |
+| `IG_STIIMPYS_USER_ID`, `IG_STIIMPYS_TOKEN` | Instagram |
+| `CRON_SECRET` | Tarea diaria |
+| `RESEND_API_KEY`, `CORREO_DESDE` | Recibos por correo (opcional) |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Avisos al celular cuando algo falla (opcional, v41) |
+| `AVISOS_CORREO` | Correo a donde llegan esos avisos (opcional, v41; usa Resend) |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Freno para robots de Cloudflare (opcional, v41) |
+| `SITE_URL`, `ACTIVIDAD_DIAS`, `BAZAR_PRINCIPAL` | Opcionales |
+
+v42 y v43 no piden variables nuevas (todo lo nuevo se prende en Ventas → Módulos): SPEI (CLABE) y cliente frecuente se configuran en el panel; el rastreo usa `ENVIA_TOKEN`, el cupón de cumpleaños usa Resend y los comprobantes y fotos de reseñas usan Cloudinary.
+
+Las claves nunca van en el código ni en el chat: solo en Vercel → Settings → Environment Variables.
 
 ---
 
-## Sincronizacion en tiempo real
+## Historial
 
-El sistema usa polling adaptativo a `/api/sync`:
-
-- **3 segundos** -- cuando hay actividad reciente (< 15s)
-- **6 segundos** -- visible pero tranquilo
-- **15 segundos** -- pestana oculta o sin cambios
-
-El endpoint `/api/sync` devuelve todas las colecciones en una sola llamada con cache de servidor de 2s. Los cambios disparan eventos:
-
-```
-db:inventario  -> re-renderiza el grid
-db:categorias  -> actualiza filtros y selects
-db:marcas      -> actualiza filtros y selects
-db:usuarios    -> actualiza lista de vendedores
-db:activos     -> actualiza badge de usuarios en linea
-db:logs        -> actualiza registro de actividad
-db:drops       -> actualiza vista de drops
-```
-
----
-
-## Panel de administracion
-
-Acceso en `/login.html`. Credenciales por defecto: `admin` / `stiimpys2026`
-
-### Pestanas
-
-| Pestana | Acceso | Descripcion |
-|---|---|---|
-| Inventario | Todos | Grid con filtros Todos/Disponibles/Vendidos, busqueda, paginacion (50x) |
-| Registrar | Todos | Formulario para agregar/editar prendas con preview en vivo |
-| Catalogo | Solo admin | Gestion de categorias y marcas |
-| Vendedores | Solo admin | CRUD de usuarios, cambios de contrasena |
-| Drops | Todos | Gestion de colecciones programadas con publicacion automatica |
-| Mi Cuenta | Todos | Avatar, preferencias, cambio de contrasena |
-| Sistema | Solo admin | Metricas, verificacion de modulos, deteccion de errores, logs, respaldos |
-
-### Permisos por rol
-
-| Funcion | Admin | Vendedor |
-|---|---|---|
-| Ver inventario | Si | Si |
-| Agregar/Editar prendas | Si | Si |
-| Marcar vendido / Reactivar | Si | Si |
-| Gestionar drops | Si | Si |
-| Ver costo interno | Si | No |
-| Ver ganancias | Si | No |
-| Gestionar catalogo | Si | No |
-| Gestionar vendedores | Si | No |
-| Eliminar prendas | Si | No (limite de 10/hora) |
-| Acceso a pestana Sistema | Si | No |
-
----
-
-## API endpoints
-
-| Endpoint | Metodos | Auth | Descripcion |
-|---|---|---|---|
-| `/api/auth` | POST | No | Login con sesion unica |
-| `/api/sync` | GET | No | Todas las colecciones (con cache) |
-| `/api/inventario` | GET, PUT | Solo PUT | Lista completa de prendas |
-| `/api/inventario-item?id=N` | PATCH, DELETE | Si | Prenda individual |
-| `/api/config?col=X` | GET, PUT | Solo PUT | Categorias, marcas, usuarios, drops |
-| `/api/activos` | GET, POST, DELETE | POST/DELETE | Usuarios activos |
-| `/api/upload` | POST | Si | Subir imagen a Cloudinary |
-| `/api/acciones?op=X` | GET, POST | Segun op | Logs, borrar prenda, gestionar usuarios |
-| `/api/change-password` | POST | Si | Cambiar contrasena propia |
-| `/api/prenda?id=N` | GET | No | Open Graph HTML para compartir |
-| `/api/session-check` | POST | No | Validar vigencia de token |
-
----
-
-## Comandos utiles
-
-```bash
-# Redesplegar despues de cambios
-vercel --prod
-
-# Ver logs en tiempo real
-vercel logs https://stiimpys.store --follow
-
-# Ver variables de entorno
-vercel env ls
-
-# Subir cambios a GitHub
-git add .
-git commit -m "descripcion del cambio"
-git push origin main
-```
-
----
-
-## Licencia
-
-MIT -- libre para uso personal y comercial.
-
----
-
-<div align="center">
-  Hecho con ❤️ en Reynosa, Tamaulipas · 2026
-</div>
+Las notas de cada versión están en `docs/HISTORIAL-VERSIONES.txt` (y las de esta, v46, en `LEEME.txt`).

@@ -3,65 +3,76 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <title>STMP MARKET | Streetwear y vintage con envíos a todo México</title>
+  <!-- v37 · La animación entre páginas es adorno: si el navegador la cancela, que no cuente como error -->
+  <script>addEventListener('pagereveal',function(e){var v=e.viewTransition;if(v){[v.ready,v.finished,v.updateCallbackDone].forEach(function(p){p&&p.catch(function(){})})}});addEventListener('pageswap',function(e){var v=e.viewTransition;if(v){[v.ready,v.finished,v.updateCallbackDone].forEach(function(p){p&&p.catch(function(){})})}});addEventListener('unhandledrejection',function(e){var r=e.reason;if(r&&/^(InvalidStateError|AbortError)$/.test(r.name||'')&&/Transition was|view ?transition/i.test(r.message||''))e.preventDefault()})</script>
+  <title>Stiimpys | Streetwear y ropa vintage en Reynosa, México</title>
 
   <!-- SEO -->
-  <meta name="description" content="STMP MARKET · Catálogo de streetwear, vintage y prendas únicas seleccionadas a mano. Compra por WhatsApp con envíos a todo México desde Reynosa, Tamaulipas.">
-  <meta name="keywords" content="bazar, streetwear, vintage, ropa, prendas únicas, Reynosa, México, segunda mano, catálogo">
-  <meta name="author" content="STMP MARKET">
+  <meta name="description" content="Streetwear y ropa vintage de segunda mano en Reynosa: piezas únicas revisadas a mano, con fotos reales. Pago en línea o en persona y envíos a todo México.">
+  <meta name="keywords" content="Stiimpys, bazar Reynosa, streetwear, vintage, ropa de segunda mano, prendas únicas, Reynosa, Tamaulipas, México">
+  <meta name="author" content="Stiimpys">
   <meta name="theme-color" content="#2d6be4">
-  <link rel="canonical" href="https://stiimpys.store/inicio.html">
+  <link rel="canonical" href="https://stiimpys.store/">
 
   <!-- Open Graph / WhatsApp / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="STMP MARKET">
-  <meta property="og:title" content="STMP MARKET | Streetwear y vintage">
-  <meta property="og:description" content="Prendas únicas seleccionadas a mano. Compra por WhatsApp con envíos a todo México.">
-  <meta property="og:url" content="https://stiimpys.store/inicio.html">
+  <meta property="og:site_name" content="Stiimpys">
+  <meta property="og:title" content="Stiimpys | Streetwear y ropa vintage en Reynosa">
+  <meta property="og:description" content="Página oficial de Stiimpys. Prendas únicas seleccionadas a mano, envíos a todo México.">
+  <meta property="og:url" content="https://stiimpys.store/">
   <meta property="og:locale" content="es_MX">
-  <meta property="og:image" content="https://res.cloudinary.com/dendyzqsn/image/upload/v1788229817/STMP_MARKET_x7qnat.png">
+  <meta property="og:image" content="https://stiimpys.store/img/compartir.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta name="twitter:image" content="https://res.cloudinary.com/dendyzqsn/image/upload/v1788229817/STMP_MARKET_x7qnat.png">
+  <meta name="twitter:image" content="https://stiimpys.store/img/compartir.jpg">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="STMP MARKET | Streetwear y vintage">
-  <meta name="twitter:description" content="Prendas únicas seleccionadas a mano. Envíos a todo México.">
+  <meta name="twitter:title" content="Stiimpys | Streetwear y ropa vintage en Reynosa">
+  <meta name="twitter:description" content="Página oficial de Stiimpys. Prendas únicas, envíos a todo México.">
 
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d6be4'/%3E%3Ctext x='16' y='23' font-family='Arial,sans-serif' font-size='20' font-weight='bold' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/png" sizes="48x48" href="/icons/favicon-48.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Bazar">
+  <meta name="apple-mobile-web-app-title" content="Stiimpys">
 
-  <!-- Datos estructurados del sitio: ayudan al buscador a entender qué es
-       STMP MARKET y a mostrar la caja de búsqueda del catálogo. -->
+  <!-- Datos estructurados: la tienda oficial de Stiimpys y la caja de búsqueda
+       del catálogo para el buscador. -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "STMP MARKET",
-    "url": "https://stiimpys.store/",
-    "inLanguage": "es-MX",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://stiimpys.store/tienda.html?q={search_term_string}",
-      "query-input": "required name=search_term_string"
-    }
+    "@graph": [
+      {
+        "@type": "ClothingStore",
+        "name": "Stiimpys",
+        "url": "https://stiimpys.store/",
+        "image": "https://res.cloudinary.com/dendyzqsn/image/upload/v1787696361/Logos_Sti_oabdjv.png",
+        "description": "Tienda de streetwear y ropa vintage de segunda mano en Reynosa, Tamaulipas: piezas únicas revisadas a mano. Envíos a todo México.",
+        "currenciesAccepted": "MXN",
+        "areaServed": "MX",
+        "address": { "@type": "PostalAddress", "addressLocality": "Reynosa", "addressRegion": "Tamaulipas", "addressCountry": "MX" },
+        "sameAs": ["https://www.instagram.com/stiimpys"]
+      },
+      {
+        "@type": "WebSite",
+        "name": "Stiimpys",
+        "url": "https://stiimpys.store/",
+        "inLanguage": "es-MX",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://stiimpys.store/tienda.html?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
   }
   </script>
 
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   <link rel="dns-prefetch" href="https://res.cloudinary.com">
-  <link rel="stylesheet" href="css/global.css">
-  <link rel="stylesheet" href="css/tienda.css">
-  <link rel="stylesheet" href="css/inicio.css">
-  <link rel="stylesheet" href="css/dispositivos.css">
-  <link rel="stylesheet" href="css/estetica.css">
-  <link rel="stylesheet" href="css/premium.css">
-  <link rel="stylesheet" href="css/motionsites.css">
-  <link rel="stylesheet" href="css/anuncios.css">
-  <link rel="stylesheet" href="css/inicio-premium.css">
+  <!-- Letras propias (css/fuentes): se piden antes para que el texto no cambie de letra al cargar -->
+  <link rel="preload" href="css/fuentes/dm-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="css/fuentes/bebas-neue-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/dist/inicio.css?v=1d396397bc">
   <style>
     html, body { overflow-x: hidden; max-width: 100%; }
     .logo-short { display: none; }
@@ -70,19 +81,8 @@
       .logo-short { display: inline; }
     }
   </style>
-  <script src="js/db.js" defer></script>
-  <script src="js/opciones.js" defer></script>
-  <script src="js/wishlist.js" defer></script>
-  <script src="js/inicio.js" defer></script>
-  <script src="js/legal.js" defer></script>
-  <script src="js/cuenta.js" defer></script>
-  <script src="js/subasta.js" defer></script>
-  <script src="js/mantenimiento.js" defer></script>
-  <script src="js/movimiento.js" defer></script>
-  <script src="js/motion-pro.js" defer></script>
-  <script src="js/experiencia.js" defer></script>
-  <script src="js/anuncios.js" defer></script>
-  <script src="js/inicio-premium.js" defer></script>
+  <script src="js/dist/inicio.js?v=52409ffe3f" defer></script>
+  <link rel="manifest" href="/manifest.webmanifest">
 </head>
 <body data-seccion="">
 
@@ -90,25 +90,24 @@
 <header>
   <div class="ticker-bar">
     <div class="ticker-track">
-      <span>Streetwear · Vintage · Bazar</span>
+      <span>Stiimpys · Página oficial</span>
+      <span>Streetwear · Vintage · Reynosa</span>
       <span>Envíos a todo México</span>
-      <span>Prendas únicas seleccionadas</span>
-      <span>Contacta por WhatsApp</span>
-      <span>Streetwear · Vintage · Bazar</span>
+      <span>Paga en línea o aparta por WhatsApp</span>
+      <span>Stiimpys · Página oficial</span>
+      <span>Streetwear · Vintage · Reynosa</span>
       <span>Envíos a todo México</span>
-      <span>Prendas únicas seleccionadas</span>
-      <span>Contacta por WhatsApp</span>
-      <span>Streetwear · Vintage · Bazar</span>
+      <span>Paga en línea o aparta por WhatsApp</span>
+      <span>Stiimpys · Página oficial</span>
+      <span>Streetwear · Vintage · Reynosa</span>
       <span>Envíos a todo México</span>
-      <span>Prendas únicas seleccionadas</span>
-      <span>Contacta por WhatsApp</span>
+      <span>Paga en línea o aparta por WhatsApp</span>
     </div>
   </div>
 
   <div class="header-row">
-    <a href="inicio.html" class="logo">
-      <span class="logo-full">STMP MARKET</span>
-      <span class="logo-short">STMP</span><span>.</span>
+    <a href="inicio.html" class="logo" aria-label="Stiimpys, ir al inicio">
+      <img class="logo-img" src="img/logo-negro-chico.webp" alt="" width="69" height="48" decoding="async" fetchpriority="high"><span class="logo-txt">STIIMPYS</span>
     </a>
 
     <form class="search-wrap expanded h-header-search" id="homeSearchForm" role="search">
@@ -121,17 +120,17 @@
     </form>
 
     <div class="header-actions">
-      <button class="btn-wishlist-header" onclick="toggleWishlistPanel()" aria-label="Mi wishlist" id="wishlistHeaderBtn">
+      <button class="btn-wishlist-header" onclick="toggleWishlistPanel()" aria-label="Mi carrito" id="wishlistHeaderBtn">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          <path d="M3 4h2.4l2.2 10.3a1.7 1.7 0 0 0 1.7 1.3h8.1a1.7 1.7 0 0 0 1.6-1.2L21 8H6.2"/><circle cx="9.6" cy="19.6" r="1.3"/><circle cx="17.2" cy="19.6" r="1.3"/>
         </svg>
         <span class="wishlist-count" id="wishlistCount" style="display:none">0</span>
       </button>
       <span id="cuentaSlot"></span>
       <a href="tienda.html" class="h-nav-cta"><span class="cta-largo">Ver&nbsp;</span>catálogo</a>
-      <a href="redes.html" class="h-nav-ig" aria-label="Los bazares oficiales y sus redes sociales" title="Los Bazares">
+      <a href="https://www.instagram.com/stiimpys" class="h-nav-ig" target="_blank" rel="noopener" aria-label="Instagram de Stiimpys" title="@stiimpys en Instagram">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 9h18M3 9l1.5-5h15L21 9M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9M9 21v-7h6v7"/>
+          <rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/>
         </svg>
       </a>
     </div>
@@ -140,26 +139,22 @@
 
 <main>
 
-  <!-- ── HERO — los bazares al frente ─────────────────────── -->
+  <!-- ── HERO — página oficial de Stiimpys ───────────────── -->
   <section class="h-hero">
     <div class="h-hero-inner h-hero-bz">
       <div class="h-hero-top">
-        <div class="h-tabs">
-          <a href="inicio.html" class="active">Explorar</a>
-          <a href="tienda.html">Catálogo</a>
-        </div>
-
-        <h1 id="heroTitulo">Multi bazares.<br><em>Un solo catálogo.</em></h1>
-        <div class="hero-slugs" id="heroSlugs"></div>
+        <h1 id="heroTitulo">Stiimpys.<br><em>Streetwear y vintage.</em></h1>
         <p class="h-hero-sub" id="heroSub">
-          Streetwear, vintage y piezas únicas seleccionadas a mano.
-          Cada prenda es de un bazar y le escribes directo a su dueño por WhatsApp.
+          La página oficial de Stiimpys: streetwear, vintage y piezas únicas
+          seleccionadas a mano en Reynosa. Apártala por WhatsApp y te la enviamos a todo México.
         </p>
 
         <div class="h-cta-row">
           <a href="tienda.html" class="h-btn h-btn-primary">Ver todas las prendas</a>
-          <a href="#bazares" class="h-btn h-btn-wa">Conoce los bazares</a>
+          <a href="https://wa.me/528995284602" class="h-btn h-btn-wa" id="waHero" target="_blank" rel="noopener">Escríbenos por WhatsApp</a>
         </div>
+        <!-- v55 · Formas de pago (Ventas → Promociones y pagos; formas-pago.js lo repinta) -->
+        <div data-formas-pago="hero"><div class="fp fp-hero"><span class="fp-tit">Aceptamos</span><ul class="fp-lista"><li class="fp-item" data-fp="tarjeta"><span class="fp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.2"/><path d="M2.5 9.6h19M6.5 15h4"/></svg></span><span class="fp-txt"><b>Tarjeta</b></span></li><li class="fp-item" data-fp="efectivo"><span class="fp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg></span><span class="fp-txt"><b>Efectivo</b></span></li><li class="fp-item" data-fp="transferencia"><span class="fp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h14.5M15 5l3.5 3.5L15 12"/><path d="M20 15.5H5.5M9 12l-3.5 3.5L9 19"/></svg></span><span class="fp-txt"><b>Transferencia</b></span></li></ul></div></div>
 
         <div class="h-stats">
           <div class="h-stat">
@@ -168,21 +163,20 @@
             <div class="h-stat-lbl">Prendas disponibles</div>
           </div>
           <div class="h-stat">
-            <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18M3 9l1.5-5h15L21 9M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9M9 21v-7h6v7"/></svg>
-            <div class="h-stat-num" id="statBazares">—</div>
-            <div class="h-stat-lbl" id="statBazaresLbl">Bazares publicando</div>
-          </div>
-          <div class="h-stat">
             <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.09 5.26L20 9.27l-4 3.9.94 5.83L12 16.5l-4.94 2.5L8 13.17l-4-3.9 5.91-1.01z"/></svg>
             <div class="h-stat-num" id="statNuevas">0</div>
             <div class="h-stat-lbl" id="statNuevasLbl">Prendas nuevas esta semana</div>
           </div>
+          <div class="h-stat">
+            <svg viewBox="0 0 24 24" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/></svg>
+            <div class="h-stat-num" id="statMarcas">—</div>
+            <div class="h-stat-lbl" id="statMarcasLbl">Marcas en el catálogo</div>
+          </div>
         </div>
       </div>
 
-      <!-- Tarjetas grandes con el logo de cada bazar -->
-      <div class="h-hero-bazares" id="heroBazares" aria-label="Bazares">
-        <div class="hb-card hb-skeleton"><div class="h-sk" style="height:100%"></div></div>
+      <!-- Tarjeta oficial de Stiimpys (logo, redes y contacto) -->
+      <div class="h-hero-bazares" id="heroBazares" data-cuantos="1" aria-label="Stiimpys">
         <div class="hb-card hb-skeleton"><div class="h-sk" style="height:100%"></div></div>
       </div>
     </div>
@@ -194,14 +188,26 @@
     <div class="h-section-head">
       <div>
         <h2>Novedades y <em>anuncios</em></h2>
-        <p>Lo último de los bazares: lanzamientos, aperturas, rebajas y avisos importantes.</p>
+        <p>Lo último de Stiimpys: drops, rebajas y avisos importantes.</p>
       </div>
     </div>
     <div class="an-grid" id="anunciosGrid"></div>
   </section>
 
-  <!-- ── FILAS POR BAZAR (una por cada tienda) ─────────────── -->
-  <div id="filasBazares"></div>
+  <!-- ── RECIÉN LLEGADAS ─────────────────────────────────── -->
+  <section class="h-section h-wrap">
+    <div class="h-section-head">
+      <div>
+        <h2>Recién <em>llegadas</em></h2>
+        <p>Las últimas piezas que subimos. Cuando se van, no regresan.</p>
+      </div>
+      <a href="tienda.html" class="h-see-more">Ver todo</a>
+    </div>
+    <div class="h-rail" id="railNuevas">
+      <div class="h-sk"></div><div class="h-sk"></div><div class="h-sk"></div>
+      <div class="h-sk"></div><div class="h-sk"></div><div class="h-sk"></div>
+    </div>
+  </section>
 
   <!-- ── CATEGORÍAS ───────────────────────────────────────── -->
   <section class="h-section h-wrap">
@@ -247,22 +253,11 @@
   <section class="h-section h-wrap">
     <div class="h-section-head">
       <div>
-        <h2>Marcas en el <em>bazar</em></h2>
+        <h2>Marcas en <em>Stiimpys</em></h2>
         <p>Piezas originales de las marcas que más se mueven.</p>
       </div>
     </div>
     <div class="h-brands" id="homeBrands"><div class="h-sk-pill"></div><div class="h-sk-pill"></div><div class="h-sk-pill"></div><div class="h-sk-pill"></div><div class="h-sk-pill"></div><div class="h-sk-pill"></div><div class="h-sk-pill"></div><div class="h-sk-pill"></div></div>
-  </section>
-
-  <!-- ── BAZARES ──────────────────────────────────────────── -->
-  <section class="h-section h-wrap" id="bazares">
-    <div class="h-section-head">
-      <div>
-        <h2>Los <em>bazares</em></h2>
-        <p>El catálogo es compartido: estas son las tiendas que publican aquí. Entra a la de cada quien para ver solo sus prendas.</p>
-      </div>
-    </div>
-    <div class="h-bazares" id="homeBazares"></div>
   </section>
 
   <!-- ── CÓMO FUNCIONA ────────────────────────────────────── -->
@@ -270,19 +265,19 @@
     <div class="h-section-head">
       <div>
         <h2>Cómo <em>comprar</em></h2>
-        <p>Tres pasos y la prenda es tuya. Sin registros ni carritos complicados.</p>
+        <p>Tres pasos y la prenda es tuya. Sin registrarte: agrega al carrito, paga y listo.</p>
       </div>
     </div>
     <div class="h-steps">
       <div class="h-step">
         <div class="h-step-num">01</div>
         <h3>Explora el catálogo</h3>
-        <p>Filtra por categoría, marca, talla, estado o precio. Guarda tus favoritas en la wishlist para no perderlas de vista.</p>
+        <p>Filtra por categoría, marca, talla, estado o precio. Agrega al carrito las que te gusten: cada pieza es única.</p>
       </div>
       <div class="h-step">
         <div class="h-step-num">02</div>
-        <h3>Apártala por WhatsApp</h3>
-        <p>Cada prenda tiene su botón de contacto directo. Nos llega el nombre, la talla y el precio; te confirmamos disponibilidad al momento.</p>
+        <h3>Págala o apártala</h3>
+        <p>Paga en línea con tarjeta o PayPal (los pagos los procesan Clip y PayPal como intermediarios), aparta con anticipo o escríbenos por WhatsApp.</p>
       </div>
       <div class="h-step">
         <div class="h-step-num">03</div>
@@ -292,27 +287,25 @@
     </div>
   </section>
 
-  <!-- ── SOBRE EL BAZAR ───────────────────────────────────── -->
+  <!-- ── SOBRE STIIMPYS ───────────────────────────────────── -->
   <section class="h-section h-wrap">
     <div class="h-about">
       <div>
-        <h2 id="aboutTitulo">Multi bazares, <em>un solo lugar</em></h2>
+        <h2 id="aboutTitulo">Sobre <em>Stiimpys</em></h2>
         <p id="aboutTexto">
-          STMP MARKET es una plataforma que reúne el catálogo digital de diferentes
-          bazares independientes de México. Aquí encontrarás prendas streetwear, vintage y
-          piezas únicas de segunda mano. Nada de stock repetido: casi todas son piezas
+          Stiimpys es un bazar de streetwear y vintage de Reynosa, Tamaulipas. Buscamos y
+          seleccionamos cada prenda a mano: nada de stock repetido, casi todas son piezas
           únicas en talla exclusiva.
         </p>
         <p>
-          Cada prenda es revisada detalladamente antes de publicarse, registrando su estado,
-          talla, marca y fotos reales en su ficha. Lo que ves en el catálogo es exactamente
-          lo que recibes.
+          Cada prenda se revisa antes de publicarse y su ficha trae estado, talla, marca y
+          fotos reales. Lo que ves en el catálogo es exactamente lo que recibes.
         </p>
       </div>
       <div class="h-facts">
         <div class="h-fact">
           <div class="h-fact-k">Ubicación</div>
-          <div class="h-fact-v" id="aboutUbicacion">México</div>
+          <div class="h-fact-v" id="aboutUbicacion">Reynosa, Tamaulipas · México</div>
         </div>
         <div class="h-fact">
           <div class="h-fact-k">Envíos</div>
@@ -320,14 +313,25 @@
         </div>
         <div class="h-fact">
           <div class="h-fact-k">Catálogo</div>
-          <div class="h-fact-v">Compartido entre bazares independientes, actualizado en tiempo real</div>
+          <div class="h-fact-v">Piezas únicas, actualizado en tiempo real</div>
         </div>
         <div class="h-fact">
           <div class="h-fact-k">Contacto</div>
-          <div class="h-fact-v">Directo con cada bazar a través de sus redes oficiales</div>
+          <div class="h-fact-v">WhatsApp e Instagram <a href="https://www.instagram.com/stiimpys" target="_blank" rel="noopener">@stiimpys</a></div>
         </div>
       </div>
     </div>
+  </section>
+
+  <!-- v42 · Reseñas verificadas (con fotos de clientes) -->
+  <section class="h-section h-wrap hidden" id="resenasSeccion" aria-labelledby="resenasH">
+    <div class="h-section-head">
+      <div>
+        <h2 id="resenasH">Lo que dicen <em>nuestros clientes</em></h2>
+        <p class="rv-prom" id="resenasProm"></p>
+      </div>
+    </div>
+    <div class="rv-lista" id="resenasLista"></div>
   </section>
 
   <!-- ── FAQ ──────────────────────────────────────────────── -->
@@ -343,24 +347,41 @@
         <p>Hay de las dos. Cada ficha indica el estado de la prenda (nueva, seminueva o usada) para que sepas exactamente qué estás comprando.</p>
       </details>
       <details>
-        <summary>¿Cómo aparto una prenda?</summary>
-        <p>Abre la prenda en el catálogo y usa el botón de WhatsApp. El mensaje ya lleva el nombre, la talla y el precio; solo tienes que enviarlo.</p>
+        <summary>¿Cómo compro o aparto una prenda?</summary>
+        <p>Agrégala al carrito y págala en línea, o usa "Comprar ahora" en su ficha. Si la prenda lo permite, puedes apartarla pagando un anticipo y liquidar después. También puedes usar el botón de WhatsApp: el mensaje ya lleva el nombre, la talla y el precio.</p>
+      </details>
+      <details>
+        <summary>¿Qué tipo de ropa venden?</summary>
+        <p>Streetwear y ropa vintage de segunda mano: playeras de bandas, giras y películas, sudaderas, chamarras, jeans, gorras y tenis. Cada prenda es una pieza única, revisada a mano y con fotos reales; cuando se vende, sale del catálogo.</p>
+      </details>
+      <details>
+        <summary>¿Qué formas de pago aceptan?</summary>
+        <!-- v57 · formas-pago.js lo reescribe con lo marcado en Ventas → Promociones y pagos -->
+        <p data-formas-pago-faq>Aceptamos tarjeta, efectivo y transferencia. Con tarjeta de crédito o débito pagas en línea desde la página; en efectivo, al recoger tu compra en persona en Reynosa; y por transferencia, desde la app de tu banco.</p>
+      </details>
+      <details>
+        <summary>¿Dónde puedo recoger mi compra en Reynosa?</summary>
+        <p>Entregamos en persona en puntos de Reynosa; al pagar ves cuáles son y su costo (en algunos es gratis). Si prefieres, también te la enviamos a domicilio.</p>
+      </details>
+      <details>
+        <summary>¿Cómo sé si me queda?</summary>
+        <p>Cada ficha trae la talla de la etiqueta y, cuando las tenemos, las medidas (largo, ancho, hombros, cintura). Si necesitas otra medida o más fotos, escríbenos por WhatsApp o Instagram antes de pagar.</p>
       </details>
       <details>
         <summary>¿Hacen envíos fuera de Reynosa?</summary>
-        <p>Sí, enviamos a todo México con guía rastreable. El costo de envío se acuerda por WhatsApp según tu ubicación.</p>
+        <p>Sí, enviamos a todo México con guía rastreable. Al pagar escribes tu código postal y ves el costo de envío de cada paquetería antes de pagar.</p>
       </details>
       <details>
         <summary>¿Puedo apartar varias prendas?</summary>
-        <p>Claro. Guarda todas las que te gusten en la wishlist y desde ahí mandas la lista en un solo mensaje. Se agrupan por bazar, así que si son de varios recibes un mensaje listo para cada uno.</p>
+        <p>Claro. Agrégalas a tu carrito y págalas juntas en línea (con descuento por llevar varias) o apártalas todas en un solo mensaje de WhatsApp.</p>
+      </details>
+      <details>
+        <summary>¿Quién cobra mis pagos? ¿Es seguro?</summary>
+        <p>Los pagos en línea se hacen a través de intermediarios de pago: Clip (tarjeta) y PayPal. También puedes pagar por transferencia SPEI desde la app de tu banco. Pones tus datos en su página segura y el dinero llega a la cuenta de Stiimpys. Stiimpys no ve ni guarda los datos de tu tarjeta. <a href="terminos.html#pagos">Más detalles</a>.</p>
       </details>
       <details>
         <summary>¿Hay cambios, devoluciones o garantía?</summary>
         <p>No. Todas las prendas son de segunda mano y se venden tal como se muestran: las ventas son finales, sin cambios, sin devoluciones y sin garantía de ningún tipo. Por eso pide todas las medidas y fotos que necesites por WhatsApp antes de pagar. Puedes leer el detalle en los <a href="terminos.html">términos y condiciones</a>.</p>
-      </details>
-      <details>
-        <summary>¿Todas las prendas son del mismo vendedor?</summary>
-        <p>No. Varios bazares publican en el mismo catálogo. Cada prenda indica de qué bazar es y su botón de WhatsApp escribe directo a esa persona. Puedes filtrar por bazar o entrar al apartado de cada uno.</p>
       </details>
       <details>
         <summary>¿Cada cuánto se suben prendas nuevas?</summary>
@@ -370,7 +391,7 @@
   </section>
 
   <!-- ── CTA FINAL ────────────────────────────────────────── -->
-  <section class="h-wrap" style="padding-top:3rem">
+  <section class="h-section h-wrap">
     <div class="h-cta">
       <h2>¿Listo para <em>encontrar la tuya?</em></h2>
       <p>Entra al catálogo completo y filtra por talla, marca, estado o precio.</p>
@@ -378,18 +399,6 @@
     </div>
   </section>
 
-  <!-- ── CTA VENDEDORES ───────────────────────────────────── -->
-  <section class="h-wrap" style="padding-top:0">
-    <div class="h-vender">
-      <div class="h-vender-txt">
-        <span class="h-vender-tag">Para bazares</span>
-        <h2>¿Tienes un <em>bazar?</em></h2>
-        <p>Publica tus prendas con nosotros y llega a más clientes. Sin costos ocultos, con tu propio catálogo dentro de STMP MARKET.</p>
-        <a href="vender.html" class="h-btn h-btn-vender">Publica tus prendas &rarr;</a>
-      </div>
-      <div class="h-vender-deco" aria-hidden="true">🛍️</div>
-    </div>
-  </section>
 
 </main>
 
@@ -401,34 +410,38 @@
   </article>
 </div>
 
-<!-- ── FOOTER ─────────────────────────────────────────────── -->
+<!-- ── FOOTER (igual en todas las páginas públicas · v39) ──── -->
 <footer class="site-footer">
   <div class="sf-inner">
     <div class="sf-col sf-brand">
-      <a href="inicio.html" class="sf-logo">STMP MARKET<span>.</span></a>
+      <a href="inicio.html" class="sf-logo" aria-label="Stiimpys, ir al inicio"><img src="img/logo-blanco-chico.webp" alt="Stiimpys Bazar" width="150" height="104" loading="lazy" decoding="async"></a>
       <p class="sf-desc">
-        Catálogo digital de bazares independientes. Streetwear, vintage y prendas
-        únicas de segunda mano. Cada prenda pertenece al bazar que la publica.
+        Página oficial de Stiimpys. Streetwear, vintage y prendas únicas de
+        segunda mano, seleccionadas a mano en Reynosa.
       </p>
       <div class="sf-ubi">Reynosa, Tamaulipas · México</div>
+      <div data-formas-pago="pie"><div class="fp fp-pie"><span class="fp-tit">Formas de pago</span><ul class="fp-lista"><li class="fp-item" data-fp="tarjeta"><span class="fp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.2"/><path d="M2.5 9.6h19M6.5 15h4"/></svg></span><span class="fp-txt"><b>Tarjeta</b><small>Crédito o débito</small></span></li><li class="fp-item" data-fp="efectivo"><span class="fp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg></span><span class="fp-txt"><b>Efectivo</b><small>Al entregar en persona</small></span></li><li class="fp-item" data-fp="transferencia"><span class="fp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5h14.5M15 5l3.5 3.5L15 12"/><path d="M20 15.5H5.5M9 12l-3.5 3.5L9 19"/></svg></span><span class="fp-txt"><b>Transferencia</b><small>SPEI desde tu banco</small></span></li></ul></div></div>
     </div>
 
     <div class="sf-col">
-      <h3>Comprar</h3>
+      <h2>Comprar</h2>
       <a href="tienda.html">Ver catálogo</a>
-      <a href="redes.html">Los bazares</a>
+      <a href="tienda.html?orden=descuento">Ofertas</a>
+      <a href="carrito.html">Mi carrito</a>
+      <a href="pagar.html?mis=1">Mis pedidos</a>
       <a href="inicio.html#comofunciona">Cómo comprar</a>
-      <a href="vender.html">Vende con nosotros</a>
-      <a href="tienda.html">Novedades</a>
-    </div>
-
-    <div class="sf-col sf-bazares">
-      <h3>Bazares</h3>
-      <div id="footerBazares"><a href="redes.html">Ver todos</a></div>
     </div>
 
     <div class="sf-col">
-      <h3>Legal</h3>
+      <h2>Stiimpys</h2>
+      <a href="inicio.html">Inicio</a>
+      <a href="https://www.instagram.com/stiimpys" target="_blank" rel="noopener">Instagram @stiimpys</a>
+      <a href="https://wa.me/528995284602" id="waFooter" target="_blank" rel="noopener">WhatsApp</a>
+      <a href="cuenta.html">Mi cuenta</a>
+    </div>
+
+    <div class="sf-col">
+      <h2>Legal</h2>
       <a href="terminos.html">Términos y condiciones</a>
       <a href="terminos.html#sin-cambios">Cambios y devoluciones</a>
       <a href="terminos.html#garantias">Garantías</a>
@@ -440,13 +453,15 @@
     <strong>Precios en pesos mexicanos (MXN).</strong>
     <strong>Importante:</strong> todas las prendas son de segunda mano y se venden
     <em>tal como se muestran</em>. <b>No se aceptan cambios ni devoluciones</b> y
-    <b>no se ofrece ninguna garantía</b>. STMP MARKET es solo un catálogo: la venta,
-    el pago y el envío se acuerdan directamente con cada bazar.
+    <b>no se ofrece ninguna garantía</b>. Los pagos en línea se procesan a través de
+    intermediarios de pago (Clip y PayPal): Stiimpys no recibe ni guarda los datos de tu tarjeta.
     <a href="terminos.html">Leer los términos completos</a>
   </div>
 
+  <!-- v41 · Datos del vendedor (los escribe la dueña en el panel; si están vacíos no se ve) -->
+  <p class="sf-legal" data-legal="pie" hidden></p>
   <div class="sf-base">
-    <span>STMP MARKET &copy; <span id="anioActual">2026</span> · Todos los derechos reservados</span>
+    <span>Stiimpys &copy; <span id="anioActual">2026</span> · Todos los derechos reservados</span>
     <span class="sf-base-links">
       <a href="terminos.html">Términos</a>
       <a href="terminos.html#privacidad">Privacidad</a>
@@ -458,14 +473,14 @@
 <!-- ── PANEL WISHLIST ─────────────────────────────────────
      El mismo de la tienda y la ficha: js/wishlist.js lo llena. -->
 <div class="wishlist-overlay" id="wishlistOverlay" onclick="closeWishlistPanel()"></div>
-<aside class="wishlist-panel" id="wishlistPanel" aria-label="Mi wishlist">
+<aside class="wishlist-panel" id="wishlistPanel" aria-label="Mi carrito">
   <div class="wishlist-panel-header">
-    <h3>Mi Wishlist <span class="wishlist-panel-count" id="wishlistPanelCount">0</span></h3>
+    <h3>Mi carrito <span class="wishlist-panel-count" id="wishlistPanelCount">0</span></h3>
     <button onclick="closeWishlistPanel()" aria-label="Cerrar">✕</button>
   </div>
   <div class="wishlist-panel-body" id="wishlistPanelBody"></div>
   <div class="wishlist-panel-footer" id="wishlistPanelFooter" style="display:none">
-    <button class="wl-vaciar" onclick="vaciarWishlist()">Vaciar la lista</button>
+    <button class="wl-vaciar" onclick="vaciarWishlist()">Vaciar carrito</button>
   </div>
 </aside>
 

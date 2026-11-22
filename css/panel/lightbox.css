@@ -1,0 +1,95 @@
+/* ============================================================
+   lightbox.css — Estilos del modal de imagen grande (admin)
+   Combina con la paleta clara/azul del bazar.
+   ============================================================ */
+
+.modal-overlay{
+  position:fixed;
+  inset:0;
+  z-index:1000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(20,30,50,0.78);
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+  padding:32px;
+  animation:lbFade .18s ease;
+}
+.modal-overlay.open{ display:flex; }
+.modal-overlay{ cursor:pointer; }
+.modal-inner img{ cursor:default; }
+
+@keyframes lbFade{ from{opacity:0} to{opacity:1} }
+
+.modal-inner{
+  max-width:90vw;
+  max-height:88vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.modal-inner img{
+  max-width:90vw;
+  max-height:88vh;
+  width:auto;
+  height:auto;
+  object-fit:contain;
+  border-radius:12px;
+  box-shadow:0 24px 70px rgba(0,0,0,.5);
+  background:#fff;
+}
+
+/* Botón cerrar */
+.m-close{
+  position:absolute;
+  top:20px;
+  right:24px;
+  width:44px;
+  height:44px;
+  border:none;
+  border-radius:50%;
+  background:rgba(255,255,255,.92);
+  color:#1a1a1a;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:background .15s, transform .15s;
+}
+.m-close:hover{ background:#fff; transform:scale(1.06); }
+
+/* Flechas de navegación */
+.m-nav{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  width:52px;
+  height:52px;
+  border:none;
+  border-radius:50%;
+  background:rgba(255,255,255,.92);
+  color:#2d6be4;
+  font-size:30px;
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:background .15s, transform .15s;
+  user-select:none;
+}
+.m-nav:hover{ background:#fff; transform:translateY(-50%) scale(1.08); }
+#mPrev{ left:24px; }
+#mNext{ right:24px; }
+
+/* Señal de que la foto se puede abrir */
+.item-img{ cursor:zoom-in; }
+
+@media (max-width:600px){
+  .modal-overlay{ padding:14px; }
+  .modal-inner img{ max-height:82vh; }
+  /* En móvil se navega deslizando el dedo: ocultamos las flechas */
+  .m-nav{ display:none !important; }
+  .m-close{ top:12px; right:12px; }
+}

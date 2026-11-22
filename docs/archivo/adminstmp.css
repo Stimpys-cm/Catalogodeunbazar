@@ -1,0 +1,349 @@
+/* ═══════════════════════════════════════════════════════════════
+   STMP MARKET · ADMIN — Capa de identidad premium (Fase 1)
+   ───────────────────────────────────────────────────────────────
+   Aditiva y NO destructiva. Se carga al final para unificar el
+   panel con la identidad de inicio.html / tienda.html sin tocar
+   la lógica JS ni los contratos de API.
+   Todo va scopeado bajo body.stmp-admin.
+   ═══════════════════════════════════════════════════════════════ */
+
+body.stmp-admin {
+  /* ── Tokens centralizados (identidad real STMP) ── */
+  --stmp-primary:      #2d6be4;
+  --stmp-primary-2:    #4a90d9;
+  --stmp-primary-ink:  #1c48a0;
+  --stmp-gradient:     linear-gradient(135deg, #2d6be4 0%, #4a90d9 100%);
+
+  --stmp-ink:          #1a1f2e;
+  --stmp-ink-soft:     #3a3d47;
+  --stmp-muted:        #74706a;
+
+  --stmp-paper:        #f7f4ef;
+  --stmp-surface:      #ffffff;
+  --stmp-surface-2:    #faf8f4;
+  --stmp-line:         rgba(26, 31, 46, .10);
+  --stmp-line-2:       rgba(26, 31, 46, .16);
+  --stmp-border:       #d4cfc6;
+
+  --stmp-danger:       #e05c5c;
+  --stmp-success:      #2e8b57;
+  --stmp-warning:      #c8761f;
+
+  --stmp-radius-sm:    10px;
+  --stmp-radius:       16px;
+  --stmp-radius-lg:    20px;
+  --stmp-pill:         40px;
+
+  --stmp-shadow-xs:    0 1px 2px rgba(26,31,46,.05);
+  --stmp-shadow-sm:    0 3px 14px rgba(26,31,46,.06);
+  --stmp-shadow-md:    0 10px 34px -14px rgba(26,31,46,.28);
+  --stmp-shadow-accent: 0 10px 26px -10px rgba(45,107,228,.45);
+
+  --stmp-ease:         cubic-bezier(.16, 1, .3, 1);
+  --stmp-t-fast:       .16s var(--stmp-ease);
+  --stmp-t:            .24s var(--stmp-ease);
+  --stmp-t-slow:       .36s var(--stmp-ease);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   1 · SIDEBAR — jerarquía, grupos, hover, activo, badges
+   ═══════════════════════════════════════════════════════════════ */
+body.stmp-admin .sidebar {
+  background: linear-gradient(180deg, #ffffff 0%, #fdfcfa 100%);
+  border-right: 1px solid var(--stmp-line);
+  box-shadow: 1px 0 0 var(--stmp-line);
+}
+
+/* El nav ocupa el alto y hace scroll propio si hace falta */
+body.stmp-admin .sidebar-nav {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: .35rem .6rem 1rem;
+  scrollbar-width: thin;
+}
+body.stmp-admin .sidebar-nav::-webkit-scrollbar { width: 8px; }
+body.stmp-admin .sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--stmp-line-2); border-radius: 10px;
+}
+
+/* Grupos: ocultan su etiqueta si no tienen items visibles (permisos) */
+body.stmp-admin .sidebar-group { margin-top: .35rem; }
+body.stmp-admin .sidebar-group:first-of-type { margin-top: 0; }
+body.stmp-admin .sidebar-group:not(:has(.sidebar-item:not(.hidden))) { display: none; }
+
+body.stmp-admin .sidebar-nav-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--stmp-muted);
+  padding: .7rem .85rem .35rem;
+  margin: 0;
+}
+
+body.stmp-admin .sidebar-item {
+  position: relative;
+  gap: 11px;
+  padding: 9px 12px;
+  margin: 1px 0;
+  border-radius: 11px;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--stmp-ink-soft);
+  transition: background var(--stmp-t-fast), color var(--stmp-t-fast),
+              transform var(--stmp-t-fast);
+}
+body.stmp-admin .sidebar-item svg { opacity: .85; transition: opacity var(--stmp-t-fast); }
+body.stmp-admin .sidebar-item:hover {
+  background: rgba(45,107,228,.07);
+  color: var(--stmp-primary-ink);
+  transform: translateX(2px);
+}
+body.stmp-admin .sidebar-item:hover svg { opacity: 1; }
+body.stmp-admin .sidebar-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(45,107,228,.28);
+}
+
+/* Barra indicadora del activo */
+body.stmp-admin .sidebar-item.active {
+  background: var(--stmp-gradient);
+  color: #fff;
+  box-shadow: var(--stmp-shadow-accent);
+  transform: none;
+}
+body.stmp-admin .sidebar-item.active::before {
+  content: "";
+  position: absolute;
+  left: -6px; top: 22%; bottom: 22%;
+  width: 3px; border-radius: 3px;
+  background: var(--stmp-primary-ink);
+}
+body.stmp-admin .sidebar-item.active svg { opacity: 1; }
+
+/* Badges de conteo (Solicitudes, Drops…) */
+body.stmp-admin .sidebar-badge {
+  margin-left: auto;
+  min-width: 20px; height: 20px;
+  padding: 0 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800;
+  background: var(--stmp-danger); color: #fff;
+  border-radius: 999px;
+  box-shadow: 0 2px 6px rgba(224,92,92,.4);
+}
+
+/* Perfil */
+body.stmp-admin .sidebar-profile {
+  border-bottom: 1px solid var(--stmp-line);
+}
+body.stmp-admin .profile-name { font-weight: 700; color: var(--stmp-ink); }
+body.stmp-admin .profile-role {
+  font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--stmp-primary); font-weight: 700;
+}
+
+/* Logo */
+body.stmp-admin .sidebar-logo { border-bottom: 1px solid var(--stmp-line); }
+body.stmp-admin .sidebar-logo-text { letter-spacing: .06em; }
+
+/* Footer / acciones */
+body.stmp-admin .sidebar-footer { border-top: 1px solid var(--stmp-line); }
+body.stmp-admin .btn-tienda,
+body.stmp-admin .btn-logout {
+  border-radius: 10px;
+  transition: transform var(--stmp-t-fast), background var(--stmp-t-fast),
+              border-color var(--stmp-t-fast), color var(--stmp-t-fast);
+}
+body.stmp-admin .btn-tienda:hover { transform: translateY(-1px); }
+body.stmp-admin .btn-logout:hover { color: var(--stmp-danger); border-color: var(--stmp-danger); }
+
+/* ═══════════════════════════════════════════════════════════════
+   2 · DENSIDAD / APROVECHAMIENTO DE ESPACIO
+   Escala de padding y contenido según el ancho real de pantalla.
+   ═══════════════════════════════════════════════════════════════ */
+body.stmp-admin .admin-main {
+  padding: 1.75rem 2rem 3rem;
+}
+
+/* Laptop grande */
+@media (min-width: 1280px) {
+  body.stmp-admin .admin-main { padding: 2rem 2.5rem 3.5rem; }
+}
+/* Monitores grandes: aprovechar el ancho, no dejar huecos enormes */
+@media (min-width: 1600px) {
+  body.stmp-admin .admin-main { padding: 2.25rem 3rem 4rem; }
+  body.stmp-admin .inv-grid {
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  }
+  body.stmp-admin .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+@media (min-width: 1920px) {
+  body.stmp-admin .admin-main { padding: 2.5rem 3.5rem 4rem; }
+  body.stmp-admin .inv-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   3 · CABECERAS DE VISTA
+   ═══════════════════════════════════════════════════════════════ */
+body.stmp-admin .view-header {
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--stmp-line);
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+body.stmp-admin .view-title {
+  letter-spacing: .01em;
+  color: var(--stmp-ink);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   4 · SUPERFICIES: cards, métricas, tablas
+   ═══════════════════════════════════════════════════════════════ */
+body.stmp-admin .stat-card,
+body.stmp-admin .metric-card,
+body.stmp-admin .inv-card,
+body.stmp-admin .bz-card,
+body.stmp-admin .sol-card,
+body.stmp-admin .vendedor-card {
+  transition: transform var(--stmp-t), box-shadow var(--stmp-t),
+              border-color var(--stmp-t);
+}
+body.stmp-admin .inv-card:hover,
+body.stmp-admin .bz-card:hover,
+body.stmp-admin .vendedor-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--stmp-shadow-md);
+  border-color: transparent;
+}
+
+/* Tablas administrativas legibles y densas */
+body.stmp-admin table.admin-table,
+body.stmp-admin .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+body.stmp-admin table.admin-table th,
+body.stmp-admin .data-table th {
+  text-align: left;
+  font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--stmp-muted); font-weight: 800;
+  padding: 10px 12px;
+  border-bottom: 1.5px solid var(--stmp-line);
+  position: sticky; top: 0; background: var(--stmp-surface); z-index: 1;
+}
+body.stmp-admin table.admin-table td,
+body.stmp-admin .data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--stmp-line);
+  vertical-align: middle;
+}
+body.stmp-admin table.admin-table tbody tr,
+body.stmp-admin .data-table tbody tr { transition: background var(--stmp-t-fast); }
+body.stmp-admin table.admin-table tbody tr:hover,
+body.stmp-admin .data-table tbody tr:hover { background: rgba(45,107,228,.045); }
+
+/* Fix "orejitas": la franja de color superior con esquinas rectas,
+   recortada por el overflow del propio card (evita el pico en las esquinas). */
+body.stmp-admin .stat-card { overflow: hidden; }
+body.stmp-admin .stat-card::before {
+  border-radius: 0 !important;
+  height: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   5 · CONTROLES: botones, inputs, chips, badges de estado
+   ═══════════════════════════════════════════════════════════════ */
+body.stmp-admin .btn-primary,
+body.stmp-admin .btn-accent {
+  background: var(--stmp-gradient);
+  box-shadow: var(--stmp-shadow-accent);
+  transition: transform var(--stmp-t-fast), box-shadow var(--stmp-t-fast), filter var(--stmp-t-fast);
+}
+body.stmp-admin .btn-primary:hover,
+body.stmp-admin .btn-accent:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px -10px rgba(45,107,228,.5);
+}
+body.stmp-admin .btn-primary:active,
+body.stmp-admin .btn-accent:active { transform: translateY(0) scale(.99); }
+
+body.stmp-admin input:not([type=checkbox]):not([type=radio]):focus,
+body.stmp-admin select:focus,
+body.stmp-admin textarea:focus {
+  outline: none;
+  border-color: var(--stmp-primary);
+  box-shadow: 0 0 0 4px rgba(45,107,228,.12);
+}
+
+/* Badges de estado reutilizables (progresivo: añade class="stmp-badge …") */
+body.stmp-admin .stmp-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  font-size: 11px; font-weight: 700; letter-spacing: .02em;
+  border-radius: 999px;
+  border: 1px solid var(--stmp-line-2);
+  background: var(--stmp-surface-2);
+  color: var(--stmp-ink-soft);
+}
+body.stmp-admin .stmp-badge--ok      { background: rgba(46,139,87,.12);  color: #226844; border-color: transparent; }
+body.stmp-admin .stmp-badge--warn    { background: rgba(200,118,31,.14); color: #96591a; border-color: transparent; }
+body.stmp-admin .stmp-badge--danger  { background: rgba(224,92,92,.14);  color: #a83a3a; border-color: transparent; }
+body.stmp-admin .stmp-badge--info    { background: rgba(45,107,228,.12); color: var(--stmp-primary-ink); border-color: transparent; }
+
+/* ═══════════════════════════════════════════════════════════════
+   6 · SCROLLBARS coherentes
+   ═══════════════════════════════════════════════════════════════ */
+body.stmp-admin .admin-main { scrollbar-width: thin; }
+body.stmp-admin ::-webkit-scrollbar { width: 10px; height: 10px; }
+body.stmp-admin ::-webkit-scrollbar-thumb {
+  background: var(--stmp-line-2); border-radius: 10px;
+  border: 2px solid transparent; background-clip: padding-box;
+}
+body.stmp-admin ::-webkit-scrollbar-thumb:hover { background: rgba(26,31,46,.28); background-clip: padding-box; }
+
+/* ═══════════════════════════════════════════════════════════════
+   7 · MÓVIL — drawer + densidad
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  body.stmp-admin .sidebar {
+    transition: transform var(--stmp-t-slow);
+    box-shadow: none;
+  }
+  body.stmp-admin .sidebar.open { box-shadow: 4px 0 60px -10px rgba(26,31,46,.35); }
+  body.stmp-admin .topbar-mobile {
+    background: color-mix(in srgb, var(--stmp-surface) 88%, transparent);
+    backdrop-filter: saturate(1.2) blur(10px);
+    border-bottom: 1px solid var(--stmp-line);
+  }
+  body.stmp-admin .view-header { align-items: flex-start; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   8 · ENTRADA DE VISTAS + MICROINTERACCIONES
+   ═══════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: no-preference) {
+  body.stmp-admin [id^="view-"]:not([style*="display: none"]):not([style*="display:none"]) {
+    animation: stmpViewIn .3s var(--stmp-ease) both;
+  }
+}
+@keyframes stmpViewIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Respeto absoluto a reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  body.stmp-admin *,
+  body.stmp-admin *::before,
+  body.stmp-admin *::after {
+    animation-duration: .001ms !important;
+    transition-duration: .001ms !important;
+  }
+}

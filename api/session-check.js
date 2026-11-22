@@ -5,10 +5,12 @@
 //
 // No expone NINGÚN dato del usuario ni tokens de otras cuentas: solo un booleano.
 
-import { getDB } from './_db.js';
-import { rateLimit } from './_rateLimit.js';
+import { getDB } from './_lib/db.js';
+import { rateLimit } from './_lib/rateLimit.js';
+import { registrarFalla } from './_lib/actividad.js';
 
-export default async function handler(req, res) {
+import { conEscudo } from './_lib/escudo.js';
+async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
 
@@ -34,7 +36,11 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('[session-check]', err);
+    await registrarFalla(err, { origen: 'session-check' });
     // Ante error de servidor NO cerramos la sesión (evita falsos positivos).
     return res.status(500).json({ error: 'No se pudo completar la operación.', valid: true });
   }
 }
+
+// v40 · Todas las funciones pasan primero por el escudo (ver api/_lib/escudo.js)
+export default conEscudo(handler);

@@ -1,0 +1,29 @@
+/* ── Reels y sorteos (panel de Instagram) ─────────────────── */
+.rl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; max-height: 420px; overflow: auto; padding: 2px; }
+.rl-p { position: relative; display: flex; flex-direction: column; gap: 3px; padding: 4px; border-radius: 10px; border: 1.5px solid var(--igx-borde); background: #fff; cursor: pointer; text-align: left; font-family: 'DM Sans', sans-serif; }
+.rl-p.on { border-color: var(--igx-txt); box-shadow: inset 0 0 0 1px var(--igx-txt); }
+.rl-p img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 7px; }
+.rl-p span { font-size: 11px; line-height: 1.2; max-height: 2.4em; overflow: hidden; color: var(--igx-txt); }
+.rl-p b { font-size: 11.5px; }
+.rl-p em { position: absolute; top: 8px; left: 8px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--igx-txt); color: #fff; font: 700 11px 'DM Sans', sans-serif; font-style: normal; }
+.rl-prev { display: flex; flex-direction: column; gap: 12px; }
+.rl-lienzo { position: relative; width: min(100%, 300px); aspect-ratio: 9 / 16; margin: 0 auto; border-radius: 16px; overflow: hidden; background: #0e0e0f; box-shadow: 0 14px 40px rgba(0,0,0,.25); }
+.rl-lienzo canvas, .rl-lienzo video { width: 100%; height: 100%; display: block; object-fit: cover; }
+.rl-barra { position: absolute; left: 14px; right: 14px; bottom: 14px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.25); }
+.rl-barra i { display: block; height: 100%; border-radius: 4px; background: #f6c86b; }
+
+.so-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; max-height: 420px; overflow: auto; }
+.so-p { position: relative; padding: 0; border: 2px solid transparent; border-radius: 10px; overflow: hidden; cursor: pointer; background: var(--igx-fondo); }
+.so-p.on { border-color: var(--igx-txt); }
+.so-p img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.so-p span { position: absolute; left: 4px; bottom: 4px; padding: 2px 7px; border-radius: 999px; background: rgba(17,17,17,.75); color: #fff; font: 700 10.5px 'DM Sans', sans-serif; }
+.so-res { text-align: center; }
+.so-cifras { display: flex; justify-content: center; gap: 22px; font-size: 13px; color: var(--igx-suave); margin-bottom: 14px; }
+.so-cifras b { color: var(--igx-txt); font-size: 16px; }
+.so-ganadores { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+.so-g { min-width: 220px; max-width: 300px; padding: 20px; border-radius: 16px; background: radial-gradient(120% 140% at 0% 0%, #2a2724, #111 60%); color: #fff; animation: so-entra .6s cubic-bezier(.2,.9,.3,1.3) both; }
+.so-g small { display: block; font: 800 10px 'DM Sans', sans-serif; letter-spacing: .2em; text-transform: uppercase; color: #f6c86b; }
+.so-g b { display: block; font: 500 28px 'Playfair Display', Georgia, serif; margin: 6px 0; word-break: break-all; }
+.so-g p { font-size: 12.5px; color: rgba(255,255,255,.7); margin: 0 0 10px; }
+.so-g .igx-btn, .so-g .igx-btn.ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.35); }
+@keyframes so-entra { from { opacity: 0; transform: scale(.7) translateY(20px); } to { opacity: 1; transform: none; } }

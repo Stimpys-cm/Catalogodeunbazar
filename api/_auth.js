@@ -29,6 +29,14 @@ function getToken(req) {
 // Devuelve { id, username, role, bazarId } si el token es válido; si no, null.
 // bazarId null = staff global (admin principal, manda sobre todos los bazares).
 export async function getUser(req) {
+  // v33: la misma petición puede preguntar varias veces (auditoría + handler): una sola consulta
+  if (req && req._usuarioLeido) return req._usuario;
+  const u = await leerUsuario(req);
+  if (req) { req._usuarioLeido = true; req._usuario = u; }
+  return u;
+}
+
+async function leerUsuario(req) {
   const token = getToken(req);
   if (!token) return null;
   const db   = await getDB();

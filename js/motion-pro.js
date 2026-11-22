@@ -1,4 +1,4 @@
-// STMP MARKET — premium motion layer
+// Stiimpys — premium motion layer
 // Vanilla JS, no dependencies, no network requests.
 // Motion is progressive: if the browser/device is not suited for it,
 // the site remains exactly usable without the effects.
@@ -227,41 +227,11 @@
     });
   }
 
-  function setupStats() {
-    const stats = document.querySelectorAll('.h-stat-num');
-    stats.forEach(el => {
-      let last = el.textContent;
-      let animating = false;
-
-      const run = () => {
-        const source = el.textContent.trim();
-        const raw = source.replace(/[^0-9.-]/g, '');
-        const target = Number(raw);
-        if (!Number.isFinite(target) || target <= 0 || target > 99999) return;
-        const suffix = source.replace(/[0-9.,\s-]/g, '');
-        const started = performance.now();
-        const dur = 800;
-        animating = true;
-        const tick = now => {
-          const t = clamp((now - started) / dur, 0, 1);
-          const eased = 1 - Math.pow(1 - t, 4);
-          el.textContent = Math.round(target * eased).toLocaleString('es-MX') + suffix;
-          if (t < 1) requestAnimationFrame(tick);
-          else {
-            animating = false;
-            last = el.textContent;
-          }
-        };
-        requestAnimationFrame(tick);
-      };
-
-      new MutationObserver(() => {
-        if (animating || el.textContent === last) return;
-        last = el.textContent;
-        run();
-      }).observe(el, { childList: true, characterData: true, subtree: true });
-    });
-  }
+  // v38 · Aquí había un segundo conteo animado de las estadísticas del inicio.
+  // Corría al mismo tiempo que el de inicio-premium.js: uno tomaba como meta un
+  // número a medio contar del otro y la estadística terminaba diciendo, por
+  // ejemplo, "3 prendas" cuando la tarjeta del hero decía 9. Ahora solo cuenta
+  // inicio-premium.js.
 
   function setupDynamicEnhancements() {
     let queued = false;
@@ -286,7 +256,6 @@
     decorateReveals();
     setupTilt();
     setupMagnets();
-    setupStats();
     setupDynamicEnhancements();
     afterPaint(() => root.classList.add('motion-loaded'));
   }

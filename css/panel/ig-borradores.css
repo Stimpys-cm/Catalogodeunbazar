@@ -1,0 +1,36 @@
+/* ── Borradores y ayudas del panel de Instagram ───────────── */
+.igb-barra { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin: -6px 0 14px; }
+.igb-estado { display: inline-flex; align-items: center; gap: 8px; font: 500 12.5px 'DM Sans', sans-serif; color: var(--igx-suave); }
+.igb-estado::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--igx-borde); }
+.igb-estado[data-e="guardado"]::before { background: var(--igx-verde, #3f6b4f); }
+.igb-estado[data-e="pendiente"]::before, .igb-estado[data-e="guardando"]::before { background: #d6992e; }
+.igb-estado[data-e="error"]::before { background: var(--igx-rojo, #b3261e); }
+
+.igb-lista { display: flex; flex-direction: column; gap: 10px; }
+.igb-item { display: grid; grid-template-columns: 72px 1fr auto; gap: 14px; align-items: center; background: #fff; border: 1px solid var(--igx-borde); border-radius: var(--igx-radio); padding: 10px 14px 10px 10px; }
+.igb-item.on { border-color: var(--igx-txt); }
+.igb-mini { position: relative; width: 72px; height: 90px; border: 0; padding: 0; border-radius: 8px; overflow: hidden; background: var(--igx-fondo); cursor: pointer; display: grid; place-items: center; color: var(--igx-tenue); }
+.igb-mini img { width: 100%; height: 100%; object-fit: cover; }
+.igb-mini span svg { width: 22px; height: 22px; }
+.igb-mini em { position: absolute; top: 5px; right: 5px; font: 700 10px 'DM Sans', sans-serif; font-style: normal; background: rgba(17,17,17,.75); color: #fff; padding: 2px 6px; border-radius: 999px; }
+.igb-info { min-width: 0; }
+.igb-info b { display: block; font: 600 14px 'DM Sans', sans-serif; color: var(--igx-txt); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.igb-info small { display: block; margin-top: 4px; font-size: 12px; color: var(--igx-tenue); }
+.igb-acc { display: flex; gap: 6px; align-items: center; }
+
+.igb-horas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 4px; }
+.igb-horas small { width: 100%; font-size: 11.5px; color: var(--igx-tenue); }
+.igx-chip-btn.on { background: var(--igx-txt); color: #fff; border-color: var(--igx-txt); }
+.igx-chip-btn.ia, .igx-btn.ia { color: #8a6514; border-color: #ecd6a4; background: #fbf6ea; }
+.igx-chip-btn.ia:hover:not(:disabled), .igx-btn.ia:hover:not(:disabled) { background: #f6c86b; color: #111; border-color: #e0ae4b; }
+.igb-mal { color: var(--igx-rojo, #b3261e); font-weight: 700; }
+.igb-restaurado { box-shadow: inset 3px 0 0 #d6992e; }
+
+@media (max-width: 760px) {
+  .igb-item { grid-template-columns: 60px 1fr; }
+  .igb-mini { width: 60px; height: 75px; }
+  .igb-acc { grid-column: 1 / -1; }
+}
+.igx-imp-guarda { color: var(--igx-tenue); }
+.igx-imp-recup { margin: 8px 0 0; padding: 8px 12px; border-radius: 8px; background: #fbf3e2; color: #5b4310; font-size: 12.5px; }
+.igx-imp-recup .igx-link { margin-left: 4px; }

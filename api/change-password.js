@@ -3,14 +3,21 @@
 // Verifica la contraseña actual en el servidor y guarda la nueva HASHEADA.
 // Solo puedes cambiar TU propia contraseña (el usuario sale del token).
 
-import { getDB, invalidarSyncCache } from './_db.js';
-import { requireAuth } from './_auth.js';
-import { verifyPassword, hashPassword } from './_password.js';
-import { rateLimit } from './_rateLimit.js';
-import { cabecerasSesion, HORAS_SESION } from './_firma.js';
+import { getDB, invalidarSyncCache } from './_lib/db.js';
+import { requireAuth } from './_lib/auth.js';
+import { verifyPassword, hashPassword } from './_lib/password.js';
+import { rateLimit } from './_lib/rateLimit.js';
+import { cabecerasSesion, HORAS_SESION } from './_lib/firma.js';
 import crypto from 'crypto';
+import { conAuditoria } from './_lib/auditoria.js';
+import { registrarFalla } from './_lib/actividad.js';
 
-export default async function handler(req, res) {
+import { conEscudo } from './_lib/escudo.js';
+// v33: queda registrado quién cambió su contraseña (nunca la contraseña)
+const auditado = conAuditoria(handler, req => req.method === 'POST' || req.method === 'PUT'
+  ? { op: 'cambiar-contrasena', categoria: 'auth', accion: 'Cambió su contraseña', duplicados: false } : null);
+
+async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
 
@@ -60,6 +67,10 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('[change-password]', err);
+    await registrarFalla(err, { origen: 'change-password' });
     return res.status(500).json({ error: 'No se pudo completar la operación.' });
   }
 }
+
+// v40 · Todas las funciones pasan primero por el escudo (ver api/_lib/escudo.js)
+export default conEscudo(auditado);
