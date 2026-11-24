@@ -27,11 +27,11 @@
 
 ## Overview
 
-**Stiimpys** is a production online store that a real business uses to sell one-of-a-kind streetwear and vintage clothing across Mexico. It has a public storefront, a private admin dashboard for managing inventory and sales, online payments, shipping-label generation, automated Instagram publishing, and AI-assisted product listing.
+**Stiimpys** is a personal project: a complete online store for streetwear and vintage clothing, published at stiimpys.store. It has a public storefront, a private admin dashboard for managing inventory and sales, online payments, shipping-label generation, automated Instagram publishing, and AI-assisted product listing.
 
-The app has been through **59 iterative releases**, each verified with automated server and browser tests before it went to production.
+I built it with the help of AI tools, and it has gone through 59 versions. Each version includes automated server and browser tests.
 
-> 🇲🇽 *Tienda en línea de streetwear y vintage de Reynosa, Tamaulipas: catálogo público, panel de administración, pagos en línea, envíos, Instagram automático e IA para registrar prendas. La guía técnica en español está en [`docs/DESARROLLO.md`](docs/DESARROLLO.md).*
+> 🇲🇽 *Proyecto personal: tienda en línea de streetwear y vintage, hecha con apoyo de herramientas de IA: catálogo público, panel de administración, pagos en línea, envíos, Instagram automático e IA para registrar prendas. La guía técnica en español está en [`docs/DESARROLLO.md`](docs/DESARROLLO.md).*
 
 ## Features
 
@@ -142,6 +142,6 @@ The `pruebas/` folder has **50+ test suites** that cover:
 
 ## Author
 
-Built by **[@Stimpys-cm](https://github.com/Stimpys-cm)**, a software development student, using an AI-assisted workflow for design, implementation and testing.
+Personal project by **[@Stimpys-cm](https://github.com/Stimpys-cm)**, a Multiplatform Software Development student, built with the help of AI tools as part of the learning process.
 
 📫 Open to junior developer opportunities.
